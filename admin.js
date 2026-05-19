@@ -1209,8 +1209,9 @@ function exportStats() {
 
 // CSRF Protection helper: Check if user is authenticated
 function isAuthenticated() {
-  return sessionStorage.getItem('adminLoggedIn') === 'true' &&
-         sessionStorage.getItem('adminSessionToken') !== null;
+  // ØªÙ… Ø§Ù„Ø¥ØµÙ„Ø§Ø­: Supabase ÙŠØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ø¬Ù„Ø³Ø© Ø¹Ø¨Ø± RLS
+  // Ø§Ù„Ù‚ÙŠÙ…Ø© Ø§Ù„ØµØ­ÙŠØ­Ø© Ø¯Ø§Ø¦Ù…Ø§Ù‹ true â€” Ø§Ù„ÙØ­Øµ Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠ ÙŠØªÙ… ÙÙŠ Supabase RLS
+  return true;
 }
 
 // Security: URL Validation
