@@ -1,4 +1,4 @@
-// supabase-db.js — Supabase adapter v2
+// supabase-db.js \u2014 Supabase adapter v2
 // DiscountCodes + ImageStorage added
 (function() {
   const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
@@ -46,7 +46,7 @@
     async setMultiple(obj) { const rows = Object.entries(obj).map(([key,value])=>({key,value})); const { error } = await _db.from('settings').upsert(rows,{onConflict:'key'}); if (error) throw error; }
   };
 
-  // ── كودات الخصم
+  // \u2500\u2500 \u0643\u0648\u062F\u0627\u062A \u0627\u0644\u062E\u0635\u0645
   const DiscountCodes = {
     list:   ()     => all('discount_codes'),
     create: code   => ins('discount_codes', code),
@@ -63,21 +63,21 @@
       const { data } = await _db.from('discount_codes').select('used_count').eq('id', id).single();
       if (data) await _db.from('discount_codes').update({ used_count: (data.used_count||0)+1 }).eq('id', id);
     },
-    // تعديل الحد الأقصى للاستخدام
+    // \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649 \u0644\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645
     async updateMaxUses(id, maxUses) {
       const { error } = await _db.from('discount_codes')
         .update({ max_uses: maxUses === null ? null : parseInt(maxUses) })
         .eq('id', id);
       if (error) throw error;
     },
-    // إعادة تعيين عداد الاستخدام
+    // \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0639\u062F\u0627\u062F \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645
     async resetUsage(id) {
       const { error } = await _db.from('discount_codes')
         .update({ used_count: 0 })
         .eq('id', id);
       if (error) throw error;
     },
-    // تفعيل / تعطيل الكود
+    // \u062A\u0641\u0639\u064A\u0644 / \u062A\u0639\u0637\u064A\u0644 \u0627\u0644\u0643\u0648\u062F
     async toggleActive(id, isActive) {
       const { error } = await _db.from('discount_codes')
         .update({ is_active: isActive })
@@ -86,13 +86,13 @@
     }
   };
 
-  // ── رفع الصور إلى Supabase Storage
+  // \u2500\u2500 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631 \u0625\u0644\u0649 Supabase Storage
   const ImageStorage = {
     async upload(file) {
       const ext = (file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z]/g,'');
       const path = 'products/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
       const { data, error } = await _db.storage.from('product-images').upload(path, file, { cacheControl:'3600', upsert:false, contentType:file.type });
-      if (error) throw new Error('خطأ في رفع الصورة: ' + error.message);
+      if (error) throw new Error('\u062E\u0637\u0623 \u0641\u064A \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629: ' + error.message);
       const { data: { publicUrl } } = _db.storage.from('product-images').getPublicUrl(data.path);
       return publicUrl;
     },
@@ -109,5 +109,5 @@
   };
 
   window.SupaDB = { Auth, Products, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
-  console.log('[SupaDB] v2 ✓ (DiscountCodes + ImageStorage)');
+  console.log('[SupaDB] v2 \u2713 (DiscountCodes + ImageStorage)');
 })();
