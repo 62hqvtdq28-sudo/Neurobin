@@ -120,9 +120,9 @@
 .glass-effect{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255, 255, 255, 0.3)}
 
 /* Checkout Modal */
-.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(10px);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
+.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(10px);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
 .checkout-modal.active{opacity:1;visibility:visible}
-.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1)}
+.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .checkout-modal.active .checkout-container{transform:scale(1)}
 
 /* WhatsApp Float Button */
@@ -216,4 +216,24 @@
 }
 @media(min-width:768px) and (max-width:1024px){
   .products-grid{grid-template-columns:repeat(2,1fr)}
+}
+/* â”€â”€ Checkout Modal Mobile Fix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-height: 800px) {
+  .checkout-container {
+    max-height: 95vh;
+    max-height: 95dvh;
+    border-radius: 1rem;
+  }
+}
+@media (max-width: 640px) {
+  .checkout-modal {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+  .checkout-container {
+    max-height: 96vh;
+    max-height: 96dvh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-width: 100%;
+  }
 }
