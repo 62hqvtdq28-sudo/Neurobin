@@ -1,5 +1,5 @@
-// orders.js — Migrated to Supabase
-// طلبات العملاء تظهر في لوحة التحكم مباشرة
+// orders.js â€” Migrated to Supabase
+// Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ ØªØ¸Ù‡Ø± ÙÙŠ Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ… Ù…Ø¨Ø§Ø´Ø±Ø©
 
 var currentOrderFilter = 'all';
 var currentCommentFilter = 'all';
@@ -16,7 +16,7 @@ async function loadOrders() {
     if (q) orders = orders.filter(function(o){ return (o.customer_name||'').toLowerCase().includes(q) || (o.customer_phone||'').includes(q); });
     if (!orders.length) { container.classList.add('hidden'); noOrders.classList.remove('hidden'); return; }
     container.classList.remove('hidden'); noOrders.classList.add('hidden');
-    var statusLabels = { new:'جديد', pending:'جديد', progress:'قيد التوصيل', delivered:'تم التوصيل', cancelled:'ملغى' };
+    var statusLabels = { new:'Ø¬Ø¯ÙŠØ¯', pending:'Ø¬Ø¯ÙŠØ¯', progress:'Ù‚ÙŠØ¯ Ø§Ù„ØªÙˆØµÙŠÙ„', delivered:'ØªÙ… Ø§Ù„ØªÙˆØµÙŠÙ„', cancelled:'Ù…Ù„ØºÙ‰' };
     var statusClasses= { new:'order-new', pending:'order-new', progress:'order-progress', delivered:'order-delivered', cancelled:'order-cancelled' };
     var html = '';
     orders.forEach(function(order) {
@@ -27,33 +27,33 @@ async function loadOrders() {
         '<div class="flex items-start justify-between mb-3">' +
         '<div><h3 class="font-bold text-brand-900">' + escapeHTML(order.customer_name||order.name||'') + '</h3>' +
         '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'') + '</p></div>' +
-        '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'جديد') + '</span>' +
+        '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'Ø¬Ø¯ÙŠØ¯') + '</span>' +
         '</div>';
       if (order.customer_address||order.address) {
         html += '<p class="text-brand-500 text-sm mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline-block ml-1"></i>' + escapeHTML(order.customer_address||order.address||'') + '</p>';
       }
       if (order.discount_code) {
-        html += '<p class="text-amber-600 text-sm mb-2"><i data-lucide="tag" class="w-4 h-4 inline-block ml-1"></i>كود خصم: <strong>' + escapeHTML(order.discount_code) + '</strong></p>';
+        html += '<p class="text-amber-600 text-sm mb-2"><i data-lucide="tag" class="w-4 h-4 inline-block ml-1"></i>ÙƒÙˆØ¯ Ø®ØµÙ…: <strong>' + escapeHTML(order.discount_code) + '</strong></p>';
       }
       html += '<div class="text-sm text-brand-600 mb-3 flex flex-wrap gap-1">';
       items.forEach(function(item) {
-        html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded">' + escapeHTML(item.product_name||item.name||'') + ' × ' + (item.quantity||1) + '</span>';
+        html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded">' + escapeHTML(item.product_name||item.name||'') + ' Ã— ' + (item.quantity||1) + '</span>';
       });
       html += '</div>' +
         '<div class="flex items-center justify-between mb-3">' +
-        '<span class="font-bold text-brand-900">' + ((order.total_amount||order.total||0)).toLocaleString() + ' د.ع</span>' +
+        '<span class="font-bold text-brand-900">' + ((order.total_amount||order.total||0)).toLocaleString() + ' Ø¯.Ø¹</span>' +
         '<span class="text-brand-400 text-xs">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</span>' +
         '</div>' +
         '<div class="flex gap-2 flex-wrap">' +
-        '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">قيد التوصيل</button>' +
-        '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التوصيل</button>' +
-        '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء</button>' +
+        '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">Ù‚ÙŠØ¯ Ø§Ù„ØªÙˆØµÙŠÙ„</button>' +
+        '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">ØªÙ… Ø§Ù„ØªÙˆØµÙŠÙ„</button>' +
+        '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">Ø¥Ù„ØºØ§Ø¡</button>' +
         '</div></div>';
     });
     container.innerHTML = html;
     lucide.createIcons();
   } catch(e) {
-    if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">خطأ في تحميل الطلبات: ' + escapeHTML(e.message) + '</div>';
+    if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø·Ù„Ø¨Ø§Øª: ' + escapeHTML(e.message) + '</div>';
   }
 }
 
@@ -67,15 +67,15 @@ function filterOrders(filter) {
 function searchOrders() { loadOrders(); }
 
 async function updateOrderStatus(orderId, status) {
-  if (!isAuthenticated()) { showToast('يجب تسجيل الدخول أولاً','error'); return; }
-  if (!isValidOrderStatus(status)) { showToast('حالة غير صالحة','error'); return; }
-  if (!orderId) { showToast('معرف الطلب غير صالح','error'); return; }
+  if (!isAuthenticated()) { showToast('ÙŠØ¬Ø¨ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
+  if (!isValidOrderStatus(status)) { showToast('Ø­Ø§Ù„Ø© ØºÙŠØ± ØµØ§Ù„Ø­Ø©','error'); return; }
+  if (!orderId) { showToast('Ù…Ø¹Ø±Ù Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± ØµØ§Ù„Ø­','error'); return; }
   try {
     await SupaDB.Orders.updateStatus(orderId, status);
     loadOrders();
     updateOrdersBadge();
-    showToast('تم تحديث حالة الطلب','success');
-  } catch(e) { showToast('خطأ: ' + e.message,'error'); }
+    showToast('ØªÙ… ØªØ­Ø¯ÙŠØ« Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ù„Ø¨','success');
+  } catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
 }
 
 async function loadComments() {
@@ -90,21 +90,21 @@ async function loadComments() {
     var html = '';
     comments.forEach(function(c, i) {
       var cid = escapeHTML(String(c.id));
-      var badge = c.is_read ? '<span class="badge badge-read px-2 py-1 rounded text-xs">تم القراءة</span>' : '<span class="badge badge-new px-2 py-1 rounded text-xs">جديد</span>';
+      var badge = c.is_read ? '<span class="badge badge-read px-2 py-1 rounded text-xs">ØªÙ… Ø§Ù„Ù‚Ø±Ø§Ø¡Ø©</span>' : '<span class="badge badge-new px-2 py-1 rounded text-xs">Ø¬Ø¯ÙŠØ¯</span>';
       html += '<div class="comment-card bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay:' + (i*0.05) + 's">' +
         '<div class="flex items-start justify-between mb-3"><div>' +
         '<h3 class="font-bold text-brand-900">' + escapeHTML(c.name||'') + '</h3>' +
-        '<p class="text-brand-500 text-sm">' + escapeHTML(c.contact_info||c.phone||'بدون هاتف') + '</p></div>' + badge + '</div>' +
+        '<p class="text-brand-500 text-sm">' + escapeHTML(c.contact_info||c.phone||'Ø¨Ø¯ÙˆÙ† Ù‡Ø§ØªÙ') + '</p></div>' + badge + '</div>' +
         '<p class="text-brand-700 mb-4 leading-relaxed">' + escapeHTML(c.message||'') + '</p>' +
         '<div class="flex items-center justify-between">' +
         '<span class="text-brand-400 text-xs">' + new Date(c.created_at||c.date||Date.now()).toLocaleDateString('ar-EG') + '</span>' +
-        '<button data-action="view-comment" data-id="' + cid + '" class="bg-brand-100 text-brand-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-200 transition-colors">عرض التفاصيل</button>' +
+        '<button data-action="view-comment" data-id="' + cid + '" class="bg-brand-100 text-brand-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-200 transition-colors">Ø¹Ø±Ø¶ Ø§Ù„ØªÙØ§ØµÙŠÙ„</button>' +
         '</div></div>';
     });
     container.innerHTML = html;
     lucide.createIcons();
   } catch(e) {
-    if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">خطأ: ' + escapeHTML(e.message) + '</div>';
+    if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">Ø®Ø·Ø£: ' + escapeHTML(e.message) + '</div>';
   }
 }
 
@@ -123,27 +123,27 @@ function openViewComment(id) {
     selectedCommentId = id;
     var details = document.getElementById('commentDetails');
     details.innerHTML = '<div class="bg-brand-50 rounded-lg p-4 space-y-2">' +
-      '<p class="text-sm text-brand-600">الاسم: <span class="font-semibold text-brand-900">' + escapeHTML(c.name||'') + '</span></p>' +
-      '<p class="text-sm text-brand-600">التواصل: <span class="font-semibold text-brand-900">' + escapeHTML(c.contact_info||c.phone||'غير محدد') + '</span></p>' +
-      '<p class="text-sm text-brand-600">التاريخ: <span class="font-semibold text-brand-900">' + new Date(c.created_at||c.date||Date.now()).toLocaleDateString('ar-EG') + '</span></p></div>' +
-      '<div class="mt-4"><p class="font-semibold text-brand-700 mb-2">الرسالة:</p><p class="text-brand-600 leading-relaxed">' + escapeHTML(c.message||'') + '</p></div>';
+      '<p class="text-sm text-brand-600">Ø§Ù„Ø§Ø³Ù…: <span class="font-semibold text-brand-900">' + escapeHTML(c.name||'') + '</span></p>' +
+      '<p class="text-sm text-brand-600">Ø§Ù„ØªÙˆØ§ØµÙ„: <span class="font-semibold text-brand-900">' + escapeHTML(c.contact_info||c.phone||'ØºÙŠØ± Ù…Ø­Ø¯Ø¯') + '</span></p>' +
+      '<p class="text-sm text-brand-600">Ø§Ù„ØªØ§Ø±ÙŠØ®: <span class="font-semibold text-brand-900">' + new Date(c.created_at||c.date||Date.now()).toLocaleDateString('ar-EG') + '</span></p></div>' +
+      '<div class="mt-4"><p class="font-semibold text-brand-700 mb-2">Ø§Ù„Ø±Ø³Ø§Ù„Ø©:</p><p class="text-brand-600 leading-relaxed">' + escapeHTML(c.message||'') + '</p></div>';
     document.getElementById('replyMessage').value = '';
     document.getElementById('viewCommentModal').classList.add('active');
   });
 }
 function closeViewCommentModal() { document.getElementById('viewCommentModal').classList.remove('active'); }
 async function markAsRead() {
-  try { await SupaDB.Comments.updateStatus(selectedCommentId,'read'); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('تم تحديث الحالة','success'); }
-  catch(e) { showToast('خطأ: '+e.message,'error'); }
+  try { await SupaDB.Comments.updateStatus(selectedCommentId,'read'); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø­Ø§Ù„Ø©','success'); }
+  catch(e) { showToast('Ø®Ø·Ø£: '+e.message,'error'); }
 }
 async function markAsReplied() {
-  try { await SupaDB.Comments.updateStatus(selectedCommentId,'replied'); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('تم تسجيل الرد','success'); }
-  catch(e) { showToast('خطأ: '+e.message,'error'); }
+  try { await SupaDB.Comments.updateStatus(selectedCommentId,'replied'); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø±Ø¯','success'); }
+  catch(e) { showToast('Ø®Ø·Ø£: '+e.message,'error'); }
 }
 async function deleteComment() {
-  if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
-  try { await SupaDB.Comments.delete(selectedCommentId); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('تم حذف الرسالة','warning'); }
-  catch(e) { showToast('خطأ: '+e.message,'error'); }
+  if (!confirm('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù Ù‡Ø°Ù‡ Ø§Ù„Ø±Ø³Ø§Ù„Ø©ØŸ')) return;
+  try { await SupaDB.Comments.delete(selectedCommentId); closeViewCommentModal(); loadComments(); updateCommentsBadge(); showToast('ØªÙ… Ø­Ø°Ù Ø§Ù„Ø±Ø³Ø§Ù„Ø©','warning'); }
+  catch(e) { showToast('Ø®Ø·Ø£: '+e.message,'error'); }
 }
 
 // Event delegation for orders + comments
