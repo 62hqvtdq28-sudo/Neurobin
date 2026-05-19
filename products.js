@@ -37,7 +37,6 @@ function openFeatureModal(id) {
 function closeFeatureModal() { document.getElementById('featureModal').classList.remove('active'); }
 function editFeature(id) { openFeatureModal(id); }
 async function saveFeature() {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var title = document.getElementById('featureTitle').value.trim();
   var desc  = document.getElementById('featureDesc').value.trim();
   if (!title) { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u064A\u0632\u0629','error'); return; }
@@ -46,7 +45,6 @@ async function saveFeature() {
   catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 async function deleteFeature(id) {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629\u061F')) return;
   try { await SupaDB.Features.delete(id); loadFeatures(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u064A\u0632\u0629','warning'); }
   catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
@@ -154,7 +152,6 @@ function removeImage() {
 }
 
 async function saveProduct() {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var name  = validateInput(document.getElementById('productName').value.trim(), 200);
   var price = parseInt(document.getElementById('productPrice').value);
   var stock = document.getElementById('productStock').value;
@@ -185,7 +182,6 @@ async function saveProduct() {
 }
 
 async function deleteProduct(id) {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0645\u0646\u062A\u062C\u061F')) return;
   try { await SupaDB.Products.delete(id); loadProducts(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0646\u062A\u062C','warning'); }
   catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
@@ -223,7 +219,6 @@ function openTestimonialModal(id) {
 function closeTestimonialModal() { document.getElementById('testimonialModal').classList.remove('active'); }
 function editTestimonial(id) { openTestimonialModal(id); }
 async function saveTestimonial() {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var name = validateInput(document.getElementById('testimonialName').value.trim(),100);
   var text = validateInput(document.getElementById('testimonialText').value.trim(),1000);
   var rat  = parseInt(document.getElementById('testimonialRating').value)||5;
@@ -233,7 +228,6 @@ async function saveTestimonial() {
   catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 async function deleteTestimonial(id) {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0631\u0623\u064A\u061F')) return;
   try { await SupaDB.Testimonials.delete(id); loadTestimonials(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0631\u0623\u064A','warning'); }
   catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
