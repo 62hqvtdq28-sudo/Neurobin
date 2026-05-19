@@ -241,7 +241,7 @@ async function applyDiscountCode() {
   const input = document.getElementById('discountCodeInput');
   if (!input) return;
   const code = input.value.trim().toUpperCase();
-  if (!code) { showToast('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0643\u0648\u062f \u0627\u0644\u062e\u0635\u0645', 'error'); return; }
+  if (!code) { return; }
 
   const btn = document.getElementById('applyDiscountBtn');
   if (btn) { btn.disabled = true; btn.textContent = '\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0642\u0642...'; }
@@ -451,6 +451,48 @@ function initCounters() {
   });
 }
 
+
+// ==== Notify When Available ====
+var _nPid='', _nPname='';
+function openNotifyModal(pid,pname){
+  _nPid=pid; _nPname=pname;
+  var m=document.getElementById('notifyModal');
+  var t=document.getElementById('notifyProductTitle');
+  var p=document.getElementById('notifyPhone');
+  if(t) t.textContent=pname;
+  if(p) p.value='';
+  if(m){m.classList.add('active');document.body.style.overflow='hidden';}
+}
+function closeNotifyModal(){
+  var m=document.getElementById('notifyModal');
+  if(m){m.classList.remove('active');document.body.style.overflow='';}
+}
+async function submitNotifyRequest(){
+  var ph=document.getElementById('notifyPhone');
+  var btn=document.getElementById('notifySubmitBtn');
+  if(!ph) return;
+  var phone=ph.value.trim();
+  var v=SecurityValidator.validatePhone(phone);
+  if(!v.valid){showToast(v.message,'error');ph.focus();return;}
+  if(btn)btn.disabled=true;
+  try{
+    if(supabaseClient){
+      await supabaseClient.from('contact_messages').insert({
+        name:'\u0625\u0634\u0639\u0627\u0631 \u0639\u0646\u062f \u0627\u0644\u062a\u0648\u0641\u0631',
+        contact_info:phone,
+        message:'\u0623\u0631\u064a\u062f \u0627\u0644\u0625\u0634\u0639\u0627\u0631 \u0639\u0646\u062f \u062a\u0648\u0641\u0631: '+_nPname
+      });
+    }
+    showToast('\u062a\u0645 \u062a\u0633\u062c\u064a\u0644\u0643! \u0633\u0646\u062e\u0637\u0631\u0643 \u0639\u0646\u062f \u062a\u0648\u0641\u0631 \u0627\u0644\u0645\u0646\u062a\u062c \u2705','success');
+    closeNotifyModal();
+  }catch(e){
+    showToast('\u062d\u062f\u062b \u062e\u0637\u0623\u060c \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649','error');
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+// ================================
+
 function renderProducts(productsToRender) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
@@ -490,9 +532,9 @@ function renderProducts(productsToRender) {
           <h3 class="font-heading font-bold text-lg text-brand-900 mb-2">${safeName}</h3>
           <div class="flex items-center justify-between">
             <span class="text-xl font-bold text-brand-700">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
-            <button onclick="addToCart('${safeId}')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}" ${!product.inStock ? 'disabled' : ''}>
+            <button onclick="addToCart('${safeId}')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'}" >
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629</span>
+              ${product.inStock ? '<span>\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629</span>' : '<span>\uD83D\uDD14 \u0623\u062e\u0628\u0631\u0646\u064a \u0639\u0646\u062f \u0627\u0644\u062a\u0648\u0641\u0631</span>'}
             </button>
           </div>
         </div>
@@ -809,7 +851,7 @@ function openQuickView(productId) {
       <p class="text-3xl font-bold text-brand-700 mb-4">${safePrice}</p>
       <p class="text-brand-600/80 mb-6">${SecurityValidator.escapeHtml(stockText)}</p>
       <div class="flex gap-3">
-        <button onclick="addToCart('${safeId}')" class="flex-grow btn-primary bg-brand-700 hover:bg-brand-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}" ${!product.inStock ? 'disabled' : ''}>
+        <button onclick="addToCart('${safeId}')" class="flex-grow btn-primary bg-brand-700 hover:bg-brand-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'}" >
           <i data-lucide="shopping-cart" class="w-5 h-5"></i>\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629
         </button>
         <button onclick="toggleFavorite('${safeId}')" class="p-3 border-2 border-brand-200 rounded-xl hover:bg-brand-50 transition-colors ${isFavorite ? 'text-red-500 border-red-200' : ''}">
