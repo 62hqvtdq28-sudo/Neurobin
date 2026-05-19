@@ -248,7 +248,7 @@ async function saveDiscountCode() {
   var durDays  = parseInt(document.getElementById('discountDays').value)  || 0;
   var durHours = parseInt(document.getElementById('discountHours').value) || 0;
   var maxU  = document.getElementById('discountMaxUses').value;
-  if (!code || code.length < 4 || !/^[A-Z0-9]+$/.test(code)) { showToast('\u0643\u0648\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D','error'); return; }
+  if (!code || code.length < 2 || !/^[A-Z0-9]+$/.test(code)) { showToast('\u0643\u0648\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D (2 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644 \u0628\u0627\u0644\u0623\u062D\u0631\u0641 \u0648\u0627\u0644\u0623\u0631\u0642\u0627\u0645)','error'); return; }
   if (!dVal || dVal <= 0) { showToast('\u0642\u064A\u0645\u0629 \u0627\u0644\u062E\u0635\u0645 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629','error'); return; }
   if (dType === 'percent' && dVal > 100) { showToast('\u0646\u0633\u0628\u0629 \u0627\u0644\u062E\u0635\u0645 \u0644\u0627 \u062A\u062A\u062C\u0627\u0648\u0632 100%','error'); return; }
   if (dType === 'fixed' && dVal % 250 !== 0) {
