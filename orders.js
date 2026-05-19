@@ -157,3 +157,4 @@ document.addEventListener('click', function(e) {
     case 'status-cancelled': updateOrderStatus(btn.dataset.orderId,'cancelled'); break;
     case 'view-comment': { var id = btn.dataset.id; if (id) openViewComment(id); break; }
   }
+});
