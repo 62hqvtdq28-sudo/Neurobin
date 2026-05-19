@@ -8,7 +8,7 @@ async function loadFeatures() {
 
 function renderFeaturesList(features) {
   var el = document.getElementById('featuresList');
-  if (!el) return; // element not in current view
+  if (!el) return;
   if (!features.length) { el.innerHTML = '<div class="text-center py-12 text-brand-400">Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù…ÙŠØ²Ø§Øª</div>'; return; }
   el.innerHTML = features.map(function(f,i) {
     var id = escapeHTML(String(f.id));
