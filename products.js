@@ -127,7 +127,7 @@ async function handleImageUpload(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
   if (!file.type.startsWith('image/') && file.type !== '') { showToast('\u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0645\u0644\u0641 \u0635\u0648\u0631\u0629 \u0635\u0627\u0644\u062D (JPG \u0623\u0648 PNG \u0623\u0648 WebP \u0623\u0648 HEIC)','error'); input.value=''; return; }
-  if (file.size > 5*1024*1024) { showToast('\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB','error'); input.value=''; return; }
+  if (file.size > 10*1024*1024) { showToast('\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 10MB','error'); input.value=''; return; }
   // \u0645\u0639\u0627\u064A\u0646\u0629 \u0641\u0648\u0631\u064A\u0629
   var fr = new FileReader();
   fr.onload = function(e) {
