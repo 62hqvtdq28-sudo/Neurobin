@@ -1,15 +1,15 @@
-// products.js â€” Migrated to Supabase + Supabase Storage for images
+// products.js \u2014 Migrated to Supabase + Supabase Storage for images
 var _allProducts = [];
 
 async function loadFeatures() {
   try { renderFeaturesList(await SupaDB.Features.list()); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); renderFeaturesList([]); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); renderFeaturesList([]); }
 }
 
 function renderFeaturesList(features) {
   var el = document.getElementById('featuresList');
   if (!el) return;
-  if (!features.length) { el.innerHTML = '<div class="text-center py-12 text-brand-400">Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù…ÙŠØ²Ø§Øª</div>'; return; }
+  if (!features.length) { el.innerHTML = '<div class="text-center py-12 text-brand-400">\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0645\u064A\u0632\u0627\u062A</div>'; return; }
   el.innerHTML = features.map(function(f,i) {
     var id = escapeHTML(String(f.id));
     return '<div class="bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay:' + (i*0.1) + 's">' +
@@ -26,7 +26,7 @@ function renderFeaturesList(features) {
 function openFeatureModal(id) {
   SupaDB.Features.list().then(function(list) {
     var f = id ? list.find(function(x){ return String(x.id)===String(id); }) : null;
-    document.getElementById('featureModalTitle').textContent = f ? 'ØªØ¹Ø¯ÙŠÙ„ Ù…ÙŠØ²Ø©' : 'Ø¥Ø¶Ø§ÙØ© Ù…ÙŠØ²Ø© Ø¬Ø¯ÙŠØ¯Ø©';
+    document.getElementById('featureModalTitle').textContent = f ? '\u062A\u0639\u062F\u064A\u0644 \u0645\u064A\u0632\u0629' : '\u0625\u0636\u0627\u0641\u0629 \u0645\u064A\u0632\u0629 \u062C\u062F\u064A\u062F\u0629';
     document.getElementById('featureId').value    = f ? id : '';
     document.getElementById('featureIcon').value  = f ? (f.icon||'shield-check') : 'shield-check';
     document.getElementById('featureTitle').value = f ? (f.title||'') : '';
@@ -37,19 +37,19 @@ function openFeatureModal(id) {
 function closeFeatureModal() { document.getElementById('featureModal').classList.remove('active'); }
 function editFeature(id) { openFeatureModal(id); }
 async function saveFeature() {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var title = document.getElementById('featureTitle').value.trim();
   var desc  = document.getElementById('featureDesc').value.trim();
-  if (!title) { showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ù…ÙŠØ²Ø©','error'); return; }
+  if (!title) { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u064A\u0632\u0629','error'); return; }
   var id = document.getElementById('featureId').value || null;
-  try { await SupaDB.Features.save({ icon: document.getElementById('featureIcon').value, title, desc }, id); closeFeatureModal(); loadFeatures(); showSuccessAnimation('ØªÙ… Ø­ÙØ¸ Ø§Ù„Ù…ÙŠØ²Ø© Ø¨Ù†Ø¬Ø§Ø­!'); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
+  try { await SupaDB.Features.save({ icon: document.getElementById('featureIcon').value, title, desc }, id); closeFeatureModal(); loadFeatures(); showSuccessAnimation('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u064A\u0632\u0629 \u0628\u0646\u062C\u0627\u062D!'); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 async function deleteFeature(id) {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
-  if (!confirm('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù Ù‡Ø°Ù‡ Ø§Ù„Ù…ÙŠØ²Ø©ØŸ')) return;
-  try { await SupaDB.Features.delete(id); loadFeatures(); showToast('ØªÙ… Ø­Ø°Ù Ø§Ù„Ù…ÙŠØ²Ø©','warning'); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
+  if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629\u061F')) return;
+  try { await SupaDB.Features.delete(id); loadFeatures(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u064A\u0632\u0629','warning'); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 
 async function loadProducts(filter) {
@@ -58,7 +58,7 @@ async function loadProducts(filter) {
     _allProducts = await SupaDB.Products.list();
     renderProductsList(_allProducts, filter);
   } catch(e) {
-    el.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Ø®Ø·Ø£: ' + escapeHTML(e.message) + '</div>';
+    el.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">\u062E\u0637\u0623: ' + escapeHTML(e.message) + '</div>';
   }
 }
 
@@ -68,9 +68,9 @@ function renderProductsList(products, filter) {
   if (filter && filter !== 'all') products = products.filter(function(p){ return p.category === filter; });
   if (q) products = products.filter(function(p){ return (p.name||'').toLowerCase().includes(q) || (p.name_ar||'').toLowerCase().includes(q); });
   if (!products.length) {
-    el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†ØªØ¬Ø§Øª</div>'; return;
+    el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0646\u062A\u062C\u0627\u062A</div>'; return;
   }
-  var catLabels = { medicines:'Ø£Ø¯ÙˆÙŠØ©', skincare:'Ø¹Ù†Ø§ÙŠØ© Ø¨Ø§Ù„Ø¨Ø´Ø±Ø©', makeup:'Ù…ÙƒÙŠØ§Ø¬', devices:'Ø£Ø¬Ù‡Ø²Ø©' };
+  var catLabels = { medicines:'\u0623\u062F\u0648\u064A\u0629', skincare:'\u0639\u0646\u0627\u064A\u0629 \u0628\u0627\u0644\u0628\u0634\u0631\u0629', makeup:'\u0645\u0643\u064A\u0627\u062C', devices:'\u0623\u062C\u0647\u0632\u0629' };
   var catColors = { medicines:'bg-blue-100 text-blue-700', skincare:'bg-pink-100 text-pink-700', makeup:'bg-purple-100 text-purple-700', devices:'bg-gray-100 text-gray-700' };
   el.innerHTML = products.map(function(p,i) {
     var pid = escapeHTML(String(p.id));
@@ -84,7 +84,7 @@ function renderProductsList(products, filter) {
       '<button data-action="delete-product" data-id="' + pid + '" class="quick-action bg-red-100 text-red-500 hover:bg-red-200"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>' +
       img +
       '<h3 class="font-bold text-brand-900 mb-1">' + escapeHTML(p.name_ar||p.name||'') + '</h3>' +
-      '<p class="text-brand-600 text-sm">' + (p.price||0).toLocaleString() + ' Ø¯.Ø¹</p>' +
+      '<p class="text-brand-600 text-sm">' + (p.price||0).toLocaleString() + ' \u062F.\u0639</p>' +
       '</div></div>';
   }).join('');
   lucide.createIcons();
@@ -100,8 +100,8 @@ function searchProducts() { var af = document.querySelector('#section-products .
 
 async function openProductModal(id) {
   var product = null;
-  if (id) { try { var list = await SupaDB.Products.list(); product = list.find(function(p){ return String(p.id)===String(id); }); } catch(e) { showToast('Ø®Ø·Ø£: '+e.message,'error'); return; } }
-  document.getElementById('productModalTitle').textContent = product ? 'ØªØ¹Ø¯ÙŠÙ„ Ù…Ù†ØªØ¬' : 'Ø¥Ø¶Ø§ÙØ© Ù…Ù†ØªØ¬ Ø¬Ø¯ÙŠØ¯';
+  if (id) { try { var list = await SupaDB.Products.list(); product = list.find(function(p){ return String(p.id)===String(id); }); } catch(e) { showToast('\u062E\u0637\u0623: '+e.message,'error'); return; } }
+  document.getElementById('productModalTitle').textContent = product ? '\u062A\u0639\u062F\u064A\u0644 \u0645\u0646\u062A\u062C' : '\u0625\u0636\u0627\u0641\u0629 \u0645\u0646\u062A\u062C \u062C\u062F\u064A\u062F';
   document.getElementById('productId').value       = product ? id : '';
   document.getElementById('productName').value     = product ? (product.name_ar||product.name||'') : '';
   document.getElementById('productCategory').value = product ? (product.category||'medicines') : 'medicines';
@@ -124,13 +124,13 @@ async function openProductModal(id) {
 function closeProductModal() { document.getElementById('productModal').classList.remove('active'); }
 function editProduct(id) { openProductModal(id); }
 
-// Ø±ÙØ¹ Ø§Ù„ØµÙˆØ± â€” Supabase Storage
+// \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631 \u2014 Supabase Storage
 async function handleImageUpload(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
-  if (!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) { showToast('Ø§Ø³ØªØ®Ø¯Ù… JPG Ø£Ùˆ PNG Ø£Ùˆ WebP ÙÙ‚Ø·','error'); input.value=''; return; }
-  if (file.size > 5*1024*1024) { showToast('Ø­Ø¬Ù… Ø§Ù„ØµÙˆØ±Ø© ÙŠØªØ¬Ø§ÙˆØ² 5MB','error'); input.value=''; return; }
-  // Ù…Ø¹Ø§ÙŠÙ†Ø© ÙÙˆØ±ÙŠØ©
+  if (!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) { showToast('\u0627\u0633\u062A\u062E\u062F\u0645 JPG \u0623\u0648 PNG \u0623\u0648 WebP \u0641\u0642\u0637','error'); input.value=''; return; }
+  if (file.size > 5*1024*1024) { showToast('\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB','error'); input.value=''; return; }
+  // \u0645\u0639\u0627\u064A\u0646\u0629 \u0641\u0648\u0631\u064A\u0629
   var fr = new FileReader();
   fr.onload = function(e) {
     document.getElementById('imagePreviewImg').src = e.target.result;
@@ -138,13 +138,13 @@ async function handleImageUpload(input) {
     document.getElementById('imagePreviewContainer').classList.remove('hidden');
   };
   fr.readAsDataURL(file);
-  // Ø±ÙØ¹ Ø¥Ù„Ù‰ Supabase Storage
+  // \u0631\u0641\u0639 \u0625\u0644\u0649 Supabase Storage
   try {
-    showToast('Ø¬Ø§Ø±ÙŠ Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©...','info');
+    showToast('\u062C\u0627\u0631\u064A \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629...','info');
     var url = await SupaDB.ImageStorage.upload(file);
     document.getElementById('productImage').value = url;
-    showToast('ØªÙ… Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø© Ø¨Ù†Ø¬Ø§Ø­ âœ“','success');
-  } catch(e) { showToast('ØªØ­Ø°ÙŠØ± Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©: ' + e.message,'warning'); }
+    showToast('\u062A\u0645 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629 \u0628\u0646\u062C\u0627\u062D \u2713','success');
+  } catch(e) { showToast('\u062A\u062D\u0630\u064A\u0631 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629: ' + e.message,'warning'); }
 }
 function removeImage() {
   document.getElementById('imagePreview').classList.remove('hidden');
@@ -154,18 +154,18 @@ function removeImage() {
 }
 
 async function saveProduct() {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var name  = validateInput(document.getElementById('productName').value.trim(), 200);
   var price = parseInt(document.getElementById('productPrice').value);
   var stock = document.getElementById('productStock').value;
-  if (!name)            { showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ø³Ù… Ø§Ù„Ù…Ù†ØªØ¬','error'); return; }
-  if (!price || price <= 0){ showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø³Ø¹Ø± ØµØ­ÙŠØ­','error'); return; }
-  // FIX: Ø§Ù„Ø£Ø³Ø¹Ø§Ø± ÙŠØ¬Ø¨ Ø£Ù† ØªÙƒÙˆÙ† Ù…Ø¶Ø§Ø¹ÙØ§Ù‹ Ù„Ù„Ù€ 250
+  if (!name)            { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062A\u062C','error'); return; }
+  if (!price || price <= 0){ showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0633\u0639\u0631 \u0635\u062D\u064A\u062D','error'); return; }
+  // FIX: \u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 \u0645\u0636\u0627\u0639\u0641\u0627\u064B \u0644\u0644\u0640 250
   if (price % 250 !== 0) {
     var rounded = Math.round(price / 250) * 250;
     price = Math.max(250, rounded);
     document.getElementById('productPrice').value = price;
-    showToast('ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø³Ø¹Ø± Ø¥Ù„Ù‰ ' + price.toLocaleString() + ' Ø¯.Ø¹ (Ù…Ø¶Ø§Ø¹Ù 250)', 'info');
+    showToast('\u062A\u0645 \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0633\u0639\u0631 \u0625\u0644\u0649 ' + price.toLocaleString() + ' \u062F.\u0639 (\u0645\u0636\u0627\u0639\u0641 250)', 'info');
   }
   var id  = document.getElementById('productId').value || null;
   var row = {
@@ -180,24 +180,24 @@ async function saveProduct() {
   if (stock) row.stock = parseInt(stock);
   try {
     if (id) { await SupaDB.Products.update(id, row); } else { row.created_at = new Date().toISOString(); await SupaDB.Products.create(row); }
-    closeProductModal(); loadProducts(); showSuccessAnimation('ØªÙ… Ø­ÙØ¸ Ø§Ù„Ù…Ù†ØªØ¬ Ø¨Ù†Ø¬Ø§Ø­!');
-  } catch(e) { showToast('Ø®Ø·Ø£ ÙÙŠ Ø§Ù„Ø­ÙØ¸: ' + e.message,'error'); }
+    closeProductModal(); loadProducts(); showSuccessAnimation('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u0646\u062A\u062C \u0628\u0646\u062C\u0627\u062D!');
+  } catch(e) { showToast('\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u0641\u0638: ' + e.message,'error'); }
 }
 
 async function deleteProduct(id) {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
-  if (!confirm('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù Ù‡Ø°Ø§ Ø§Ù„Ù…Ù†ØªØ¬ØŸ')) return;
-  try { await SupaDB.Products.delete(id); loadProducts(); showToast('ØªÙ… Ø­Ø°Ù Ø§Ù„Ù…Ù†ØªØ¬','warning'); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
+  if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0645\u0646\u062A\u062C\u061F')) return;
+  try { await SupaDB.Products.delete(id); loadProducts(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0646\u062A\u062C','warning'); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 
 async function loadTestimonials() {
   try { renderTestimonialsList(await SupaDB.Testimonials.list()); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); renderTestimonialsList([]); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); renderTestimonialsList([]); }
 }
 function renderTestimonialsList(list) {
   var el = document.getElementById('testimonialsList');
-  if (!list.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¢Ø±Ø§Ø¡</div>'; return; }
+  if (!list.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">\u0644\u0627 \u062A\u0648\u062C\u062F \u0622\u0631\u0627\u0621</div>'; return; }
   el.innerHTML = list.map(function(t,i) {
     var tid = escapeHTML(String(t.id));
     var stars = Array.from({length:5}, function(_,j){ return '<i data-lucide="star" class="w-4 h-4 ' + (j<(t.rating||5) ? 'text-gold fill-gold' : 'text-gray-300') + '"></i>'; }).join('');
@@ -212,7 +212,7 @@ function renderTestimonialsList(list) {
 function openTestimonialModal(id) {
   SupaDB.Testimonials.list().then(function(list) {
     var t = id ? list.find(function(x){ return String(x.id)===String(id); }) : null;
-    document.getElementById('testimonialModalTitle').textContent = t ? 'ØªØ¹Ø¯ÙŠÙ„ Ø±Ø£ÙŠ' : 'Ø¥Ø¶Ø§ÙØ© Ø±Ø£ÙŠ Ø¬Ø¯ÙŠØ¯';
+    document.getElementById('testimonialModalTitle').textContent = t ? '\u062A\u0639\u062F\u064A\u0644 \u0631\u0623\u064A' : '\u0625\u0636\u0627\u0641\u0629 \u0631\u0623\u064A \u062C\u062F\u064A\u062F';
     document.getElementById('testimonialId').value    = t ? id : '';
     document.getElementById('testimonialName').value  = t ? (t.name||'') : '';
     document.getElementById('testimonialText').value  = t ? (t.text||t.message||'') : '';
@@ -223,20 +223,20 @@ function openTestimonialModal(id) {
 function closeTestimonialModal() { document.getElementById('testimonialModal').classList.remove('active'); }
 function editTestimonial(id) { openTestimonialModal(id); }
 async function saveTestimonial() {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var name = validateInput(document.getElementById('testimonialName').value.trim(),100);
   var text = validateInput(document.getElementById('testimonialText').value.trim(),1000);
   var rat  = parseInt(document.getElementById('testimonialRating').value)||5;
-  if (!name||!text) { showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ø§Ø³Ù… ÙˆØ§Ù„ØªØ¹Ù„ÙŠÙ‚','error'); return; }
+  if (!name||!text) { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0627\u0644\u0627\u0633\u0645 \u0648\u0627\u0644\u062A\u0639\u0644\u064A\u0642','error'); return; }
   var id = document.getElementById('testimonialId').value || null;
-  try { await SupaDB.Testimonials.save({name,text,rating:rat},id); closeTestimonialModal(); loadTestimonials(); showSuccessAnimation('ØªÙ… Ø­ÙØ¸ Ø§Ù„Ø±Ø£ÙŠ Ø¨Ù†Ø¬Ø§Ø­!'); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
+  try { await SupaDB.Testimonials.save({name,text,rating:rat},id); closeTestimonialModal(); loadTestimonials(); showSuccessAnimation('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0631\u0623\u064A \u0628\u0646\u062C\u0627\u062D!'); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 async function deleteTestimonial(id) {
-  if (!isAuthenticated()) { showToast('ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹','error'); return; }
-  if (!confirm('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù Ù‡Ø°Ø§ Ø§Ù„Ø±Ø£ÙŠØŸ')) return;
-  try { await SupaDB.Testimonials.delete(id); loadTestimonials(); showToast('ØªÙ… Ø­Ø°Ù Ø§Ù„Ø±Ø£ÙŠ','warning'); }
-  catch(e) { showToast('Ø®Ø·Ø£: ' + e.message,'error'); }
+  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
+  if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0631\u0623\u064A\u061F')) return;
+  try { await SupaDB.Testimonials.delete(id); loadTestimonials(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0631\u0623\u064A','warning'); }
+  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
 }
 
 document.addEventListener('click', function(e) {
