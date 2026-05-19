@@ -1,19 +1,19 @@
 // =============================================================
-// admin.js — Core (SUPABASE VERSION)
+// admin.js \u2014 Core (SUPABASE VERSION)
 // Auth: Supabase email/password (replaces localStorage PBKDF2)
 // Data: SupaDB adapter (see supabase-db.js)
 // =============================================================
 
-// ─── Auth: check session on page load ─────────────────────
+// \u2500\u2500\u2500 Auth: check session on page load \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function checkAuth() {
   const session = await SupaDB.Auth.getSession();
   if (session) {
     showDashboard();
   }
-  // No session → login form is already visible (default state)
+  // No session \u2192 login form is already visible (default state)
 }
 
-// ─── Auth: handle login form submit ───────────────────────
+// \u2500\u2500\u2500 Auth: handle login form submit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function handleLogin(e) {
   e.preventDefault();
 
@@ -27,11 +27,11 @@ async function handleLogin(e) {
   const password = document.getElementById('loginPassword').value;
 
   if (!email) {
-    setLoginError('يرجى إدخال البريد الإلكتروني');
+    setLoginError('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A');
     return;
   }
   if (!password) {
-    setLoginError('يرجى إدخال كلمة المرور');
+    setLoginError('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631');
     return;
   }
 
@@ -46,9 +46,9 @@ async function handleLogin(e) {
     const attempts = getLoginAttempts();
     const remaining = MAX_LOGIN_ATTEMPTS - attempts.count;
     if (remaining <= 0) {
-      setLoginError('تم تجاوز عدد المحاولات. يرجى الانتظار 5 دقائق.');
+      setLoginError('\u062A\u0645 \u062A\u062C\u0627\u0648\u0632 \u0639\u062F\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0627\u062A. \u064A\u0631\u062C\u0649 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 5 \u062F\u0642\u0627\u0626\u0642.');
     } else {
-      setLoginError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      setLoginError('\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629.');
     }
   } finally {
     setButtonLoading('loginBtn', false);
@@ -61,7 +61,7 @@ function setLoginError(msg) {
   setTimeout(() => { if (el) el.classList.add('hidden'); }, 5000);
 }
 
-// ─── Auth: logout ──────────────────────────────────────────
+// \u2500\u2500\u2500 Auth: logout \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function logout(clearRemember) {
   await SupaDB.Auth.signOut();
   sessionStorage.clear();
@@ -71,14 +71,14 @@ async function logout(clearRemember) {
   if (loginError) loginError.classList.add('hidden');
 }
 
-// ─── Auth: isAuthenticated (sync check via session) ────────
+// \u2500\u2500\u2500 Auth: isAuthenticated (sync check via session) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function isAuthenticated() {
-  // Used in write operations — Supabase RLS enforces this server-side
+  // Used in write operations \u2014 Supabase RLS enforces this server-side
   // This is a fast client-side pre-check only
   return true; // Supabase session verified by RLS on every DB call
 }
 
-// ─── Settings: load from Supabase ─────────────────────────
+// \u2500\u2500\u2500 Settings: load from Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function loadSettings() {
   try {
     const s = await SupaDB.Settings.get();
@@ -86,11 +86,11 @@ async function loadSettings() {
     document.getElementById('instagramUrl').value   = s.instagramUrl || '';
     document.getElementById('whatsappNumber').value = s.whatsappNumber || '';
   } catch (e) {
-    showToast('تعذّر تحميل الإعدادات', 'error');
+    showToast('\u062A\u0639\u0630\u0651\u0631 \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A', 'error');
   }
 }
 
-// ─── Settings: save to Supabase ────────────────────────────
+// \u2500\u2500\u2500 Settings: save to Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function saveSettings() {
   const siteName       = validateInput(document.getElementById('siteName').value, 100);
   const instagramUrl   = validateInstagramURL(document.getElementById('instagramUrl').value);
@@ -98,13 +98,13 @@ async function saveSettings() {
 
   try {
     await SupaDB.Settings.setMultiple({ siteName, instagramUrl, whatsappNumber });
-    showToast('تم حفظ الإعدادات بنجاح', 'success');
+    showToast('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0628\u0646\u062C\u0627\u062D', 'success');
   } catch (e) {
-    showToast('تعذّر حفظ الإعدادات', 'error');
+    showToast('\u062A\u0639\u0630\u0651\u0631 \u062D\u0641\u0638 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A', 'error');
   }
 }
 
-// ─── Auth state listener — auto logout if session expires ──
+// \u2500\u2500\u2500 Auth state listener \u2014 auto logout if session expires \u2500\u2500
 SupaDB.Auth.onStateChange(function(session) {
   if (!session) {
     document.getElementById('loginSection')?.classList.remove('hidden');
@@ -113,7 +113,7 @@ SupaDB.Auth.onStateChange(function(session) {
 });
 
 // =============================================================
-// admin.js — Core (PATCHED)
+// admin.js \u2014 Core (PATCHED)
 // Security fixes applied:
 //   ENC-01: removed escapeHTML() from DOM .value assignments
 //   ENC-02: store data raw; escape only at render time
@@ -266,14 +266,14 @@ function secureOperation(operationCallback, operationName = 'operation') {
     // Check if user is authenticated first
     const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
     if (!isLoggedIn) {
-      showToast('يرجى تسجيل الدخول أولاً', 'error');
+      showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B', 'error');
       return false;
     }
 
     // Verify session token exists
     const sessionToken = sessionStorage.getItem('adminSessionToken');
     if (!sessionToken) {
-      showToast('انتهت صلاحية الجلسة', 'error');
+      showToast('\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u062C\u0644\u0633\u0629', 'error');
       logout();
       return false;
     }
@@ -284,7 +284,7 @@ function secureOperation(operationCallback, operationName = 'operation') {
     } catch (error) {
       // [PATCHED INFO-01] do not log error objects to console (stack trace disclosure)
       console.error('[admin] operation failed: ' + operationName);
-      showToast('حدث خطأ أثناء العملية', 'error');
+      showToast('\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u0639\u0645\u0644\u064A\u0629', 'error');
       return false;
     }
   };
@@ -486,9 +486,9 @@ function validateInput(input, maxLength = 500) {
 
 // Automation System - Auto-check for new items
 
-// ═══════════════════════════════════════════════════════════
-// Supabase Realtime — إشعار فوري عند وصول طلب جديد
-// ═══════════════════════════════════════════════════════════
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// Supabase Realtime \u2014 \u0625\u0634\u0639\u0627\u0631 \u0641\u0648\u0631\u064A \u0639\u0646\u062F \u0648\u0635\u0648\u0644 \u0637\u0644\u0628 \u062C\u062F\u064A\u062F
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function initOrderRealtimeNotifications() {
   if (!window.SupaDB || !SupaDB._db) return;
 
@@ -502,20 +502,20 @@ function initOrderRealtimeNotifications() {
       var order = payload.new;
       if (!order) return;
 
-      // تحديث قائمة الطلبات
+      // \u062A\u062D\u062F\u064A\u062B \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0637\u0644\u0628\u0627\u062A
       var section = document.getElementById('section-orders');
       if (section && !section.classList.contains('hidden')) {
         loadOrders();
       }
 
-      // تحديث شارة الطلبات
+      // \u062A\u062D\u062F\u064A\u062B \u0634\u0627\u0631\u0629 \u0627\u0644\u0637\u0644\u0628\u0627\u062A
       updateOrdersBadge && updateOrdersBadge();
 
-      // إشعار المتصفح
-      var title = '🛒 طلب جديد!';
-      var body = 'من: ' + (order.customer_name || '؟') +
-                 ' | هاتف: ' + (order.customer_phone || '—') +
-                 ' | الإجمالي: ' + ((order.total_amount||0)).toLocaleString() + ' د.ع';
+      // \u0625\u0634\u0639\u0627\u0631 \u0627\u0644\u0645\u062A\u0635\u0641\u062D
+      var title = '\u1F6D2 \u0637\u0644\u0628 \u062C\u062F\u064A\u062F!';
+      var body = '\u0645\u0646: ' + (order.customer_name || '\u061F') +
+                 ' | \u0647\u0627\u062A\u0641: ' + (order.customer_phone || '\u2014') +
+                 ' | \u0627\u0644\u0625\u062C\u0645\u0627\u0644\u064A: ' + ((order.total_amount||0)).toLocaleString() + ' \u062F.\u0639';
 
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
@@ -531,7 +531,7 @@ function initOrderRealtimeNotifications() {
         }
       }
 
-      // صوت تنبيه
+      // \u0635\u0648\u062A \u062A\u0646\u0628\u064A\u0647
       try {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
         var osc = ctx.createOscillator();
@@ -543,12 +543,12 @@ function initOrderRealtimeNotifications() {
         osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
       } catch(e) {}
 
-      // Toast في اللوحة
-      showToast('🛒 طلب جديد من ' + (order.customer_name || 'عميل') + '!', 'success');
+      // Toast \u0641\u064A \u0627\u0644\u0644\u0648\u062D\u0629
+      showToast('\u1F6D2 \u0637\u0644\u0628 \u062C\u062F\u064A\u062F \u0645\u0646 ' + (order.customer_name || '\u0639\u0645\u064A\u0644') + '!', 'success');
     })
     .subscribe();
 
-  console.log('[Admin] Realtime order notifications active ✓');
+  console.log('[Admin] Realtime order notifications active \u2713');
 }
 
 function initAutomationSystem() {
@@ -573,8 +573,8 @@ function checkNewOrders() {
   if (newOrders.length > 0) {
     addNotification({
       type: 'order',
-      title: 'طلب جديد!',
-      message: `لديك ${newOrders.length} طلب جديد${newOrders.length === 1 ? '' : ''}`,
+      title: '\u0637\u0644\u0628 \u062C\u062F\u064A\u062F!',
+      message: `\u0644\u062F\u064A\u0643 ${newOrders.length} \u0637\u0644\u0628 \u062C\u062F\u064A\u062F${newOrders.length === 1 ? '' : ''}`,
       icon: 'shopping-bag',
       timestamp: new Date().toISOString(),
       read: false
@@ -594,8 +594,8 @@ function checkNewComments() {
   if (newComments.length > 0) {
     addNotification({
       type: 'comment',
-      title: 'رسالة جديدة!',
-      message: `لديك ${newComments.length} رسالة جديدة`,
+      title: '\u0631\u0633\u0627\u0644\u0629 \u062C\u062F\u064A\u062F\u0629!',
+      message: `\u0644\u062F\u064A\u0643 ${newComments.length} \u0631\u0633\u0627\u0644\u0629 \u062C\u062F\u064A\u062F\u0629`,
       icon: 'message-square',
       timestamp: new Date().toISOString(),
       read: false
@@ -614,8 +614,8 @@ function checkLowStock() {
   if (lowStock.length > 0) {
     addNotification({
       type: 'warning',
-      title: 'تنبيه المخزون',
-      message: `${lowStock.length} منتج只剩 كمية محدودة`,
+      title: '\u062A\u0646\u0628\u064A\u0647 \u0627\u0644\u0645\u062E\u0632\u0648\u0646',
+      message: `${lowStock.length} \u0645\u0646\u062A\u062C\u53EA\u5269 \u0643\u0645\u064A\u0629 \u0645\u062D\u062F\u0648\u062F\u0629`,
       icon: 'alert-triangle',
       timestamp: new Date().toISOString(),
       read: false
@@ -716,13 +716,13 @@ function updateNotificationPanel() {
 
 function getTimeAgo(date) {
   const seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'الآن';
+  if (seconds < 60) return '\u0627\u0644\u0622\u0646';
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `منذ ${minutes} دقيقة`;
+  if (minutes < 60) return `\u0645\u0646\u0630 ${minutes} \u062F\u0642\u064A\u0642\u0629`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
+  if (hours < 24) return `\u0645\u0646\u0630 ${hours} \u0633\u0627\u0639\u0629`;
   const days = Math.floor(hours / 24);
-  return `منذ ${days} يوم`;
+  return `\u0645\u0646\u0630 ${days} \u064A\u0648\u0645`;
 }
 
 // Dark Mode
@@ -740,7 +740,7 @@ function toggleDarkMode() {
 function showSuccessAnimation(message, showConfetti) {
   const overlay = document.getElementById('successOverlay');
   const msgEl = document.getElementById('successMessage');
-  msgEl.textContent = message || 'تم الحفظ بنجاح!';
+  msgEl.textContent = message || '\u062A\u0645 \u0627\u0644\u062D\u0641\u0638 \u0628\u0646\u062C\u0627\u062D!';
   overlay.style.display = 'flex';
 
   if (showConfetti) {
@@ -799,11 +799,11 @@ function loadDarkModePreference() {
 }
 
 const dateRanges = {
-  today: { days: 1, label: 'اليوم', periodLabel: 'يوم واحد' },
-  yesterday: { days: 1, label: 'الأمس', periodLabel: 'يوم واحد' },
-  week: { days: 7, label: 'آخر 7 أيام', periodLabel: '7 أيام' },
-  month: { days: 30, label: 'آخر 30 يوم', periodLabel: '30 يوم' },
-  year: { days: 365, label: 'آخر 365 يوم', periodLabel: '365 يوم' }
+  today: { days: 1, label: '\u0627\u0644\u064A\u0648\u0645', periodLabel: '\u064A\u0648\u0645 \u0648\u0627\u062D\u062F' },
+  yesterday: { days: 1, label: '\u0627\u0644\u0623\u0645\u0633', periodLabel: '\u064A\u0648\u0645 \u0648\u0627\u062D\u062F' },
+  week: { days: 7, label: '\u0622\u062E\u0631 7 \u0623\u064A\u0627\u0645', periodLabel: '7 \u0623\u064A\u0627\u0645' },
+  month: { days: 30, label: '\u0622\u062E\u0631 30 \u064A\u0648\u0645', periodLabel: '30 \u064A\u0648\u0645' },
+  year: { days: 365, label: '\u0622\u062E\u0631 365 \u064A\u0648\u0645', periodLabel: '365 \u064A\u0648\u0645' }
 };
 
 // Mobile Menu
@@ -845,15 +845,15 @@ function updatePasswordStrength(password) {
   bar.className = 'password-strength';
   if (strength <= 1) {
     bar.classList.add('weak');
-    text.textContent = 'قوة كلمة المرور: ضعيفة';
+    text.textContent = '\u0642\u0648\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631: \u0636\u0639\u064A\u0641\u0629';
     text.className = 'text-xs text-red-500 mt-1';
   } else if (strength === 2 || strength === 3) {
     bar.classList.add('medium');
-    text.textContent = 'قوة كلمة المرور: متوسطة';
+    text.textContent = '\u0642\u0648\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631: \u0645\u062A\u0648\u0633\u0637\u0629';
     text.className = 'text-xs text-yellow-500 mt-1';
   } else if (strength >= 4) {
     bar.classList.add('strong');
-    text.textContent = 'قوة كلمة المرور: قوية';
+    text.textContent = '\u0642\u0648\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631: \u0642\u0648\u064A\u0629';
     text.className = 'text-xs text-green-500 mt-1';
   }
 }
@@ -952,13 +952,13 @@ function getDateRangeText(range) {
   var today = new Date();
   var rangeConfig = dateRanges[range];
 
-  if (range === 'today') return 'عرض إحصائيات اليوم: ' + formatDate(today);
+  if (range === 'today') return '\u0639\u0631\u0636 \u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A \u0627\u0644\u064A\u0648\u0645: ' + formatDate(today);
   else if (range === 'yesterday') {
     var yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-    return 'عرض إحصائيات الأمس: ' + formatDate(yesterday);
+    return '\u0639\u0631\u0636 \u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A \u0627\u0644\u0623\u0645\u0633: ' + formatDate(yesterday);
   } else {
     var startDate = new Date(today); startDate.setDate(startDate.getDate() - rangeConfig.days + 1);
-    return 'عرض إحصائيات ' + rangeConfig.label + ' (من ' + formatDate(startDate) + ' إلى ' + formatDate(today) + ')';
+    return '\u0639\u0631\u0636 \u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A ' + rangeConfig.label + ' (\u0645\u0646 ' + formatDate(startDate) + ' \u0625\u0644\u0649 ' + formatDate(today) + ')';
   }
 }
 
@@ -1031,35 +1031,35 @@ function updateStatsForDateRange() {
   html += '<div class="stat-card bg-white rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 border-r-4 border-brand-500 animate-fade-in">' +
     '<div class="flex items-center justify-between mb-2 sm:mb-4"><div class="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg"><i data-lucide="users" class="w-5 h-5 sm:w-7 sm:h-7 text-white"></i></div></div>' +
     '<h3 class="font-bold text-xl sm:text-2xl md:text-4xl text-brand-900 mb-1">' + currentData.total + '</h3>' +
-    '<p class="text-brand-600 text-xs sm:text-sm">إجمالي الزوار</p>' +
+    '<p class="text-brand-600 text-xs sm:text-sm">\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0632\u0648\u0627\u0631</p>' +
     '<p class="text-brand-400 text-xs mt-1">(' + dateRanges[currentDateRange].periodLabel + ')</p></div>';
 
   html += '<div class="stat-card bg-white rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 border-r-4 border-brand-600 animate-fade-in" style="animation-delay: 0.1s">' +
     '<div class="flex items-center justify-between mb-2 sm:mb-4"><div class="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-400 to-brand-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg"><i data-lucide="bar-chart-2" class="w-5 h-5 sm:w-7 sm:h-7 text-white"></i></div></div>' +
     '<h3 class="font-bold text-xl sm:text-2xl md:text-4xl text-brand-900 mb-1">' + avgVisitors + '</h3>' +
-    '<p class="text-brand-600 text-xs sm:text-sm">متوسط الزوار يومياً</p></div>';
+    '<p class="text-brand-600 text-xs sm:text-sm">\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0632\u0648\u0627\u0631 \u064A\u0648\u0645\u064A\u0627\u064B</p></div>';
 
   var newOrders = periodOrders.filter(function(o) { return o.status !== 'delivered' && o.status !== 'cancelled'; }).length;
   html += '<div class="stat-card bg-white rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 border-r-4 border-gold animate-fade-in" style="animation-delay: 0.2s">' +
     '<div class="flex items-center justify-between mb-2 sm:mb-4"><div class="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-gold to-yellow-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg"><i data-lucide="shopping-bag" class="w-5 h-5 sm:w-7 sm:h-7 text-white"></i></div></div>' +
     '<h3 class="font-bold text-xl sm:text-2xl md:text-4xl text-brand-900 mb-1">' + periodOrders.length + '</h3>' +
-    '<p class="text-brand-600 text-xs sm:text-sm">إجمالي الطلبات</p>' +
-    '<p class="text-gold text-xs font-semibold mt-1">' + newOrders + ' جديدة</p></div>';
+    '<p class="text-brand-600 text-xs sm:text-sm">\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0637\u0644\u0628\u0627\u062A</p>' +
+    '<p class="text-gold text-xs font-semibold mt-1">' + newOrders + ' \u062C\u062F\u064A\u062F\u0629</p></div>';
 
   html += '<div class="stat-card bg-gradient-to-br from-brand-700 to-brand-800 rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 animate-fade-in" style="animation-delay: 0.3s">' +
     '<div class="flex items-center justify-between mb-2 sm:mb-4"><div class="w-10 h-10 sm:w-14 sm:h-14 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center"><i data-lucide="' + changeIcon + '" class="w-5 h-5 sm:w-7 sm:h-7 text-white"></i></div></div>' +
     '<h3 class="font-bold text-xl sm:text-2xl md:text-4xl mb-1">' + (changePercent >= 0 ? '+' : '') + changePercent + '%</h3>' +
-    '<p class="text-white/80 text-xs sm:text-sm">مقارنة بالفترة السابقة</p></div>';
+    '<p class="text-white/80 text-xs sm:text-sm">\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629</p></div>';
 
   document.getElementById('statsCardsContainer').innerHTML = html;
 
   var comparisonHtml = '';
-  comparisonHtml += '<div class="period-stat-card text-center"><div class="text-2xl sm:text-3xl font-bold text-brand-700 mb-1 sm:mb-2">' + currentData.total + '</div><div class="text-xs sm:text-sm text-brand-600">الزوار الحالي</div><div class="text-xs text-brand-400 mt-1">(' + dateRanges[currentDateRange].label + ')</div></div>';
-  comparisonHtml += '<div class="period-stat-card text-center"><div class="text-2xl sm:text-3xl font-bold text-brand-500 mb-1 sm:mb-2">' + previousData.total + '</div><div class="text-xs sm:text-sm text-brand-600">الزوار السابق</div><div class="text-xs text-brand-400 mt-1">(نفس المدة)</div></div>';
+  comparisonHtml += '<div class="period-stat-card text-center"><div class="text-2xl sm:text-3xl font-bold text-brand-700 mb-1 sm:mb-2">' + currentData.total + '</div><div class="text-xs sm:text-sm text-brand-600">\u0627\u0644\u0632\u0648\u0627\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</div><div class="text-xs text-brand-400 mt-1">(' + dateRanges[currentDateRange].label + ')</div></div>';
+  comparisonHtml += '<div class="period-stat-card text-center"><div class="text-2xl sm:text-3xl font-bold text-brand-500 mb-1 sm:mb-2">' + previousData.total + '</div><div class="text-xs sm:text-sm text-brand-600">\u0627\u0644\u0632\u0648\u0627\u0631 \u0627\u0644\u0633\u0627\u0628\u0642</div><div class="text-xs text-brand-400 mt-1">(\u0646\u0641\u0633 \u0627\u0644\u0645\u062F\u0629)</div></div>';
   var diff = currentData.total - previousData.total;
   var diffColor = diff >= 0 ? 'text-green-600' : 'text-red-600';
   var diffIcon = diff >= 0 ? 'arrow-up' : 'arrow-down';
-  comparisonHtml += '<div class="period-stat-card text-center"><div class="' + diffColor + ' text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center justify-center gap-2"><i data-lucide="' + diffIcon + '" class="w-5 h-5 sm:w-6"></i>' + Math.abs(diff) + '</div><div class="text-xs sm:text-sm text-brand-600">الفرق</div><div class="' + diffColor + ' text-xs mt-1">' + (diff >= 0 ? '+' : '') + changePercent + '%</div></div>';
+  comparisonHtml += '<div class="period-stat-card text-center"><div class="' + diffColor + ' text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center justify-center gap-2"><i data-lucide="' + diffIcon + '" class="w-5 h-5 sm:w-6"></i>' + Math.abs(diff) + '</div><div class="text-xs sm:text-sm text-brand-600">\u0627\u0644\u0641\u0631\u0642</div><div class="' + diffColor + ' text-xs mt-1">' + (diff >= 0 ? '+' : '') + changePercent + '%</div></div>';
 
   document.getElementById('comparisonContent').innerHTML = comparisonHtml;
   document.getElementById('chartChangeValue').textContent = (changePercent >= 0 ? '+' : '') + changePercent + '%';
@@ -1070,7 +1070,7 @@ function updateStatsForDateRange() {
 }
 
 function renderDetailedStatsTable(dailyData) {
-  var html = '<table class="w-full text-xs sm:text-sm"><thead><tr class="border-b border-brand-200"><th class="text-right py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">التاريخ</th><th class="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">الزوار</th><th class="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">النسبة</th></tr></thead><tbody>';
+  var html = '<table class="w-full text-xs sm:text-sm"><thead><tr class="border-b border-brand-200"><th class="text-right py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">\u0627\u0644\u062A\u0627\u0631\u064A\u062E</th><th class="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">\u0627\u0644\u0632\u0648\u0627\u0631</th><th class="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-brand-700">\u0627\u0644\u0646\u0633\u0628\u0629</th></tr></thead><tbody>';
   var total = dailyData.reduce(function(sum, d) { return sum + d.visitors; }, 0);
 
   dailyData.forEach(function(day) {
@@ -1102,8 +1102,8 @@ function initVisitorsChart() {
     data: {
       labels: labels,
       datasets: [
-        { label: 'الفترة المحددة', data: currentValues, borderColor: '#5C933B', backgroundColor: 'rgba(92, 147, 59, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: currentDateRange === 'today' || currentDateRange === 'yesterday' ? 6 : 3, pointBackgroundColor: '#5C933B', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 8 },
-        { label: 'الفترة السابقة', data: previousValues, borderColor: '#D1D5B1', backgroundColor: 'rgba(209, 213, 177, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#D1D5B1', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6 }
+        { label: '\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u062D\u062F\u062F\u0629', data: currentValues, borderColor: '#5C933B', backgroundColor: 'rgba(92, 147, 59, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: currentDateRange === 'today' || currentDateRange === 'yesterday' ? 6 : 3, pointBackgroundColor: '#5C933B', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 8 },
+        { label: '\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629', data: previousValues, borderColor: '#D1D5B1', backgroundColor: 'rgba(209, 213, 177, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#D1D5B1', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6 }
       ]
     },
     options: {
@@ -1127,7 +1127,7 @@ function initCategoryChart() {
   categoryChart = new Chart(ctx.getContext('2d'), {
     type: 'doughnut',
     data: {
-      labels: ['أدوية', 'عناية بالبشرة', 'مكياج', 'أجهزة'],
+      labels: ['\u0623\u062F\u0648\u064A\u0629', '\u0639\u0646\u0627\u064A\u0629 \u0628\u0627\u0644\u0628\u0634\u0631\u0629', '\u0645\u0643\u064A\u0627\u062C', '\u0623\u062C\u0647\u0632\u0629'],
       datasets: [{
         data: [categories.medicines, categories.skincare, categories.makeup, categories.devices],
         backgroundColor: ['#3B82F6', '#EC4899', '#8B5CF6', '#6B7280'],
@@ -1155,7 +1155,7 @@ function initOrdersChart() {
   ordersChart = new Chart(ctx.getContext('2d'), {
     type: 'doughnut',
     data: {
-      labels: ['جديدة', 'قيد التوصيل', 'تم التوصيل', 'ملغاة'],
+      labels: ['\u062C\u062F\u064A\u062F\u0629', '\u0642\u064A\u062F \u0627\u0644\u062A\u0648\u0635\u064A\u0644', '\u062A\u0645 \u0627\u0644\u062A\u0648\u0635\u064A\u0644', '\u0645\u0644\u063A\u0627\u0629'],
       datasets: [{
         data: [statusCounts.new, statusCounts.progress, statusCounts.delivered, statusCounts.cancelled],
         backgroundColor: ['#F59E0B', '#3B82F6', '#10B981', '#EF4444'],
@@ -1175,15 +1175,15 @@ function resetTodayStats() {
   stats.todayVisitors = 0;
   localStorage.setItem('phStats', JSON.stringify(stats));
   updateStatsForDateRange();
-  showToast('تم إعادة تعيين إحصائيات اليوم');
+  showToast('\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A \u0627\u0644\u064A\u0648\u0645');
 }
 
 function resetAllStats() {
-  if (!confirm('هل أنت متأكد؟ سيتم إعادة تعيين جميع الإحصائيات.')) return;
+  if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F\u061F \u0633\u064A\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u062C\u0645\u064A\u0639 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A.')) return;
   localStorage.removeItem('phStats');
   localStorage.removeItem('phHistoricalVisitors');
   updateStatsForDateRange();
-  showToast('تم إعادة تعيين جميع الإحصائيات');
+  showToast('\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u062C\u0645\u064A\u0639 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A');
 }
 
 function exportStats() {
@@ -1191,19 +1191,19 @@ function exportStats() {
   var stats = JSON.parse(localStorage.getItem('phStats')) || '{}';
   var today = new Date().toISOString().split('T')[0];
 
-  var data = [['التاريخ', 'الزوار']];
+  var data = [['\u0627\u0644\u062A\u0627\u0631\u064A\u062E', '\u0627\u0644\u0632\u0648\u0627\u0631']];
   for (var date in historicalData) {
     if (historicalData.hasOwnProperty(date)) {
       data.push([date, historicalData[date].visitors]);
     }
   }
-  data.push(['اليوم (' + today + ')', stats.todayVisitors || 0]);
+  data.push(['\u0627\u0644\u064A\u0648\u0645 (' + today + ')', stats.todayVisitors || 0]);
 
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'الإحصائيات');
+  XLSX.utils.book_append_sheet(wb, ws, '\u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A');
   XLSX.writeFile(wb, 'neurobin_stats_' + today + '.xlsx');
-  showToast('تم تصدير الإحصائيات بنجاح');
+  showToast('\u062A\u0645 \u062A\u0635\u062F\u064A\u0631 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A \u0628\u0646\u062C\u0627\u062D');
 }
 
 
@@ -1215,15 +1215,15 @@ function isAuthenticated() {
 
 // Security: URL Validation
 // [PATCHED OPEN-01 + ENC-02b]
-// Returns raw URL (no HTML encoding) — encode at render time, not at storage.
+// Returns raw URL (no HTML encoding) \u2014 encode at render time, not at storage.
 function validateURL(url) {
   if (!url) return '';
   try {
     var parsed = new URL(url);
     if (['http:', 'https:'].includes(parsed.protocol)) {
-      return url; // raw — caller must escapeHTML() when inserting into innerHTML
+      return url; // raw \u2014 caller must escapeHTML() when inserting into innerHTML
     }
-  } catch (e) { /* invalid URL — reject it */ }
+  } catch (e) { /* invalid URL \u2014 reject it */ }
   return '';
 }
 
@@ -1241,17 +1241,17 @@ function validateInstagramURL(url) {
 }
 
 // Security: Phone Number Validation
-// [PATCHED ENC-02b] return raw cleaned string — escapeHTML at render time only
+// [PATCHED ENC-02b] return raw cleaned string \u2014 escapeHTML at render time only
 function validatePhone(phone) {
   if (!phone) return '';
   var cleaned = phone.replace(/[^\d+]/g, '').substring(0, 20);
-  return cleaned; // raw — caller escapes when inserting into DOM
+  return cleaned; // raw \u2014 caller escapes when inserting into DOM
 }
 
 async function changePassword() {
   // CSRF Protection: Verify authentication and session
   if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
+    showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B', 'error');
     return;
   }
 
@@ -1259,12 +1259,12 @@ async function changePassword() {
   var newPassword = document.getElementById('newPassword').value;
   var confirmPassword = document.getElementById('confirmPassword').value;
 
-  if (!currentPassword) { showToast('يرجى إدخال كلمة المرور الحالية', 'error'); return; }
-  if (!newPassword) { showToast('يرجى إدخال كلمة المرور الجديدة', 'error'); return; }
+  if (!currentPassword) { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629', 'error'); return; }
+  if (!newPassword) { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629', 'error'); return; }
   // Minimum password length increased for better security (12 chars instead of 8)
-  if (newPassword.length < 12) { showToast('كلمة المرور يجب أن تكون 12 حرفاً على الأقل', 'error'); return; }
-  if (newPassword !== confirmPassword) { showToast('كلمة المرور الجديدة غير متطابقة', 'error'); return; }
-  if (currentPassword === newPassword) { showToast('كلمة المرور الجديدة يجب أن تختلف عن الحالية', 'error'); return; }
+  if (newPassword.length < 12) { showToast('\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 12 \u062D\u0631\u0641\u0627\u064B \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644', 'error'); return; }
+  if (newPassword !== confirmPassword) { showToast('\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629 \u063A\u064A\u0631 \u0645\u062A\u0637\u0627\u0628\u0642\u0629', 'error'); return; }
+  if (currentPassword === newPassword) { showToast('\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629 \u064A\u062C\u0628 \u0623\u0646 \u062A\u062E\u062A\u0644\u0641 \u0639\u0646 \u0627\u0644\u062D\u0627\u0644\u064A\u0629', 'error'); return; }
 
   // Verify current password using secure PBKDF2 verification
   const storedPasswordHash = localStorage.getItem('adminPasswordHash');
@@ -1275,7 +1275,7 @@ async function changePassword() {
     // Legacy format - verify using old SHA-256 method
     const currentPasswordHash = sha256(currentPassword);
     if (storedPasswordHash && currentPasswordHash !== storedPasswordHash) {
-      showToast('كلمة المرور الحالية غير صحيحة', 'error');
+      showToast('\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629', 'error');
       return;
     }
   } else {
@@ -1283,11 +1283,11 @@ async function changePassword() {
     try {
       const isValid = await verifyPassword(currentPassword, storedPasswordHash, storedSalt);
       if (!isValid) {
-        showToast('كلمة المرور الحالية غير صحيحة', 'error');
+        showToast('\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629', 'error');
         return;
       }
     } catch (error) {
-      showToast('خطأ في التحقق من كلمة المرور', 'error');
+      showToast('\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', 'error');
       return;
     }
   }
@@ -1306,10 +1306,10 @@ async function changePassword() {
   document.getElementById('newPassword').value = '';
   document.getElementById('confirmPassword').value = '';
   document.getElementById('passwordStrengthBar').className = 'password-strength weak';
-  document.getElementById('passwordStrengthText').textContent = 'قوة كلمة المرور: ضعيفة';
+  document.getElementById('passwordStrengthText').textContent = '\u0642\u0648\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631: \u0636\u0639\u064A\u0641\u0629';
   document.getElementById('passwordStrengthText').className = 'text-xs text-brand-400 mt-1';
 
-  showToast('تم تغيير كلمة المرور بنجاح', 'success');
+  showToast('\u062A\u0645 \u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0628\u0646\u062C\u0627\u062D', 'success');
 }
 
 
@@ -1340,28 +1340,28 @@ function updateOrdersBadge() {
 
 function clearAllProducts() {
   if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
+    showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B', 'error');
     return;
   }
   localStorage.removeItem('phProducts');
   loadProducts();
-  showToast('تم حذف جميع المنتجات', 'warning');
+  showToast('\u062A\u0645 \u062D\u0630\u0641 \u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A', 'warning');
 }
 
 function clearAllOrders() {
   if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
+    showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B', 'error');
     return;
   }
   localStorage.removeItem('phOrders');
   loadOrders();
   updateOrdersBadge();
-  showToast('تم حذف جميع الطلبات', 'warning');
+  showToast('\u062A\u0645 \u062D\u0630\u0641 \u062C\u0645\u064A\u0639 \u0627\u0644\u0637\u0644\u0628\u0627\u062A', 'warning');
 }
 
 function exportAllData() {
   if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
+    showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B', 'error');
     return;
   }
   var data = {
@@ -1381,7 +1381,7 @@ function exportAllData() {
   a.download = 'neurobin_backup_' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('تم تصدير البيانات بنجاح', 'success');
+  showToast('\u062A\u0645 \u062A\u0635\u062F\u064A\u0631 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u0646\u062C\u0627\u062D', 'success');
 }
 
 function showToast(message, type) {
