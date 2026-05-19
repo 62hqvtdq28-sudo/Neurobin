@@ -1,5 +1,5 @@
 // ===================================================
-// إعدادات Supabase — Supabase Configuration
+// Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Supabase â€” Supabase Configuration
 // ===================================================
 const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_yEU6M3goCClpcjHBFqniLg_FdN9oSXb';
@@ -10,70 +10,70 @@ function initSupabase() {
   try {
     if (typeof supabase !== 'undefined') {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log('✅ Supabase initialized successfully');
+      console.log('âœ… Supabase initialized successfully');
     } else {
-      console.warn('⚠️ Supabase SDK not loaded');
+      console.warn('âš ï¸ Supabase SDK not loaded');
     }
   } catch (e) {
-    console.warn('⚠️ Supabase init failed:', e.message);
+    console.warn('âš ï¸ Supabase init failed:', e.message);
   }
 }
 
 // ===================================================
-// FIX #1: نظام التحقق من المدخلات — Security Validator (مُصلح)
+// FIX #1: Ù†Ø¸Ø§Ù… Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…Ø¯Ø®Ù„Ø§Øª â€” Security Validator (Ù…ÙØµÙ„Ø­)
 // ===================================================
 const SecurityValidator = {
   validatePhone: function(phone) {
     const phoneRegex = /^07[0-9]{9}$/;
     if (!phoneRegex.test(phone.replace(/\s/g, '').replace(/^\+964/, '0'))) {
-      return { valid: false, message: 'يرجى إدخال رقم هاتف عراقي صحيح (07XX XXX XXXX)' };
+      return { valid: false, message: 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ù‡Ø§ØªÙ Ø¹Ø±Ø§Ù‚ÙŠ ØµØ­ÙŠØ­ (07XX XXX XXXX)' };
     }
-    return { valid: true, message: 'صالح' };
+    return { valid: true, message: 'ØµØ§Ù„Ø­' };
   },
 
   validateName: function(name) {
     if (!name || name.trim().length < 3) {
-      return { valid: false, message: 'الاسم يجب أن يكون 3 أحرف على الأقل' };
+      return { valid: false, message: 'Ø§Ù„Ø§Ø³Ù… ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† 3 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„' };
     }
     if (name.trim().length > 50) {
-      return { valid: false, message: 'الاسم يجب ألا يتجاوز 50 حرفاً' };
+      return { valid: false, message: 'Ø§Ù„Ø§Ø³Ù… ÙŠØ¬Ø¨ Ø£Ù„Ø§ ÙŠØªØ¬Ø§ÙˆØ² 50 Ø­Ø±ÙØ§Ù‹' };
     }
     const arabicOk = /^[\u0600-\u06FF\s\-'.]+$/.test(name.trim());
     const englishOk = /^[a-zA-Z\s\-'.]+$/.test(name.trim());
     if (!arabicOk && !englishOk) {
-      return { valid: false, message: 'الاسم يجب أن يحتوي على أحرف فقط' };
+      return { valid: false, message: 'Ø§Ù„Ø§Ø³Ù… ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ Ø£Ø­Ø±Ù ÙÙ‚Ø·' };
     }
-    return { valid: true, message: 'صالح' };
+    return { valid: true, message: 'ØµØ§Ù„Ø­' };
   },
 
   validateAddress: function(address) {
     if (!address || address.trim().length < 3) {
-      return { valid: false, message: 'يرجى إدخال عنوان التوصيل (إجباري)' };
+      return { valid: false, message: 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø¹Ù†ÙˆØ§Ù† Ø§Ù„ØªÙˆØµÙŠÙ„ (Ø¥Ø¬Ø¨Ø§Ø±ÙŠ)' };
     }
     if (address.trim().length > 200) {
-      return { valid: false, message: 'العنوان يجب ألا يتجاوز 200 حرف' };
+      return { valid: false, message: 'Ø§Ù„Ø¹Ù†ÙˆØ§Ù† ÙŠØ¬Ø¨ Ø£Ù„Ø§ ÙŠØªØ¬Ø§ÙˆØ² 200 Ø­Ø±Ù' };
     }
-    return { valid: true, message: 'صالح' };
+    return { valid: true, message: 'ØµØ§Ù„Ø­' };
   },
 
   validateNotes: function(notes) {
     if (notes && notes.trim().length > 500) {
-      return { valid: false, message: 'الملاحظات يجب ألا تتجاوز 500 حرف' };
+      return { valid: false, message: 'Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø§Øª ÙŠØ¬Ø¨ Ø£Ù„Ø§ ØªØªØ¬Ø§ÙˆØ² 500 Ø­Ø±Ù' };
     }
-    return { valid: true, message: 'صالح' };
+    return { valid: true, message: 'ØµØ§Ù„Ø­' };
   },
 
   validateMessage: function(message) {
     if (!message || message.trim().length < 10) {
-      return { valid: false, message: 'الرسالة يجب أن تكون 10 أحرف على الأقل' };
+      return { valid: false, message: 'Ø§Ù„Ø±Ø³Ø§Ù„Ø© ÙŠØ¬Ø¨ Ø£Ù† ØªÙƒÙˆÙ† 10 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„' };
     }
     if (message.trim().length > 1000) {
-      return { valid: false, message: 'الرسالة يجب ألا تتجاوز 1000 حرف' };
+      return { valid: false, message: 'Ø§Ù„Ø±Ø³Ø§Ù„Ø© ÙŠØ¬Ø¨ Ø£Ù„Ø§ ØªØªØ¬Ø§ÙˆØ² 1000 Ø­Ø±Ù' };
     }
-    return { valid: true, message: 'صالح' };
+    return { valid: true, message: 'ØµØ§Ù„Ø­' };
   },
 
-  // FIX #1 CRITICAL: دالة التنظيف المصلحة — & أولاً ثم < > " '
+  // FIX #1 CRITICAL: Ø¯Ø§Ù„Ø© Ø§Ù„ØªÙ†Ø¸ÙŠÙ Ø§Ù„Ù…ØµÙ„Ø­Ø© â€” & Ø£ÙˆÙ„Ø§Ù‹ Ø«Ù… < > " '
   sanitizeInput: function(input) {
     if (typeof input !== 'string') return input;
     return input
@@ -94,7 +94,7 @@ const SecurityValidator = {
     return div.innerHTML;
   },
 
-  // FIX #6: التحقق الصارم من بنية عناصر السلة
+  // FIX #6: Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„ØµØ§Ø±Ù… Ù…Ù† Ø¨Ù†ÙŠØ© Ø¹Ù†Ø§ØµØ± Ø§Ù„Ø³Ù„Ø©
   validateCartItem: function(item) {
     return (
       item !== null &&
@@ -110,7 +110,7 @@ const SecurityValidator = {
   }
 };
 
-// FIX #3: Rate Limiting — منع الإرسال المتكرر للنماذج
+// FIX #3: Rate Limiting â€” Ù…Ù†Ø¹ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ù…ØªÙƒØ±Ø± Ù„Ù„Ù†Ù…Ø§Ø°Ø¬
 const RateLimiter = {
   timestamps: {},
   canSubmit: function(formId, cooldownMs = 30000) {
@@ -125,9 +125,14 @@ const RateLimiter = {
 };
 
 // ===================================================
-// بيانات المنتجات الاحتياطية (Fallback)
+// Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª Ø§Ù„Ø§Ø­ØªÙŠØ§Ø·ÙŠØ© (Fallback)
 // ===================================================
 const FALLBACK_PRODUCTS = []; // Products managed via Supabase admin panel
+
+// ===================================================
+// Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ â€” Delivery Fee (Ù„Ø¬Ù…ÙŠØ¹ Ø£Ù†Ø­Ø§Ø¡ Ø§Ù„Ø¹Ø±Ø§Ù‚)
+// ===================================================
+const DELIVERY_FEE = 4000; // 4,000 Ø¯ÙŠÙ†Ø§Ø± Ø¹Ø±Ø§Ù‚ÙŠ
 
 let products = []; // loaded from Supabase
 let cart = [];
@@ -135,7 +140,7 @@ let favorites = [];
 let displayedProducts = [...products];
 
 // ===================================================
-// دوال Supabase
+// Ø¯ÙˆØ§Ù„ Supabase
 // ===================================================
 
 async function loadProductsFromSupabase() {
@@ -161,10 +166,10 @@ async function loadProductsFromSupabase() {
       displayedProducts = [...products];
       renderProducts(products);
       updateCartUI();
-      console.log('✅ Products loaded from Supabase:', products.length);
+      console.log('âœ… Products loaded from Supabase:', products.length);
     }
   } catch (e) {
-    console.warn('⚠️ Using fallback products. Supabase error:', e.message);
+    console.warn('âš ï¸ Using fallback products. Supabase error:', e.message);
   }
 }
 
@@ -200,10 +205,10 @@ async function saveOrderToSupabase(orderData) {
       if (itemsError) throw itemsError;
     }
 
-    console.log('✅ Order saved to Supabase:', order.id);
+    console.log('âœ… Order saved to Supabase:', order.id);
     return order.id;
   } catch (e) {
-    console.warn('⚠️ Order not saved to Supabase:', e.message);
+    console.warn('âš ï¸ Order not saved to Supabase:', e.message);
     return null;
   }
 }
@@ -215,10 +220,10 @@ async function saveContactMessageToSupabase(name, contactInfo, message) {
       .from('contact_messages')
       .insert({ name, contact_info: contactInfo, message });
     if (error) throw error;
-    console.log('✅ Contact message saved to Supabase');
+    console.log('âœ… Contact message saved to Supabase');
     return true;
   } catch (e) {
-    console.warn('⚠️ Contact message not saved:', e.message);
+    console.warn('âš ï¸ Contact message not saved:', e.message);
     return false;
   }
 }
@@ -227,22 +232,22 @@ async function saveContactMessageToSupabase(name, contactInfo, message) {
 // Initialize
 // ===================================================
 
-// ═══════════════════════════════════════════════════════════
-// كود الخصم — Discount Code State & Functions
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ÙƒÙˆØ¯ Ø§Ù„Ø®ØµÙ… â€” Discount Code State & Functions
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let appliedDiscount = null;
 
 async function applyDiscountCode() {
   const input = document.getElementById('discountCodeInput');
   if (!input) return;
   const code = input.value.trim().toUpperCase();
-  if (!code) { showToast('يرجى إدخال كود الخصم', 'error'); return; }
+  if (!code) { showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ÙƒÙˆØ¯ Ø§Ù„Ø®ØµÙ…', 'error'); return; }
 
   const btn = document.getElementById('applyDiscountBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'جاري التحقق...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù‚Ù‚...'; }
 
   try {
-    if (!supabaseClient) { showToast('يرجى الانتظار حتى اكتمال التحميل', 'error'); return; }
+    if (!supabaseClient) { showToast('ÙŠØ±Ø¬Ù‰ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø± Ø­ØªÙ‰ Ø§ÙƒØªÙ…Ø§Ù„ Ø§Ù„ØªØ­Ù…ÙŠÙ„', 'error'); return; }
     const { data, error } = await supabaseClient
       .from('discount_codes')
       .select('*')
@@ -251,17 +256,17 @@ async function applyDiscountCode() {
       .gt('expires_at', new Date().toISOString())
       .single();
 
-    if (error || !data) { showToast('كود الخصم غير صالح أو منتهي الصلاحية ❌', 'error'); appliedDiscount = null; updateDiscountDisplay(); return; }
-    if (data.max_uses !== null && data.used_count >= data.max_uses) { showToast('تم استنفاد هذا الكود', 'error'); appliedDiscount = null; updateDiscountDisplay(); return; }
+    if (error || !data) { showToast('ÙƒÙˆØ¯ Ø§Ù„Ø®ØµÙ… ØºÙŠØ± ØµØ§Ù„Ø­ Ø£Ùˆ Ù…Ù†ØªÙ‡ÙŠ Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ© âŒ', 'error'); appliedDiscount = null; updateDiscountDisplay(); return; }
+    if (data.max_uses !== null && data.used_count >= data.max_uses) { showToast('ØªÙ… Ø§Ø³ØªÙ†ÙØ§Ø¯ Ù‡Ø°Ø§ Ø§Ù„ÙƒÙˆØ¯', 'error'); appliedDiscount = null; updateDiscountDisplay(); return; }
 
     appliedDiscount = data;
     updateDiscountDisplay();
-    const displayVal = data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString() + ' د.ع';
-    showToast('✅ تم تطبيق خصم ' + displayVal, 'success');
+    const displayVal = data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString() + ' Ø¯.Ø¹';
+    showToast('âœ… ØªÙ… ØªØ·Ø¨ÙŠÙ‚ Ø®ØµÙ… ' + displayVal, 'success');
   } catch(e) {
-    showToast('خطأ في التحقق: ' + e.message, 'error');
+    showToast('Ø®Ø·Ø£ ÙÙŠ Ø§Ù„ØªØ­Ù‚Ù‚: ' + e.message, 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'تطبيق'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'ØªØ·Ø¨ÙŠÙ‚'; }
   }
 }
 
@@ -272,8 +277,8 @@ function updateDiscountDisplay() {
   if (appliedDiscount) {
     row.classList.remove('hidden');
     amt.textContent = appliedDiscount.discount_type === 'percent'
-      ? '− ' + appliedDiscount.discount_value + '%'
-      : '− ' + appliedDiscount.discount_value.toLocaleString() + ' د.ع';
+      ? 'âˆ’ ' + appliedDiscount.discount_value + '%'
+      : 'âˆ’ ' + appliedDiscount.discount_value.toLocaleString() + ' Ø¯.Ø¹';
   } else {
     row.classList.add('hidden');
   }
@@ -287,9 +292,9 @@ function calcTotal(rawTotal) {
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// إشعارات الإيميل — EmailJS Configuration
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„ â€” EmailJS Configuration
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const EMAILJS_CONFIG = {
   serviceId:  'service_al7y77e',
   templateId: 'template_s9h0fnc',
@@ -299,32 +304,32 @@ const EMAILJS_CONFIG = {
 
 async function sendEmailNotification(orderData) {
   if (typeof emailjs === 'undefined') {
-    console.warn('EmailJS not loaded — skipping email notification');
+    console.warn('EmailJS not loaded â€” skipping email notification');
     return;
   }
   try {
     emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
 
     var itemsList = orderData.items.map(function(item) {
-      return '• ' + item.productName + ' × ' + item.quantity + ' = ' + formatPrice(item.subtotal);
+      return 'â€¢ ' + item.productName + ' Ã— ' + item.quantity + ' = ' + formatPrice(item.subtotal);
     }).join('\n');
 
     await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
       to_email:       EMAILJS_CONFIG.adminEmail,
       customer_name:  orderData.name,
       customer_phone: orderData.phone,
-      customer_address: orderData.address || 'غير محدد',
+      customer_address: orderData.address || 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯',
       order_items:    itemsList,
       order_total:    formatPrice(orderData.total),
-      discount_code:  orderData.discountCode || 'لا يوجد',
+      discount_code:  orderData.discountCode || 'Ù„Ø§ ÙŠÙˆØ¬Ø¯',
       order_date:     new Date().toLocaleDateString('ar-EG'),
       order_time:     new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}),
-      order_id:       orderData.orderId || '—'
+      order_id:       orderData.orderId || 'â€”'
     });
 
-    console.log('✅ Email notification sent to', EMAILJS_CONFIG.adminEmail);
+    console.log('âœ… Email notification sent to', EMAILJS_CONFIG.adminEmail);
   } catch(e) {
-    console.warn('⚠️ Email notification failed:', e.message || e);
+    console.warn('âš ï¸ Email notification failed:', e.message || e);
   }
 }
 
@@ -456,16 +461,16 @@ function renderProducts(productsToRender) {
     const isFavorite = favorites.includes(product.id);
     let stockBadge = '';
     if (!product.inStock) {
-      stockBadge = '<span class="stock-badge out-of-stock absolute top-12 right-12 z-10">نفذت الكمية</span>';
+      stockBadge = '<span class="stock-badge out-of-stock absolute top-12 right-12 z-10">Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©</span>';
     } else if (product.stockLevel === 'low') {
-      stockBadge = '<span class="stock-badge low-stock absolute top-12 right-12 z-10">كمية محدودة</span>';
+      stockBadge = '<span class="stock-badge low-stock absolute top-12 right-12 z-10">ÙƒÙ…ÙŠØ© Ù…Ø­Ø¯ÙˆØ¯Ø©</span>';
     } else if (product.stockLevel === 'in') {
-      stockBadge = '<span class="stock-badge in-stock absolute top-12 right-12 z-10">متوفر</span>';
+      stockBadge = '<span class="stock-badge in-stock absolute top-12 right-12 z-10">Ù…ØªÙˆÙØ±</span>';
     }
     return `
       <div class="product-card-main scroll-animate-scale" role="listitem" data-category="${safeCategory}" data-id="${safeId}">
         ${stockBadge}
-        <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}">
+        <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? 'Ø¥Ø²Ø§Ù„Ø© Ù…Ù† Ø§Ù„Ù…ÙØ¶Ù„Ø©' : 'Ø¥Ø¶Ø§ÙØ© Ù„Ù„Ù…ÙØ¶Ù„Ø©'}">
           <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : ''}"></i>
         </button>
         <div class="product-image-wrapper cursor-pointer" onclick="openQuickView('${safeId}')">
@@ -475,7 +480,7 @@ function renderProducts(productsToRender) {
             </svg>
           </div>
           <div class="product-overlay">
-            <button class="bg-white text-brand-700 px-6 py-2.5 rounded-full font-semibold hover:bg-brand-50 transition-colors">عرض سريع</button>
+            <button class="bg-white text-brand-700 px-6 py-2.5 rounded-full font-semibold hover:bg-brand-50 transition-colors">Ø¹Ø±Ø¶ Ø³Ø±ÙŠØ¹</button>
           </div>
         </div>
         <div class="p-6">
@@ -487,7 +492,7 @@ function renderProducts(productsToRender) {
             <span class="text-xl font-bold text-brand-700">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
             <button onclick="addToCart('${safeId}')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}" ${!product.inStock ? 'disabled' : ''}>
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>أضف للسلة</span>
+              <span>Ø£Ø¶Ù Ù„Ù„Ø³Ù„Ø©</span>
             </button>
           </div>
         </div>
@@ -499,15 +504,15 @@ function renderProducts(productsToRender) {
 }
 
 function getCategoryLabel(category) {
-  const labels = { medicines: 'أدوية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة طبية' };
+  const labels = { medicines: 'Ø£Ø¯ÙˆÙŠØ©', skincare: 'Ø§Ù„Ø¹Ù†Ø§ÙŠØ© Ø¨Ø§Ù„Ø¨Ø´Ø±Ø©', makeup: 'Ù…ÙƒÙŠØ§Ø¬', devices: 'Ø£Ø¬Ù‡Ø²Ø© Ø·Ø¨ÙŠØ©' };
   return labels[category] || category;
 }
 
 function formatPrice(price) {
-  return Number(price).toLocaleString('ar-IQ') + ' د.ع';
+  return Number(price).toLocaleString('ar-IQ') + ' Ø¯.Ø¹';
 }
 
-// FIX #2: تمرير event كمعامل — لا global event object
+// FIX #2: ØªÙ…Ø±ÙŠØ± event ÙƒÙ…Ø¹Ø§Ù…Ù„ â€” Ù„Ø§ global event object
 function filterProducts(e, category) {
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
@@ -529,9 +534,9 @@ function addToCart(productId) {
   if (!product || !product.inStock) return;
   const existingItem = cart.find(item => item.productId === productId);
   if (existingItem) {
-    // FIX #4: حد أقصى 99 وحدة
+    // FIX #4: Ø­Ø¯ Ø£Ù‚ØµÙ‰ 99 ÙˆØ­Ø¯Ø©
     if (existingItem.quantity >= 99) {
-      showToast('الحد الأقصى 99 وحدة لكل منتج', 'error');
+      showToast('Ø§Ù„Ø­Ø¯ Ø§Ù„Ø£Ù‚ØµÙ‰ 99 ÙˆØ­Ø¯Ø© Ù„ÙƒÙ„ Ù…Ù†ØªØ¬', 'error');
       return;
     }
     existingItem.quantity++;
@@ -540,7 +545,7 @@ function addToCart(productId) {
   }
   saveCart();
   updateCartUI();
-  showToast('تمت الإضافة للسلة', 'success');
+  showToast('ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ù„Ù„Ø³Ù„Ø©', 'success');
 }
 
 function removeFromCart(productId) {
@@ -553,7 +558,7 @@ function updateCartQuantity(productId, change) {
   const item = cart.find(item => item.productId === productId);
   if (item) {
     const newQty = item.quantity + change;
-    if (newQty > 99) { showToast('الحد الأقصى 99 وحدة لكل منتج', 'error'); return; }
+    if (newQty > 99) { showToast('Ø§Ù„Ø­Ø¯ Ø§Ù„Ø£Ù‚ØµÙ‰ 99 ÙˆØ­Ø¯Ø© Ù„ÙƒÙ„ Ù…Ù†ØªØ¬', 'error'); return; }
     if (newQty <= 0) { removeFromCart(productId); }
     else { item.quantity = newQty; saveCart(); updateCartUI(); }
   }
@@ -577,7 +582,7 @@ function updateCartUI() {
     if (totalItems > 0) { cartBadge.textContent = totalItems; cartBadge.classList.remove('hidden'); }
     else { cartBadge.classList.add('hidden'); }
   }
-  if (cartCountText) cartCountText.textContent = `${totalItems} ${totalItems === 1 ? 'منتج' : 'منتجات'}`;
+  if (cartCountText) cartCountText.textContent = `${totalItems} ${totalItems === 1 ? 'Ù…Ù†ØªØ¬' : 'Ù…Ù†ØªØ¬Ø§Øª'}`;
   if (checkoutBtn) checkoutBtn.disabled = cart.length === 0;
   if (cartItems) {
     if (cart.length === 0) {
@@ -587,8 +592,8 @@ function updateCartUI() {
             <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           </svg>
-          <p class="text-lg font-medium">السلة فارغة</p>
-          <p class="text-sm">أضف منتجات للبدء</p>
+          <p class="text-lg font-medium">Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©</p>
+          <p class="text-sm">Ø£Ø¶Ù Ù…Ù†ØªØ¬Ø§Øª Ù„Ù„Ø¨Ø¯Ø¡</p>
         </div>`;
     } else {
       let total = 0;
@@ -623,7 +628,9 @@ function updateCartUI() {
             </button>
           </div>`;
       }).join('');
-      if (cartTotal) cartTotal.textContent = SecurityValidator.escapeHtml(formatPrice(total));
+      const cartSubtotalEl = document.getElementById('cartSubtotal');
+      if (cartSubtotalEl) cartSubtotalEl.textContent = SecurityValidator.escapeHtml(formatPrice(total));
+      if (cartTotal) cartTotal.textContent = SecurityValidator.escapeHtml(formatPrice(total + DELIVERY_FEE));
     }
     lucide.createIcons();
   }
@@ -661,9 +668,9 @@ function updateFavoritesUI() {
 function openFavorites() {
   if (favorites.length > 0) {
     renderProducts(products.filter(p => favorites.includes(p.id)));
-    showToast('عرض المنتجات المفضلة');
+    showToast('Ø¹Ø±Ø¶ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª Ø§Ù„Ù…ÙØ¶Ù„Ø©');
   } else {
-    showToast('لا توجد منتجات مفضلة', 'error');
+    showToast('Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†ØªØ¬Ø§Øª Ù…ÙØ¶Ù„Ø©', 'error');
   }
 }
 
@@ -679,11 +686,16 @@ function openCheckout() {
     const subtotal = product.price * item.quantity;
     total += subtotal;
     return `<div class="flex justify-between">
-      <span>${SecurityValidator.escapeHtml(product.nameAr + ' × ' + item.quantity)}</span>
+      <span>${SecurityValidator.escapeHtml(product.nameAr + ' Ã— ' + item.quantity)}</span>
       <span class="font-medium">${SecurityValidator.escapeHtml(formatPrice(subtotal))}</span>
     </div>`;
   }).join('');
-  document.getElementById('checkoutTotal').textContent = SecurityValidator.escapeHtml(formatPrice(total));
+  // Ø¥Ø¶Ø§ÙØ© Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„
+  checkoutItems.innerHTML += `<div class="flex justify-between text-amber-700 border-t border-dashed border-brand-200 pt-2 mt-2 font-medium">
+    <span>ðŸšš Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ (Ø¬Ù…ÙŠØ¹ Ø£Ù†Ø­Ø§Ø¡ Ø§Ù„Ø¹Ø±Ø§Ù‚)</span>
+    <span>${formatPrice(DELIVERY_FEE)}</span>
+  </div>`;
+  document.getElementById('checkoutTotal').textContent = SecurityValidator.escapeHtml(formatPrice(total + DELIVERY_FEE));
 }
 
 function closeCheckout() {
@@ -705,7 +717,7 @@ async function sendToWhatsApp() {
   // FIX #3: Rate limiting
   const rateCheck = RateLimiter.canSubmit('checkout', 30000);
   if (!rateCheck.allowed) {
-    showToast('يرجى الانتظار ' + rateCheck.remaining + ' ثانية قبل إرسال طلب جديد', 'error');
+    showToast('ÙŠØ±Ø¬Ù‰ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø± ' + rateCheck.remaining + ' Ø«Ø§Ù†ÙŠØ© Ù‚Ø¨Ù„ Ø¥Ø±Ø³Ø§Ù„ Ø·Ù„Ø¨ Ø¬Ø¯ÙŠØ¯', 'error');
     return;
   }
 
@@ -725,12 +737,12 @@ async function sendToWhatsApp() {
 
   if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.7'; }
 
-  let message = '\u{1F6D2} *طلب جديد من صيدلية neurobin*\n\n';
-  message += '\u{1F464} *العميل:* ' + name + '\n';
-  message += '\u{1F4F1} *الهاتف:* ' + phone + '\n';
-  message += '\u{1F4CD} *العنوان:* ' + address + '\n';
-  if (notes) message += '\u{1F4DD} *ملاحظات:* ' + notes + '\n\n';
-  message += '*المنتجات:*\n';
+  let message = '\u{1F6D2} *Ø·Ù„Ø¨ Ø¬Ø¯ÙŠØ¯ Ù…Ù† ØµÙŠØ¯Ù„ÙŠØ© neurobin*\n\n';
+  message += '\u{1F464} *Ø§Ù„Ø¹Ù…ÙŠÙ„:* ' + name + '\n';
+  message += '\u{1F4F1} *Ø§Ù„Ù‡Ø§ØªÙ:* ' + phone + '\n';
+  message += '\u{1F4CD} *Ø§Ù„Ø¹Ù†ÙˆØ§Ù†:* ' + address + '\n';
+  if (notes) message += '\u{1F4DD} *Ù…Ù„Ø§Ø­Ø¸Ø§Øª:* ' + notes + '\n\n';
+  message += '*Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª:*\n';
 
   let total = 0;
   const orderItems = [];
@@ -744,10 +756,11 @@ async function sendToWhatsApp() {
     }
   });
   const discountedTotal = calcTotal(total);
-  if (appliedDiscount) { const dD = appliedDiscount.discount_type==='percent' ? appliedDiscount.discount_value+'%' : formatPrice(appliedDiscount.discount_value); message += '\n\u{1F3F7}\uFE0F *كود الخصم:* ' + appliedDiscount.code + ' (' + dD + ')'; message += '\n\u{1F4B0} *الإجمالي بعد الخصم:* ' + formatPrice(discountedTotal); } else { message += '\n\u{1F4B0} *الإجمالي:* ' + formatPrice(total); }
+  message += '\n\u{1F69A} *Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„:* ' + formatPrice(DELIVERY_FEE);
+  if (appliedDiscount) { const dD = appliedDiscount.discount_type==='percent' ? appliedDiscount.discount_value+'%' : formatPrice(appliedDiscount.discount_value); message += '\n\u{1F3F7}\uFE0F *ÙƒÙˆØ¯ Ø§Ù„Ø®ØµÙ…:* ' + appliedDiscount.code + ' (' + dD + ')'; message += '\n\u{1F4B0} *Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø´Ø§Ù…Ù„ Ø§Ù„ØªÙˆØµÙŠÙ„:* ' + formatPrice(discountedTotal + DELIVERY_FEE); } else { message += '\n\u{1F4B0} *Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø´Ø§Ù…Ù„ Ø§Ù„ØªÙˆØµÙŠÙ„:* ' + formatPrice(total + DELIVERY_FEE); }
 
-  const orderId = await saveOrderToSupabase({ name, phone, address, notes, total, items: orderItems });
-  // إرسال إشعار إيميل للمشرف
+  const orderId = await saveOrderToSupabase({ name, phone, address, notes, total: (appliedDiscount ? discountedTotal : total) + DELIVERY_FEE, items: orderItems });
+  // Ø¥Ø±Ø³Ø§Ù„ Ø¥Ø´Ø¹Ø§Ø± Ø¥ÙŠÙ…ÙŠÙ„ Ù„Ù„Ù…Ø´Ø±Ù
   sendEmailNotification({
     name, phone, address,
     total: calcTotal(total),
@@ -755,7 +768,7 @@ async function sendToWhatsApp() {
     discountCode: appliedDiscount ? appliedDiscount.code : null,
     orderId: orderId ? orderId.slice(-8).toUpperCase() : null
   });
-  if (orderId) message += '\n\u{1F516} *رقم الطلب:* #' + orderId.slice(-8).toUpperCase();
+  if (orderId) message += '\n\u{1F516} *Ø±Ù‚Ù… Ø§Ù„Ø·Ù„Ø¨:* #' + orderId.slice(-8).toUpperCase();
 
   window.open('https://wa.me/9647870404967?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
   if (appliedDiscount && supabaseClient) {
@@ -769,7 +782,7 @@ async function sendToWhatsApp() {
   }
   clearCart();
   closeCheckout();
-  showToast('شكراً لك! سيتم التواصل معك قريباً', 'success');
+  showToast('Ø´ÙƒØ±Ø§Ù‹ Ù„Ùƒ! Ø³ÙŠØªÙ… Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹Ùƒ Ù‚Ø±ÙŠØ¨Ø§Ù‹', 'success');
   if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
 }
 
@@ -782,7 +795,7 @@ function openQuickView(productId) {
   const safeName = SecurityValidator.escapeHtml(product.nameAr);
   const safeCategory = SecurityValidator.escapeHtml(getCategoryLabel(product.category));
   const safePrice = SecurityValidator.escapeHtml(formatPrice(product.price));
-  const stockText = product.inStock ? 'متوفر في المخزون' : 'نفذت الكمية';
+  const stockText = product.inStock ? 'Ù…ØªÙˆÙØ± ÙÙŠ Ø§Ù„Ù…Ø®Ø²ÙˆÙ†' : 'Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©';
   const isFavorite = favorites.includes(product.id);
   content.innerHTML = `
     <div class="bg-gradient-to-br from-brand-100 to-brand-50 h-64 flex items-center justify-center">
@@ -797,7 +810,7 @@ function openQuickView(productId) {
       <p class="text-brand-600/80 mb-6">${SecurityValidator.escapeHtml(stockText)}</p>
       <div class="flex gap-3">
         <button onclick="addToCart('${safeId}')" class="flex-grow btn-primary bg-brand-700 hover:bg-brand-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}" ${!product.inStock ? 'disabled' : ''}>
-          <i data-lucide="shopping-cart" class="w-5 h-5"></i>أضف للسلة
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>Ø£Ø¶Ù Ù„Ù„Ø³Ù„Ø©
         </button>
         <button onclick="toggleFavorite('${safeId}')" class="p-3 border-2 border-brand-200 rounded-xl hover:bg-brand-50 transition-colors ${isFavorite ? 'text-red-500 border-red-200' : ''}">
           <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}"></i>
@@ -844,7 +857,7 @@ function performSearch() {
     p.name.toLowerCase().includes(query) || p.nameAr.includes(rawQuery) || p.category.includes(query)
   );
   if (matches.length === 0) {
-    results.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
+    results.innerHTML = '<div class="p-6 text-center text-brand-400"><p>Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¹Ø«ÙˆØ± Ø¹Ù„Ù‰ Ù†ØªØ§Ø¦Ø¬</p></div>';
   } else {
     results.innerHTML = matches.map(p => {
       const safeId = SecurityValidator.escapeHtml(p.id);
@@ -893,7 +906,7 @@ async function handleContactSubmit() {
   // FIX #3: Rate limiting
   const rateCheck = RateLimiter.canSubmit('contact', 30000);
   if (!rateCheck.allowed) {
-    showToast('يرجى الانتظار ' + rateCheck.remaining + ' ثانية قبل إرسال رسالة جديدة', 'error');
+    showToast('ÙŠØ±Ø¬Ù‰ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø± ' + rateCheck.remaining + ' Ø«Ø§Ù†ÙŠØ© Ù‚Ø¨Ù„ Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø©', 'error');
     return;
   }
 
@@ -907,7 +920,7 @@ async function handleContactSubmit() {
   const phoneRegex = /^07[0-9]{9}$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!phoneRegex.test(info.replace(/\s/g, '')) && !emailRegex.test(info)) {
-    showToast('يرجى إدخال رقم هاتف أو بريد إلكتروني صحيح', 'error');
+    showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ù‡Ø§ØªÙ Ø£Ùˆ Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØµØ­ÙŠØ­', 'error');
     infoInput.focus();
     return;
   }
@@ -917,15 +930,15 @@ async function handleContactSubmit() {
 
   if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.7'; }
 
-  let whatsappMessage = '\u{1F4EC} *رسالة جديدة من الموقع*\n\n';
-  whatsappMessage += '\u{1F464} *الاسم:* ' + name + '\n';
-  whatsappMessage += '\u{1F4F1} *التواصل:* ' + info + '\n';
-  whatsappMessage += '\u{1F4AC} *الرسالة:* ' + message;
+  let whatsappMessage = '\u{1F4EC} *Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø© Ù…Ù† Ø§Ù„Ù…ÙˆÙ‚Ø¹*\n\n';
+  whatsappMessage += '\u{1F464} *Ø§Ù„Ø§Ø³Ù…:* ' + name + '\n';
+  whatsappMessage += '\u{1F4F1} *Ø§Ù„ØªÙˆØ§ØµÙ„:* ' + info + '\n';
+  whatsappMessage += '\u{1F4AC} *Ø§Ù„Ø±Ø³Ø§Ù„Ø©:* ' + message;
 
   await saveContactMessageToSupabase(name, info, message);
   window.open('https://wa.me/9647870404967?text=' + encodeURIComponent(whatsappMessage), '_blank', 'noopener,noreferrer');
   document.getElementById('contactForm').reset();
-  showToast('تم إرسال رسالتك بنجاح!', 'success');
+  showToast('ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„ØªÙƒ Ø¨Ù†Ø¬Ø§Ø­!', 'success');
   if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
 }
 
