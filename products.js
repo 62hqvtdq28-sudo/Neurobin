@@ -138,11 +138,16 @@ async function handleImageUpload(input) {
   fr.readAsDataURL(file);
   // \u0631\u0641\u0639 \u0625\u0644\u0649 Supabase Storage
   try {
-    showToast('\u062C\u0627\u0631\u064A \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629...','info');
+    showToast('\u062c\u0627\u0631\u064a \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629...','info');
     var url = await SupaDB.ImageStorage.upload(file);
     document.getElementById('productImage').value = url;
-    showToast('\u062A\u0645 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629 \u0628\u0646\u062C\u0627\u062D \u2713','success');
-  } catch(e) { console.error('[Supabase Upload Error]', e); showToast('\u0641\u0634\u0644 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629: ' + (e.message || e), 'error'); }
+    showToast('\u062a\u0645 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629 \u0628\u0646\u062c\u0627\u062d \u2713','success');
+  } catch(e) {
+    var errMsg = (e && e.message) ? e.message : String(e);
+    console.error('[Upload Error]', errMsg, e);
+    showToast('\u062e\u0637\u0623 \u0627\u0644\u0631\u0641\u0639: ' + errMsg, 'error');
+    document.getElementById('productImageFile').value = '';
+  }
 }
 function removeImage() {
   document.getElementById('imagePreview').classList.remove('hidden');
