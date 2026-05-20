@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>لوحة التحكم - ph.neurobin</title>
+
+<!-- Security Headers -->
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<!-- Security: Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://hczsskviliuqyayylutv.supabase.co; connect-src 'self' https://hczsskviliuqyayylutv.supabase.co https://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
+<meta name="author" content="ph.neurobin">
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='18' fill='%232D5016'/><path d='M12 8L20 32M12 12C12 16 10 20 12C24 14 26 18 26 18M14 16C14 16 18 14 22 16' stroke='white' stroke-width='2.5' fill='none'/></svg>">
+<meta name="theme-color" content="#2D5016">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="admin-styles.css">
+<!-- Supabase JS SDK v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="tailwind.config.js"></script>
+<!-- [PATCHED CSP-01] Tailwind config moved to external file to remove unsafe-inline -->
+<!-- Additional Security Headers -->
+<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta name="color-scheme" content="light dark">
+</head>
+<body class="min-h-screen bg-cream">
+
+<a href="#main-content" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
+
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="فتح القائمة">
+  <i data-lucide="menu" class="w-6 h-6"></i>
+</button>
+
+<div id="menuOverlay" class="menu-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- Confetti Container -->
+<div id="confettiContainer" class="confetti-container"></div>
+
+<!-- Success Animation Overlay -->
+<div id="successOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center" style="display: none;">
+  <div class="bg-white rounded-2xl p-8 text-center animate-success">
+    <svg class="success-check mb-4" viewBox="0 0 60 60">
+      <circle cx="30" cy="30" r="28"/>
+      <path d="M18 30 L26 38 L42 22"/>
+    </svg>
+    <h3 id="successMessage" class="text-xl font-bold text-brand-900">تم الحفظ بنجاح!</h3>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="text-center">
+    <div class="spinner mx-auto mb-4"></div>
+    <p class="text-brand-700 font-semibold">جاري التحميل...</p>
+  </div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 sm:p-6">
+  <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-8 sm:p-10 w-full max-w-md animate-fade-in">
+    <div class="text-center mb-8 sm:mb-10">
+      <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-brand-600 to-brand-800 rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-lg animate-bounce-in">
+        <svg class="w-12 h-12 text-white" viewBox="0 0 40 40" fill="none">
+          <path d="M12 8L20 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M14 16C14 16 18 14 22 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1 class="font-bold text-3xl sm:text-4xl text-brand-900 mb-3">لوحة التحكم</h1>
+      <p class="text-brand-600 text-base sm:text-lg">أدخل كلمة المرور للمتابعة</p>
+    </div>
+    <form id="loginForm" autocomplete="on">
+      <div class="mb-4">
+        <label class="block text-base font-semibold text-brand-700 mb-2 sm:mb-3">كلمة المرور</label>
+        <div class="relative">
+          <input type="email" id="loginEmail" class="input-field" placeholder="البريد الإلكتروني" autocomplete="email" required dir="ltr" style="margin-bottom:12px">
+        <input type="password" id="loginPassword" class="input-field" autocomplete="off" autocapitalize="off" spellcheck="false" style="min-height: 56px; font-size: 18px; padding-left: 3rem;" placeholder="أدخل كلمة المرور" required>
+          <button type="button" onclick="togglePasswordVisibility('loginPassword')" class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 hover:text-brand-600 transition-colors">
+            <i data-lucide="eye" class="w-5 h-5" id="loginPasswordIcon"></i>
+          </button>
+        </div>
+      </div>
+      <div class="mb-6 sm:mb-8 flex items-center">
+        <input type="checkbox" id="rememberMe" class="w-6 h-6 sm:w-5 sm:h-5 text-brand-700 border-brand-300 rounded focus:ring-brand-500 cursor-pointer" checked>
+        <label for="rememberMe" class="mr-3 text-base sm:text-sm text-brand-600 cursor-pointer select-none">تذكرني لمدة 24 ساعة</label>
+      </div>
+      <button type="submit" class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-4 sm:py-4 rounded-xl font-semibold text-lg sm:text-xl transition-all flex items-center justify-center gap-3 shadow-lg" style="min-height: 56px;">
+        <i data-lucide="log-in" class="w-6 h-6 sm:w-5 sm:h-5"></i>
+        <span>دخول</span>
+      </button>
+      <p id="loginError" class="text-red-500 text-center mt-5 text-base hidden font-medium animate-fade-in">كلمة المرور غير صحيحة</p>
+    </form>
+    <div class="mt-6 text-center">
+      <p class="text-brand-400 text-sm">هل نسيت كلمة المرور؟ تواصل مع المسؤول</p>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Dashboard -->
+<div id="adminDashboard" class="hidden">
+  <aside id="sidebar" class="fixed right-0 top-0 h-full w-64 md:w-72 bg-gradient-to-b from-brand-900 to-brand-800 text-white z-40 flex flex-col">
+    <div class="p-4 sm:p-6 border-b border-brand-700/50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center shadow-lg">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 40 40" fill="none">
+              <path d="M12 8L20 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M14 16C14 16 18 14 22 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-base sm:text-lg md:text-xl">ph.neurobin</h2>
+            <p class="text-brand-400 text-xs sm:text-sm">لوحة التحكم</p>
+          </div>
+        </div>
+        <!-- Request Notification Permission -->
+        <button onclick="Notification.requestPermission().then(p=>showToast(p===\'granted\' ? \'✅ إشعارات المتصفح مفعّلة\' : \'تعذّر التفعيل\', p===\'granted\'?\'success\':\'error\'))" class="p-1.5 rounded-lg hover:bg-brand-700/50 transition-colors text-brand-300 hover:text-white" title="تفعيل إشعارات المتصفح" aria-label="تفعيل الإشعارات">
+          <i data-lucide="bell-ring" class="w-4 h-4"></i>
+        </button>
+        <!-- Notification Bell -->
+        <div class="flex items-center gap-2">
+          <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-brand-700/50 transition-colors relative" title="الإشعارات" aria-label="عرض الإشعارات">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span id="notificationBadge" class="hidden absolute -top-1 -left-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">0</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-3 sm:p-4 space-y-1 overflow-y-auto" id="main-content">
+      <button onclick="showSection('stats')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="stats">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">الإحصائيات</span>
+      </button>
+      <button onclick="showSection('orders')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right relative" data-section="orders">
+        <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">الطلبات</span>
+        <span id="ordersBadge" class="hidden absolute left-3 top-3 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
+      </button>
+      <button onclick="showSection('settings')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="settings">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">الإعدادات</span>
+      </button>
+      <button onclick="showSection('comments')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right relative" data-section="comments">
+        <i data-lucide="message-square" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">الشكاوى والاقتراحات</span>
+        <span id="commentsBadge" class="hidden absolute left-3 top-3 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
+      </button>
+      <button onclick="showSection('products')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="products">
+        <i data-lucide="package" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">المنتجات</span>
+      </button>
+      <button onclick="showSection('testimonials')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="testimonials">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">آراء العملاء</span>
+      </button>
+      <button onclick="showSection('discounts')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="discounts">
+        <i data-lucide="tag" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">كودات الخصم</span>
+      </button>
+    </nav>
+
+    <div class="p-3 sm:p-4 border-t border-brand-700/50">
+      <div class="flex items-center gap-3 mb-3 px-3 text-brand-400 text-sm">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span id="currentTime"></span>
+      </div>
+      <button onclick="logout(true)" class="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">تسجيل الخروج</span>
+      </button>
+    </div>
+  </aside>
+
+  <main id="mainContent" class="mr-0 md:mr-72 min-h-screen p-4 sm:p-6 md:p-8 w-full">
+
+    <!-- Statistics Section -->
+    <section id="section-stats" class="section-content">
+      <div class="mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">الإحصائيات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">تتبع أداء الموقع والطلبات</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Range Selector -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="calendar-range" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          اختيار الفترة الزمنية
+        </h2>
+        <div class="date-range-buttons flex flex-wrap gap-2 sm:gap-3">
+          <button onclick="setDateRange('today')" class="date-btn active bg-brand-700 text-white" data-range="today">
+            <span class="flex items-center gap-2"><i data-lucide="sun" class="w-4 h-4"></i><span>اليوم</span></span>
+          </button>
+          <button onclick="setDateRange('yesterday')" class="date-btn bg-brand-100 text-brand-700" data-range="yesterday">
+            <span class="flex items-center gap-2"><i data-lucide="moon" class="w-4 h-4"></i><span>الأمس</span></span>
+          </button>
+          <button onclick="setDateRange('week')" class="date-btn bg-brand-100 text-brand-700" data-range="week">
+            <span class="flex items-center gap-2"><i data-lucide="calendar-week" class="w-4 h-4"></i><span>7 أيام</span></span>
+          </button>
+          <button onclick="setDateRange('month')" class="date-btn bg-brand-100 text-brand-700" data-range="month">
+            <span class="flex items-center gap-2"><i data-lucide="calendar-month" class="w-4 h-4"></i><span>الشهر</span></span>
+          </button>
+          <button onclick="setDateRange('year')" class="date-btn bg-brand-100 text-brand-700" data-range="year">
+            <span class="flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i><span>السنة</span></span>
+          </button>
+        </div>
+        <div id="dateRangeInfo" class="mt-4 sm:mt-4 text-brand-600 text-sm sm:text-sm">
+          <i data-lucide="info" class="w-4 h-4 inline-block ml-1"></i>
+          <span id="dateRangeText">عرض إحصائيات اليوم</span>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div id="statsCardsContainer" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6"></div>
+
+      <!-- Comparison Section -->
+      <div id="comparisonSection" class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6 animate-fade-in">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="git-compare" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          مقارنة مع الفترة السابقة
+        </h2>
+        <div id="comparisonContent" class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"></div>
+      </div>
+
+      <!-- Main Chart -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+          <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 flex items-center gap-2 sm:gap-3">
+            <i data-lucide="trending-up" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+            <span id="chartTitle">الزيارات خلال الفترة المحددة</span>
+          </h2>
+          <div id="chartTotalChange" class="flex items-center gap-2 text-xs sm:text-sm">
+            <span class="flex items-center gap-1 font-semibold">
+              <i data-lucide="minus" class="w-3 h-3 sm:w-4 sm:h-4 text-brand-400"></i>
+              <span id="chartChangeValue">0%</span>
+            </span>
+          </div>
+        </div>
+        <div class="chart-container" style="height: 280px;">
+          <canvas id="visitorsChart"></canvas>
+        </div>
+        <div id="chartLegend" class="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-3 sm:mt-4 flex-wrap">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-brand-500"></div>
+            <span class="text-xs sm:text-sm text-brand-600">الفترة المحددة</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-brand-200"></div>
+            <span class="text-xs sm:text-sm text-brand-600">الفترة السابقة</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doughnut Chart for Category Distribution -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+          <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+            توزيع المنتجات
+          </h2>
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+          <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+            حالة الطلبات
+          </h2>
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="ordersChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Stats Table -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="table" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          تفاصيل الإحصائيات اليومية
+        </h2>
+        <div id="detailedStatsTable" class="overflow-x-auto"></div>
+      </div>
+
+      <!-- Stats Management -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="settings" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          إدارة الإحصائيات
+        </h2>
+        <div class="flex flex-wrap gap-2 sm:gap-3 md:gap-4">
+          <button onclick="resetTodayStats()" class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+            <i data-lucide="refresh-cw" class="w-3 h-3 sm:w-4 sm:h-5"></i>
+            <span>إعادة تعيين اليوم</span>
+          </button>
+          <button onclick="resetAllStats()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+            <i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-5"></i>
+            <span>إعادة تعيين الكل</span>
+          </button>
+          <button onclick="exportStats()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+            <i data-lucide="download" class="w-3 h-3 sm:w-4 sm:h-5"></i>
+            <span>تصدير Excel</span>
+          </button>
+        </div>
+        <p class="text-brand-500 text-xs sm:text-sm mt-3 sm:mt-4">ملاحظة: إعادة تعيين اليوم يوقف العداد لهذا اليوم فقط</p>
+      </div>
+    </section>
+
+    <!-- Orders Section -->
+    <section id="section-orders" class="section-content hidden">
+      <div class="mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-gold to-yellow-500 rounded-xl flex items-center justify-center">
+            <i data-lucide="clipboard-list" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">الطلبات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">إدارة وتتبع طلبات العملاء</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <button onclick="filterOrders('all')" class="tab-btn active px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-700 text-white font-medium text-xs sm:text-sm" data-filter="all">الكل</button>
+        <button onclick="filterOrders('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">جديدة</button>
+        <button onclick="filterOrders('progress')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="progress">قيد التوصيل</button>
+        <button onclick="filterOrders('delivered')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="delivered">تم التوصيل</button>
+        <button onclick="filterOrders('cancelled')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="cancelled">ملغاة</button>
+      </div>
+
+      <div class="mb-4">
+        <div class="search-box">
+          <i data-lucide="search" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-400"></i>
+          <input type="text" id="orderSearch" class="input-field" placeholder="ابحث في الطلبات..." oninput="searchOrders()">
+        </div>
+      </div>
+
+      <div id="ordersList" class="space-y-3 sm:space-y-4"></div>
+      <div id="noOrders" class="hidden text-center py-10 sm:py-12 md:py-16 bg-white rounded-xl sm:rounded-2xl shadow-sm">
+        <i data-lucide="inbox" class="w-16 h-16 text-brand-200 mx-auto mb-4"></i>
+        <p class="text-brand-400 text-lg md:text-xl">لا توجد طلبات</p>
+      </div>
+    </section>
+
+    <!-- Comments Section -->
+    <section id="section-comments" class="section-content hidden">
+      <div class="mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <i data-lucide="message-square" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">الشكاوى والاقتراحات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">عرض وإدارة رسائل العملاء</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <button onclick="filterComments('all')" class="tab-btn active px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-700 text-white font-medium text-xs sm:text-sm" data-filter="all">الكل</button>
+        <button onclick="filterComments('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">جديدة</button>
+        <button onclick="filterComments('read')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="read">تم القراءة</button>
+        <button onclick="filterComments('replied')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="replied">تم الرد</button>
+      </div>
+
+      <div id="commentsList" class="space-y-3 sm:space-y-4"></div>
+      <div id="noComments" class="hidden text-center py-10 sm:py-12 md:py-16 bg-white rounded-xl sm:rounded-2xl shadow-sm">
+        <i data-lucide="inbox" class="w-16 h-16 text-brand-200 mx-auto mb-4"></i>
+        <p class="text-brand-400 text-lg md:text-xl">لا توجد شكاوى أو اقتراحات</p>
+      </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="section-settings" class="section-content hidden">
+      <div class="mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center">
+            <i data-lucide="settings" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">الإعدادات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">إعدادات الموقع الأساسية</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="globe" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          إعدادات الموقع
+        </h2>
+        <div class="space-y-4 sm:space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">اسم الموقع</label>
+            <input type="text" id="siteName" class="input-field" placeholder="ph.neurobin">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">رابط إنستغرام</label>
+            <input type="url" id="instagramUrl" class="input-field" placeholder="https://instagram.com/ph.neurobin">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">رقم واتساب</label>
+            <input type="text" id="whatsappNumber" class="input-field" placeholder="9647870404967">
+          </div>
+          <button onclick="saveSettings()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm md:text-base shadow-lg">
+            <i data-lucide="save" class="w-4 h-4 sm:w-5"></i>
+            <span>حفظ الإعدادات</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="lock" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          تغيير كلمة المرور
+        </h2>
+        <div class="space-y-4 sm:space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">كلمة المرور الحالية</label>
+            <div class="relative">
+              <input type="password" id="currentPassword" class="input-field" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="أدخل كلمة المرور الحالية">
+              <button type="button" onclick="togglePasswordVisibility('currentPassword')" class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 hover:text-brand-600 transition-colors">
+                <i data-lucide="eye" class="w-5 h-5" id="currentPasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">كلمة المرور الجديدة</label>
+            <div class="relative">
+              <input type="password" id="newPassword" class="input-field" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="أدخل كلمة المرور الجديدة" oninput="updatePasswordStrength(this.value)">
+              <button type="button" onclick="togglePasswordVisibility('newPassword')" class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 hover:text-brand-600 transition-colors">
+                <i data-lucide="eye" class="w-5 h-5" id="newPasswordIcon"></i>
+              </button>
+            </div>
+            <div class="mt-2">
+              <div id="passwordStrengthBar" class="password-strength weak"></div>
+              <p id="passwordStrengthText" class="text-xs text-brand-400 mt-1">قوة كلمة المرور: ضعيفة</p>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">تأكيد كلمة المرور</label>
+            <div class="relative">
+              <input type="password" id="confirmPassword" class="input-field" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="أعد إدخال كلمة المرور الجديدة">
+              <button type="button" onclick="togglePasswordVisibility('confirmPassword')" class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 hover:text-brand-600 transition-colors">
+                <i data-lucide="eye" class="w-5 h-5" id="confirmPasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+          <button onclick="changePassword()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm md:text-base shadow-lg">
+            <i data-lucide="key" class="w-4 h-4 sm:w-5"></i>
+            <span>تغيير كلمة المرور</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          إدارة البيانات
+        </h2>
+        <div class="flex flex-wrap gap-2 sm:gap-3">
+          <button onclick="exportAllData()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm shadow-lg">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>تصدير كل البيانات</span>
+          </button>
+          <button onclick="if(confirm('هل أنت متأكد؟ سيتم حذف جميع المنتجات!')) clearAllProducts()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm shadow-lg">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>حذف المنتجات</span>
+          </button>
+          <button onclick="if(confirm('هل أنت متأكد؟ سيتم حذف جميع الطلبات!')) clearAllOrders()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm shadow-lg">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>حذف الطلبات</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    
+    
+    <!-- Products Section -->
+    <section id="section-products" class="section-content hidden">
+      <div class="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
+            <i data-lucide="package" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">المنتجات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">إدارة منتجات الصيدلية</p>
+          </div>
+        </div>
+        <button onclick="openProductModal()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+          <i data-lucide="plus" class="w-4 h-4 sm:w-5"></i>
+          <span>إضافة منتج</span>
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <button onclick="filterProductsAdmin('all')" class="tab-btn active px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="all">الكل</button>
+        <button onclick="filterProductsAdmin('medicines')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="medicines">الأدوية</button>
+        <button onclick="filterProductsAdmin('skincare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="skincare">العناية</button>
+        <button onclick="filterProductsAdmin('makeup')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="makeup">المكياج</button>
+        <button onclick="filterProductsAdmin('devices')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="devices">أجهزة</button>
+      </div>
+
+      <div class="mb-4">
+        <div class="search-box">
+          <i data-lucide="search" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-400"></i>
+          <input type="text" id="productSearch" class="input-field" placeholder="ابحث عن منتج..." oninput="searchProducts()">
+        </div>
+      </div>
+
+      <div id="productsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"></div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="section-testimonials" class="section-content hidden">
+      <div class="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+            <i data-lucide="message-circle" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">آراء العملاء</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">إدارة آراء العملاء</p>
+          </div>
+        </div>
+        <button onclick="openTestimonialModal()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+          <i data-lucide="plus" class="w-4 h-4 sm:w-5"></i>
+          <span>إضافة رأي</span>
+        </button>
+      </div>
+      <div id="testimonialsList" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6"></div>
+    </section>
+  
+<section id="section-discounts" class="section-content hidden">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+        <i data-lucide="tag" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-xl sm:text-2xl text-brand-900">كودات الخصم</h1>
+        <p class="text-brand-500 text-sm">أنشئ وأدر كودات الخصم بمدة محددة</p>
+      </div>
+    </div>
+    <button onclick="openCreateDiscountModal()" class="flex items-center gap-2 bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>كود جديد</span>
+    </button>
+  </div>
+  <div id="discountCodesList" class="min-h-48">
+    <div class="text-center py-8 text-brand-400">جاري التحميل...</div>
+  </div>
+</section>
+</main>
+</div>
+
+<!-- Feature Modal -->
+<div id="featureModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl p-5 max-h-[95vh] overflow-y-auto animate-fade-in" style="margin: auto; width: calc(100% - 1.5rem); max-width: 480px;">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900" id="featureModalTitle">إضافة ميزة جديدة</h2>
+      <button onclick="closeFeatureModal()" class="p-2 hover:bg-brand-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-600"></i>
+      </button>
+    </div>
+    <input type="hidden" id="featureId">
+    <div class="space-y-4 sm:space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الأيقونة</label>
+        <select id="featureIcon" class="input-field">
+          <option value="shield-check">درع وفحص (موثوقية)</option>
+          <option value="truck">شاحنة (توصيل)</option>
+          <option value="heart-handshake">قلب ومصافحة (خدمة)</option>
+          <option value="award">الجائزة (جودة)</option>
+          <option value="package">صندوق (منتجات)</option>
+          <option value="star">نجمة (تميز)</option>
+          <option value="shield">درع (أمان)</option>
+          <option value="clock">ساعة (التزام)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">العنوان</label>
+        <input type="text" id="featureTitle" class="input-field" placeholder="منتجات أصلية">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الوصف</label>
+        <textarea id="featureDesc" rows="3" class="input-field" placeholder="جميع منتجاتنا أصلية ومستوردة..."></textarea>
+      </div>
+      <button onclick="saveFeature()" class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-3 sm:py-4 rounded-xl font-semibold transition-all text-sm sm:text-base md:text-lg shadow-lg">
+        <span>حفظ</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div id="productModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl w-full max-w-lg p-5 max-h-[95vh] overflow-y-auto animate-fade-in" style="margin: auto; width: calc(100% - 1.5rem);">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900" id="productModalTitle">إضافة منتج جديد</h2>
+      <button onclick="closeProductModal()" class="p-2 hover:bg-brand-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-600"></i>
+      </button>
+    </div>
+    <input type="hidden" id="productId">
+    <div class="space-y-4 sm:space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">اسم المنتج *</label>
+        <input type="text" id="productName" class="input-field" placeholder="اسم المنتج" required>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">التصنيف *</label>
+        <select id="productCategory" class="input-field">
+          <option value="medicines">أدوية</option>
+          <option value="skincare">عناية بالبشرة</option>
+          <option value="makeup">مكياج</option>
+          <option value="devices">أجهزة</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">السعر (د.ع) *</label>
+        <input type="number" id="productPrice" class="input-field" placeholder="25,000" inputmode="numeric" oninput="formatPriceInput(this)" onblur="formatPriceInput(this)">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الكمية</label>
+        <input type="number" id="productStock" class="input-field" placeholder="100" min="0" max="999999" step="1">
+        <p class="text-xs text-brand-400 mt-1">اتركها فارغة أو اكتب 0 للمنتجات غير محدودة</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">صورة المنتج</label>
+        <div class="relative">
+          
+          
+          <!-- Upload area: file input directly visible (opacity:0.01) — most reliable iOS approach -->
+          <div id="imagePreview"
+            class="border-2 border-dashed border-brand-200 rounded-xl text-center hover:border-brand-400 hover:bg-brand-50 transition-colors"
+            style="position:relative;min-height:120px;cursor:pointer;overflow:visible">
+            <!-- The ACTUAL file input covering 100% — user taps it directly -->
+            <input type="file"
+              id="productImageFile"
+              accept="image/*,image/heic,image/heif"
+              onchange="handleImageUpload(this)"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;cursor:pointer;z-index:10;font-size:16px;margin:0;padding:0">
+            <!-- Visual content (non-interactive) -->
+            <div style="pointer-events:none;padding:1.5rem">
+              <i data-lucide="image-plus" class="w-12 h-12 text-brand-300 mx-auto mb-3"></i>
+              <p class="text-brand-600 font-medium mb-1 text-sm">اضغط هنا لاختيار صورة</p>
+              <p class="text-brand-400 text-xs">PNG, JPG, HEIC — حتى 10MB</p>
+            </div>
+          </div>
+          <div id="imagePreviewContainer" class="hidden relative">
+            <img id="imagePreviewImg" src="" class="w-full h-32 sm:h-40 md:h-48 object-cover rounded-xl">
+            <button type="button" onclick="removeImage()" class="absolute top-2 left-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <input type="hidden" id="productImage">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الوصف (اختياري)</label>
+        <textarea id="productDesc" rows="3" class="input-field" placeholder="وصف المنتج..."></textarea>
+      </div>
+      <button onclick="saveProduct()" class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-3 sm:py-4 rounded-xl font-semibold transition-all text-sm sm:text-base md:text-lg shadow-lg">
+        <span>حفظ</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Testimonial Modal -->
+<div id="testimonialModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl p-5 max-h-[95vh] overflow-y-auto animate-fade-in" style="margin: auto; width: calc(100% - 1.5rem); max-width: 480px;">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900" id="testimonialModalTitle">إضافة رأي جديد</h2>
+      <button onclick="closeTestimonialModal()" class="p-2 hover:bg-brand-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-600"></i>
+      </button>
+    </div>
+    <input type="hidden" id="testimonialId">
+    <div class="space-y-4 sm:space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">اسم العميل</label>
+        <input type="text" id="testimonialName" class="input-field" placeholder="اسم العميل">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">التعليق</label>
+        <textarea id="testimonialText" rows="4" class="input-field" placeholder="تعليق العميل..."></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">التقييم (1-5)</label>
+        <select id="testimonialRating" class="input-field">
+          <option value="5">5 نجوم</option>
+          <option value="4">4 نجوم</option>
+          <option value="3">3 نجوم</option>
+          <option value="2">نجمتان</option>
+          <option value="1">نجمة</option>
+        </select>
+      </div>
+      <button onclick="saveTestimonial()" class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-3 sm:py-4 rounded-xl font-semibold transition-all text-sm sm:text-base md:text-lg shadow-lg">
+        <span>حفظ</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Comment Modal -->
+<div id="viewCommentModal" class="modal fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl p-5 max-h-[95vh] overflow-y-auto animate-fade-in" style="margin: auto; width: calc(100% - 1.5rem); max-width: 480px;">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <h2 class="font-lg sm:text-xl md:text-2xl text-brand-900">تفاصيل الرسالة</h2>
+      <button onclick="closeViewCommentModal()" class="p-3 sm:p-2 hover:bg-brand-100 rounded-full transition-colors" style="min-width: 48px; min-height: 48px;">
+        <i data-lucide="x" class="w-6 h-6 sm:w-5 sm:h-5 text-brand-600"></i>
+      </button>
+    </div>
+    <div id="commentDetails" class="space-y-3 sm:space-y-4"></div>
+    <div class="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
+      <div>
+        <label class="block text-base sm:text-sm font-semibold text-brand-700 mb-3 sm:mb-2">الرد على الرسالة</label>
+        <textarea id="replyMessage" rows="4" class="input-field" style="min-height: 120px; font-size: 16px;" placeholder="اكتب ردك هنا..."></textarea>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <button onclick="markAsRead()" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 sm:py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-base sm:text-sm shadow-lg" style="min-height: 52px;">
+          <i data-lucide="check" class="w-5 h-5 sm:w-4 sm:h-4"></i>
+          <span>تم القراءة</span>
+        </button>
+        <button onclick="markAsReplied()" class="flex-1 bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-4 sm:py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-base sm:text-sm shadow-lg" style="min-height: 52px;">
+          <i data-lucide="send" class="w-5 h-5 sm:w-4 sm:h-4"></i>
+          <span>تم الرد</span>
+        </button>
+      </div>
+      <button onclick="deleteComment()" class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 sm:py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-base sm:text-sm shadow-lg" style="min-height: 52px;">
+        <i data-lucide="trash-2" class="w-5 h-5 sm:w-4 sm:h-4"></i>
+        <span>حذف الرسالة</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast">
+  <div class="flex items-center gap-3">
+    <i data-lucide="check-circle" class="w-5 h-5"></i>
+    <span id="toastMessage">تم الحفظ بنجاح</span>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div id="notificationPanel" class="notification-panel glass-effect">
+  <div class="p-4 border-b border-brand-100 flex items-center justify-between">
+    <h3 class="font-bold text-brand-900">الإشعارات</h3>
+    <button onclick="toggleNotifications()" class="p-1 hover:bg-brand-100 rounded-full">
+      <i data-lucide="x" class="w-4 h-4 text-brand-600"></i>
+    </button>
+  </div>
+  <div id="notificationList" class="max-h-80 overflow-y-auto"></div>
+  <div id="noNotifications" class="p-6 text-center text-brand-400 hidden">
+    <i data-lucide="bell-off" class="w-12 h-12 mx-auto mb-2 text-brand-200"></i>
+    <p>لا توجد إشعارات جديدة</p>
+  </div>
+</div>
+
+
+<!-- [SUPABASE] DB adapter + patched JS -->
+<script src="supabase-db.js"></script>
+<script src="admin.js"></script>
+<script src="products.js"></script>
+<script src="orders.js"></script>
+
+<div id="createDiscountModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl w-full max-w-md p-4 sm:p-5 animate-fade-in overflow-y-auto max-h-screen" style="margin:auto;width:calc(100% - 1.5rem)">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-bold text-lg text-brand-900 flex items-center gap-2">
+        <i data-lucide="tag" class="w-5 h-5 text-brand-600"></i>
+        إنشاء كود خصم جديد
+      </h2>
+      <button onclick="closeCreateDiscountModal()" class="p-2 hover:bg-brand-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 text-brand-600"></i>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">كود الخصم *</label>
+        <div class="flex gap-2">
+          <input type="text" id="discountCode" class="input-field flex-1 font-mono uppercase text-base tracking-widest" placeholder="SAVE10" maxlength="20" dir="ltr" style="letter-spacing:0.15em;text-align:left">
+          <button type="button" onclick="regenerateCode()" class="px-3 bg-brand-100 text-brand-700 rounded-xl hover:bg-brand-200 transition-colors" title="توليد كود عشوائي">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <p class="text-xs text-brand-400 mt-1">يُولَّد تلقائياً بشكل آمن — يمكنك تعديله</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-semibold text-brand-700 mb-2">نوع الخصم *</label>
+          <select id="discountType" class="input-field">
+            <option value="percent">نسبة مئوية (%)</option>
+            <option value="fixed">مبلغ ثابت (د.ع)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-brand-700 mb-2">القيمة *</label>
+          <input type="number" id="discountValue" class="input-field" placeholder="10" min="1" max="999999" step="1" oninput="updateDiscountStep()">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">
+          ⏱️ مدة الصلاحية *
+        </label>
+        <div class="grid grid-cols-2 gap-2 sm:gap-3">
+          <div>
+            <label class="text-xs text-brand-500 mb-1 block">الأيام</label>
+            <div class="relative">
+              <input type="number" id="discountDays"
+                class="input-field pl-10 sm:pl-12 text-center" placeholder="0" min="0" max="365" value="1"
+                oninput="updateExpiryPreview()">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 text-sm font-medium pointer-events-none">يوم</span>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-brand-500 mb-1 block">الساعات</label>
+            <div class="relative">
+              <input type="number" id="discountHours"
+                class="input-field pl-12 sm:pl-14 text-center" placeholder="0" min="0" max="23" value="0"
+                oninput="updateExpiryPreview()">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-400 text-sm font-medium pointer-events-none">ساعة</span>
+            </div>
+          </div>
+        </div>
+        <!-- معاينة فورية لوقت الانتهاء -->
+        <p id="expiryPreview" class="text-xs text-green-700 mt-2">⏱️ ينتهي بعد <b>1 يوم</b></p>
+        <p class="text-xs text-brand-400 mt-1">يمكن الجمع بين الأيام والساعات معاً</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الحد الأقصى للاستخدام</label>
+        <input type="number" id="discountMaxUses" class="input-field" placeholder="اتركه فارغاً = بلا حد" min="1">
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveDiscountCode()" class="save-btn flex-1 bg-brand-700 text-white py-3 rounded-xl font-semibold hover:bg-brand-600 transition-colors">إنشاء الكود</button>
+      <button onclick="closeCreateDiscountModal()" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">إلغاء</button>
+    </div>
+  </div>
+</div>
+<script src="discounts.js"></script>
+<script>
+function updateDiscountStep() {
+  var type = document.getElementById('discountType');
+  var val  = document.getElementById('discountValue');
+  if (!type || !val) return;
+  if (type.value === 'fixed') {
+    val.step = '250'; val.min = '250'; val.placeholder = '1000 (مضاعف 250)';
+  } else {
+    val.step = '1'; val.min = '1'; val.placeholder = '10';
+  }
+}
+
+// ── Init on DOM ready ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Attach login form handler reliably (works on Safari/iPad)
+  var loginForm = document.getElementById('loginForm');
+  if (loginForm && typeof handleLogin === 'function') {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+
+  // Attach discount type change handler
+  var discountType = document.getElementById('discountType');
+  if (discountType) discountType.addEventListener('change', updateDiscountStep);
+
+  // Check existing Supabase session
+  if (typeof checkAuth === 'function') checkAuth();
+});
+
+// Real-time order refresh — poll every 30s
+setInterval(function() {
+  if (document.getElementById('section-orders') && !document.getElementById('section-orders').classList.contains('hidden')) {
+    if (typeof loadOrders === 'function') loadOrders();
+  }
+}, 30000);
+</script>
+<script>
+function switchImageTab(tab) {
+  var uploadBtn = document.getElementById('tabUpload');
+  var urlBtn = document.getElementById('tabUrl');
+  var uploadDiv = document.getElementById('imgTabUpload');
+  var urlDiv = document.getElementById('imgTabUrl');
+  if (!uploadBtn || !urlBtn) return; // لا يوجد tab UI في الصفحة الحالية
+  if (tab === 'upload') {
+    uploadBtn.className = 'flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-brand-700 text-white transition-colors';
+    urlBtn.className = 'flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-brand-100 text-brand-700 transition-colors';
+    uploadDiv.classList.remove('hidden');
+    urlDiv.classList.add('hidden');
+  } else {
+    urlBtn.className = 'flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-brand-700 text-white transition-colors';
+    uploadBtn.className = 'flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-brand-100 text-brand-700 transition-colors';
+    urlDiv.classList.remove('hidden');
+    uploadDiv.classList.add('hidden');
+  }
+}
+
+// previewUrlImage: النسخة المُحسَّنة مُعرَّفة في القسم التالي
+</script>
+
+<script>
+// ── Price Formatting ─────────────────────────────────────
+function formatPriceInput(input) {
+  // Remove all non-numeric chars
+  var raw = input.value.replace(/[^0-9]/g, '');
+  if (!raw) { input.value = ''; input.dataset.rawValue = '0'; return; }
+  var num = parseInt(raw, 10);
+  // Format with commas
+  input.value = num.toLocaleString('en-US');
+  input.dataset.rawValue = raw;
+}
+
+function getRawPrice() {
+  var el = document.getElementById('productPrice');
+  if (!el) return 0;
+  var raw = el.dataset.rawValue || el.value.replace(/[^0-9]/g, '');
+  return parseInt(raw, 10) || 0;
+}
+
+// ── Image URL Tab - Fix hidden input ─────────────────────
+function previewUrlImage(url) {
+  var box = document.getElementById('urlPreviewBox');
+  var img = document.getElementById('urlPreviewImg');
+  var hiddenInput = document.getElementById('productImage');
+  if (url && (url.startsWith('http') || url.startsWith('//'))) {
+    if (img) { img.src = url; }
+    if (box) {
+      box.classList.remove('hidden');
+      if (img) {
+        img.onerror = function() { box.classList.add('hidden'); hiddenInput.value = ''; };
+        img.onload = function() { box.classList.remove('hidden'); };
+      }
+    }
+    if (hiddenInput) hiddenInput.value = url;
+  } else {
+    if (box) box.classList.add('hidden');
+    if (hiddenInput) hiddenInput.value = '';
+  }
+}
+
+// ── Image Upload - iOS Compatible + Canvas Compression + Supabase ────
+window.handleImageUpload = async function(input) {
+  // iOS delivers files asynchronously — wait if files[0] not yet available
+  var file = input && input.files && input.files[0];
+  if (!file) {
+    await new Promise(function(r) { setTimeout(r, 350); });
+    file = input && input.files && input.files[0];
+  }
+  if (!file) {
+    if (typeof showToast === 'function') showToast('⚠️ لم يتم اختيار صورة، حاول مرة أخرى', 'error');
+    return;
+  }
+  if (!file.type.startsWith('image/') && file.type !== '') {
+    if (typeof showToast === 'function') showToast('❌ الملف المختار ليس صورة — يرجى اختيار JPG أو PNG أو HEIC', 'error');
+    input.value = ''; return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    if (typeof showToast === 'function') showToast('❌ حجم الصورة ' + (file.size / 1024 / 1024).toFixed(1) + 'MB — الحد الأقصى 10MB', 'error');
+    input.value = ''; return;
+  }
+
+  // Show preview immediately via FileReader
+  var fr = new FileReader();
+  fr.onload = function(e) {
+    var container = document.getElementById('imagePreviewContainer');
+    var previewArea = document.getElementById('imagePreview');
+    var previewImg = document.getElementById('imagePreviewImg');
+    if (previewImg) previewImg.src = e.target.result;
+    if (container) container.classList.remove('hidden');
+    if (previewArea) previewArea.classList.add('hidden');
+    document.getElementById('productImage').value = e.target.result;
+  };
+  fr.readAsDataURL(file);
+
+  // Upload to Supabase Storage
+  // 1) التحقق من وجود SupaDB
+  if (typeof SupaDB === 'undefined') {
+    if (typeof showToast === 'function') showToast('❌ خطأ: ملف supabase-db.js لم يُحمَّل — تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة', 'error');
+    console.error('[Upload Error] SupaDB is not defined — supabase-db.js may not be loaded');
+    return;
+  }
+
+  // 2) التحقق من وجود ImageStorage
+  if (!SupaDB.ImageStorage || typeof SupaDB.ImageStorage.upload !== 'function') {
+    if (typeof showToast === 'function') showToast('❌ خطأ في الإعداد: دالة رفع الصور غير موجودة في supabase-db.js — تواصل مع المطور', 'error');
+    console.error('[Upload Error] SupaDB.ImageStorage.upload is not a function', SupaDB);
+    return;
+  }
+
+  // 3) محاولة الرفع
+  try {
+    if (typeof showToast === 'function') showToast('⏳ جاري رفع الصورة إلى Supabase...', 'info');
+    var url = await SupaDB.ImageStorage.upload(file);
+
+    // 4) التحقق من أن الـ URL صحيح
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+      throw new Error('الرابط المُرجَع من Supabase غير صالح: ' + JSON.stringify(url));
+    }
+
+    document.getElementById('productImage').value = url;
+    if (typeof showToast === 'function') showToast('✅ تم رفع الصورة بنجاح!', 'success');
+    console.log('[Upload OK] Image URL:', url);
+
+  } catch(e) {
+    var errMsg = (e && e.message) ? e.message : String(e);
+    console.error('[Upload Error]', errMsg, e);
+
+    // رسائل خطأ مفصّلة حسب نوع المشكلة
+    var userMsg = '❌ فشل رفع الصورة: ';
+    if (errMsg.includes('row-level security') || errMsg.includes('RLS') || errMsg.includes('policy')) {
+      userMsg += 'مشكلة في صلاحيات Supabase — تحقق من الـ Policies في Storage';
+    } else if (errMsg.includes('bucket') && errMsg.includes('not found')) {
+      userMsg += 'الـ Bucket "product-images" غير موجود في Supabase Storage';
+    } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('Failed to fetch')) {
+      userMsg += 'مشكلة في الاتصال بالإنترنت — تحقق من الشبكة وأعد المحاولة';
+    } else if (errMsg.includes('401') || errMsg.includes('403') || errMsg.includes('unauthorized')) {
+      userMsg += 'غير مصرّح — مفتاح Supabase منتهي أو غير صحيح';
+    } else if (errMsg.includes('413') || errMsg.includes('too large')) {
+      userMsg += 'الصورة كبيرة جداً — جرّب صورة أصغر';
+    } else {
+      userMsg += errMsg;
+    }
+
+    if (typeof showToast === 'function') showToast(userMsg, 'error');
+
+    // إبقاء المعاينة المحلية مع تحذير
+    var previewImg = document.getElementById('imagePreviewImg');
+    if (previewImg && previewImg.src && previewImg.src.startsWith('data:')) {
+      if (typeof showToast === 'function') {
+        setTimeout(function() {
+          showToast('⚠️ المعاينة تعمل محلياً فقط — الصورة لن تُحفظ في قاعدة البيانات', 'error');
+        }, 3500);
+      }
+    }
+  }
+};
+
+// ── Override saveProduct price reading ────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Format price on load
+  var priceEl = document.getElementById('productPrice');
+  if (priceEl) {
+    priceEl.setAttribute('type', 'text');
+  }
+  
+  // URL input listener
+  var urlInput = document.getElementById('productImageUrl');
+  if (urlInput) {
+    urlInput.addEventListener('input', function() {
+      previewUrlImage(this.value.trim());
+    });
+    urlInput.addEventListener('paste', function() {
+      setTimeout(function() { previewUrlImage(urlInput.value.trim()); }, 100);
+    });
+  }
+});
+</script>
+
+<script>
+// Patch saveProduct to handle formatted price
+var _origSaveProduct2 = window.saveProduct;
+window.saveProduct = async function() {
+  var priceEl = document.getElementById('productPrice');
+  if (priceEl) {
+    var rawVal = priceEl.value.replace(/[,\.\s]/g, '');
+    priceEl.dataset._formatted = priceEl.value;
+    priceEl.value = rawVal;
+  }
+  var result = _origSaveProduct2 ? await _origSaveProduct2() : undefined;
+  if (priceEl && priceEl.dataset._formatted) {
+    priceEl.value = priceEl.dataset._formatted;
+  }
+  return result;
+};
+</script>
+
+<script>
+// ── Device Image Upload with Canvas Compression ──────────
+function compressAndStoreImage(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      // Compress using Canvas
+      var canvas = document.createElement('canvas');
+      var MAX_W = 800, MAX_H = 800;
+      var w = img.width, h = img.height;
+      if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+      if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H; }
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+      callback(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// handleImageUpload مُعرَّف أعلاه — لا حاجة لإعادة تعريفه هنا
+
+function clearProductImage() {
+  // إعادة ضبط منطقة الصورة إلى حالتها الأولى
+  var container = document.getElementById('imagePreviewContainer');
+  var previewArea = document.getElementById('imagePreview');
+  var previewImg = document.getElementById('imagePreviewImg');
+  var hidden = document.getElementById('productImage');
+  var fileInput = document.getElementById('productImageFile');
+
+  if (container) container.classList.add('hidden');
+  if (previewArea) previewArea.classList.remove('hidden');
+  if (previewImg) previewImg.src = '';
+  if (hidden) hidden.value = '';
+  if (fileInput) fileInput.value = '';
+}
+
+// URL input handler
+document.addEventListener('DOMContentLoaded', function() {
+  var urlInput = document.getElementById('productImageUrl');
+  if (urlInput) {
+    var applyUrl = function(url) {
+      url = (url || '').trim();
+      var preview = document.getElementById('urlImagePreview');
+      var previewImg = document.getElementById('urlPreviewImg');
+      var hidden = document.getElementById('productImage');
+      if (url && url.startsWith('http')) {
+        if (previewImg) {
+          previewImg.src = url;
+          previewImg.onload = function() { if (preview) preview.classList.remove('hidden'); };
+          previewImg.onerror = function() { if (preview) preview.classList.add('hidden'); };
+        }
+        if (hidden) hidden.value = url;
+      } else {
+        if (preview) preview.classList.add('hidden');
+        if (hidden && !hidden.value.startsWith('data:')) hidden.value = '';
+      }
+    };
+    urlInput.addEventListener('input', function() { applyUrl(this.value); });
+    urlInput.addEventListener('paste', function() { setTimeout(function(){ applyUrl(urlInput.value); }, 100); });
+  }
+});
+
+// formatPriceInput مُعرَّفة أعلاه
+</script>
+
+<!-- Global file input for iOS compatibility — outside all modals -->
+
+
+<!-- iOS-compatible file input: opacity:0, within viewport -->
+
+</body>
+</html>
