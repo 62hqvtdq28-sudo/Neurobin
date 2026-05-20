@@ -122,30 +122,27 @@ async function openProductModal(id) {
 function closeProductModal() { document.getElementById('productModal').classList.remove('active'); }
 function editProduct(id) { openProductModal(id); }
 
-// رفع الصور — Supabase Storage (يُعاد تعريفها في admin.html كدالة موحدة)
+// \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631 \u2014 Supabase Storage
 async function handleImageUpload(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
-  if (file.size > 10*1024*1024) { showToast('حجم الصورة يتجاوز 10MB','error'); input.value=''; return; }
-  // معاينة فورية
+  if (!file.type.startsWith('image/') && file.type !== '') { showToast('\u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0645\u0644\u0641 \u0635\u0648\u0631\u0629 \u0635\u0627\u0644\u062D (JPG \u0623\u0648 PNG \u0623\u0648 WebP \u0623\u0648 HEIC)','error'); input.value=''; return; }
+  if (file.size > 10*1024*1024) { showToast('\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 10MB','error'); input.value=''; return; }
+  // \u0645\u0639\u0627\u064A\u0646\u0629 \u0641\u0648\u0631\u064A\u0629
   var fr = new FileReader();
   fr.onload = function(e) {
-    var previewImg = document.getElementById('imagePreviewImg');
-    var previewArea = document.getElementById('imagePreview');
-    var container = document.getElementById('imagePreviewContainer');
-    if (previewImg) previewImg.src = e.target.result;
-    if (previewArea) previewArea.classList.add('hidden');
-    if (container) container.classList.remove('hidden');
-    document.getElementById('productImage').value = e.target.result;
+    document.getElementById('imagePreviewImg').src = e.target.result;
+    document.getElementById('imagePreview').classList.add('hidden');
+    document.getElementById('imagePreviewContainer').classList.remove('hidden');
   };
   fr.readAsDataURL(file);
-  // رفع إلى Supabase Storage
+  // \u0631\u0641\u0639 \u0625\u0644\u0649 Supabase Storage
   try {
-    showToast('جاري رفع الصورة...','info');
+    showToast('\u062C\u0627\u0631\u064A \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629...','info');
     var url = await SupaDB.ImageStorage.upload(file);
     document.getElementById('productImage').value = url;
-    showToast('تم رفع الصورة بنجاح ✓','success');
-  } catch(e) { showToast('تحذير رفع الصورة: ' + e.message,'warning'); }
+    showToast('\u062A\u0645 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629 \u0628\u0646\u062C\u0627\u062D \u2713','success');
+  } catch(e) { console.error('[Supabase Upload Error]', e); showToast('\u0641\u0634\u0644 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629: ' + (e.message || e), 'error'); }
 }
 function removeImage() {
   document.getElementById('imagePreview').classList.remove('hidden');
