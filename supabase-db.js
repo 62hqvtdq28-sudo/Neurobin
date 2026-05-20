@@ -2,7 +2,7 @@
 // DiscountCodes + ImageStorage added
 (function() {
   const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_yEU6M3goCClpcjHBFqniLg_FdN9oSXb';
+  coconst SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
   const { createClient } = window.supabase;
   const _db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
