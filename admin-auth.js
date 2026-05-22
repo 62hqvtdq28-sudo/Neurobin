@@ -607,8 +607,8 @@ function logout(clearRemember) {
 async function showDashboard() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('adminDashboard').classList.remove('hidden');
-  loadAllData();
-  lucide.createIcons();
+  try { if (typeof loadAllData === 'function') loadAllData(); } catch(e) { console.warn('[Dashboard] loadAllData:', e.message); }
+  try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('[Dashboard] lucide:', e.message); }
 }
 
 function showSection(section) {
