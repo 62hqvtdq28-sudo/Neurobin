@@ -1358,7 +1358,6 @@ function loadCategoryImages() {
   var grid = document.getElementById('categoryImagesGrid');
   if (!grid) return;
 
-  // Show loading indicator
   grid.innerHTML =
     '<div class="col-span-full text-center py-12 text-brand-400">' +
     '<div class="spinner mx-auto mb-3" style="width:32px;height:32px;border-width:3px"></div>' +
@@ -1380,24 +1379,26 @@ function loadCategoryImages() {
     .then(function(result) {
       var images = {};
       if (!result.error && result.data) {
-        result.data.forEach(function(row) {
-          images[row.key] = row.value || '';
-        });
+        result.data.forEach(function(row) { images[row.key] = row.value || ''; });
       }
 
       var html = '';
       CATEGORY_DEFS_ADMIN.forEach(function(cat) {
         var key = 'cat_img_' + cat.filter;
         var url = images[key] || '';
+
         var previewHtml = url
           ? '<div class="mb-3 rounded-xl overflow-hidden h-28 bg-gray-50">' +
-            '<img src="' + url + '" alt="' + cat.label + '" ' +
-            'class="w-full h-full object-cover" ' +
-            'onerror="this.parentElement.innerHTML='<div class=\\"flex items-center justify-center h-full text-gray-400 text-xs\\">رابط الصورة غير صالح</div>'">' +
+            '<img src="' + url + '" alt="' + cat.label + '" class="w-full h-full object-cover"' +
+            ' onerror="this.parentElement.style.display='none'">' +
             '</div>'
           : '<div class="mb-3 rounded-xl h-28 bg-gray-50 flex items-center justify-center text-brand-300">' +
             '<i class="fa-solid ' + cat.icon + ' text-3xl"></i>' +
             '</div>';
+
+        var clearBtn = url
+          ? '<button data-cat="' + cat.filter + '" class="clear-cat-btn w-full text-red-400 hover:text-red-600 hover:bg-red-50 text-xs py-1.5 rounded-lg transition-colors font-medium mt-1">إزالة الصورة الحالية</button>'
+          : '';
 
         html +=
           '<div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-5">' +
@@ -1411,19 +1412,34 @@ function loadCategoryImages() {
               '</div>' +
             '</div>' +
             previewHtml +
-            '<div class="flex gap-2">' +
-              '<input type="url" id="cat_url_' + cat.filter + '" ' +
-              'class="input-field flex-1 text-sm" ' +
-              'placeholder="https://example.com/image.jpg" ' +
-              'value="' + url.replace(/"/g, '&quot;') + '" dir="ltr">' +
-              '<button onclick="saveCategoryImage(\'' + cat.filter + '\')" ' +
-              'class="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-2 rounded-lg ' +
-              'font-semibold text-sm transition-colors flex-shrink-0">حفظ</button>' +
+            '<label data-cat="' + cat.filter + '" class="upload-cat-btn flex items-center justify-center gap-2 w-full bg-brand-700 hover:bg-brand-800 text-white px-3 py-2.5 rounded-xl font-semibold text-sm cursor-pointer transition-colors select-none">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+              ' ارفع صورة' +
+              '<input type="file" accept="image/*" class="hidden cat-file-input">' +
+            '</label>' +
+            '<div id="cat_progress_' + cat.filter + '" class="hidden flex items-center justify-center gap-1.5 text-xs text-teal-600 py-1.5">' +
+              '<div class="spinner" style="width:14px;height:14px;border-width:2px;border-color:#0d9488;border-top-color:transparent"></div>' +
+              '<span>جاري الرفع...</span>' +
             '</div>' +
+            clearBtn +
           '</div>';
       });
 
       grid.innerHTML = html;
+
+      // ── Delegated event: file input change ───────────────────────────
+      grid.addEventListener('change', function(e) {
+        if (e.target.classList.contains('cat-file-input')) {
+          var label = e.target.closest('.upload-cat-btn');
+          if (label) uploadCatImage(label.dataset.cat, e.target);
+        }
+      });
+
+      // ── Delegated event: clear button click ──────────────────────────
+      grid.addEventListener('click', function(e) {
+        var btn = e.target.closest('.clear-cat-btn');
+        if (btn) clearCategoryImage(btn.dataset.cat);
+      });
     })
     .catch(function(err) {
       grid.innerHTML =
@@ -1434,31 +1450,87 @@ function loadCategoryImages() {
     });
 }
 
-async function saveCategoryImage(catFilter) {
-  var input = document.getElementById('cat_url_' + catFilter);
-  if (!input) return;
-  var url = input.value.trim();
+async function uploadCatImage(catFilter, fileInput) {
+  if (!fileInput || !fileInput.files[0]) return;
 
-  if (url && !url.startsWith('http')) {
-    showToast('يرجى إدخال رابط صحيح يبدأ بـ http أو https', 'error');
+  var progressEl = document.getElementById('cat_progress_' + catFilter);
+  var file = fileInput.files[0];
+
+  if (file.size > 32 * 1024 * 1024) {
+    showToast('حجم الصورة كبير جدًا (الحد الأقصى 32MB)', 'error');
+    fileInput.value = '';
     return;
   }
 
-  if (!supabaseClient) {
-    showToast('خطأ في الاتصال بقاعدة البيانات', 'error');
-    return;
-  }
+  if (progressEl) progressEl.classList.remove('hidden');
 
+  try {
+    var base64 = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload  = function() { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    var formData = new FormData();
+    formData.append('image', base64);
+
+    var response = await fetch('https://api.imgbb.com/1/upload?key=405daedac0e1e717cde2106b81d225b9', {
+      method: 'POST',
+      body: formData
+    });
+
+    var data = await response.json();
+    if (!data.success) throw new Error(data.error ? data.error.message : 'فشل رفع الصورة');
+
+    var imageUrl = data.data.url;
+
+    if (!supabaseClient) throw new Error('قاعدة البيانات غير متصلة');
+    var key = 'cat_img_' + catFilter;
+    var result = await supabaseClient
+      .from('site_settings')
+      .upsert({ key: key, value: imageUrl }, { onConflict: 'key' });
+
+    if (result.error) throw result.error;
+
+    showToast('تم رفع الصورة وحفظها بنجاح ✓', 'success');
+    loadCategoryImages();
+
+  } catch(e) {
+    showToast('حدث خطأ أثناء رفع الصورة', 'error');
+    ErrorHandler.log('uploadCatImage', e, { catFilter: catFilter });
+  } finally {
+    if (progressEl) progressEl.classList.add('hidden');
+    if (fileInput) fileInput.value = '';
+  }
+}
+
+async function clearCategoryImage(catFilter) {
+  if (!supabaseClient) { showToast('خطأ في الاتصال بقاعدة البيانات', 'error'); return; }
   try {
     var key = 'cat_img_' + catFilter;
     var result = await supabaseClient
       .from('site_settings')
-      .upsert({ key: key, value: url }, { onConflict: 'key' });
-
+      .upsert({ key: key, value: '' }, { onConflict: 'key' });
     if (result.error) throw result.error;
+    showToast('تم إزالة صورة القسم ✓', 'success');
+    loadCategoryImages();
+  } catch(e) {
+    showToast('حدث خطأ أثناء إزالة الصورة', 'error');
+    ErrorHandler.log('clearCategoryImage', e, { catFilter: catFilter });
+  }
+}
 
+// kept for backward compat
+async function saveCategoryImage(catFilter, imageUrl) {
+  if (!supabaseClient) return;
+  try {
+    var key = 'cat_img_' + catFilter;
+    var result = await supabaseClient
+      .from('site_settings')
+      .upsert({ key: key, value: imageUrl || '' }, { onConflict: 'key' });
+    if (result.error) throw result.error;
     showToast('تم حفظ صورة القسم بنجاح ✓', 'success');
-    // Reload panel to refresh preview
     loadCategoryImages();
   } catch(e) {
     showToast('حدث خطأ أثناء الحفظ', 'error');
