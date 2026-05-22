@@ -353,6 +353,8 @@ const dateRanges = {
 
 // Mobile Menu
 function toggleMobileMenu() {
+  // Security: block hamburger menu on login screen
+  if (!isAuthenticated()) return;
   var sidebar = document.getElementById('sidebar');
   var overlay = document.getElementById('menuOverlay');
   sidebar.classList.toggle('mobile-open');
@@ -675,6 +677,8 @@ async function showDashboard() {
 }
 
 function showSection(section) {
+  // Security: block navigation if not authenticated
+  if (!isAuthenticated()) return;
   // Add exit animation to current section
   var currentSection = document.querySelector('.section-content:not(.hidden)');
   if (currentSection) {
