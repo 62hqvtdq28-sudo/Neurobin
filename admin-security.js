@@ -758,6 +758,7 @@ async function checkAndBindDevice() {
   var localDeviceId = localStorage.getItem('adminDeviceId');
 
   var client = window.supabaseClient
+    || (window.SupaDB && window.SupaDB._db ? window.SupaDB._db : null)
     || (typeof supabase !== 'undefined' && typeof supabase.from === 'function' ? supabase : null);
 
   if (!client) {
