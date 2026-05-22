@@ -430,6 +430,11 @@ function showLoginLockedMessage(minutes) {
 
 async function handleLogin(e) {
   e.preventDefault();
+  var _errEl = document.getElementById('loginError');
+  function _showErr(msg) {
+    if (_errEl) { _errEl.textContent = msg; _errEl.classList.remove('hidden'); }
+  }
+  try {
 
   if (isAccountLocked()) {
     showLoginLockedMessage(getRemainingLockoutTime());
@@ -568,6 +573,11 @@ async function handleLogin(e) {
   recordSuccessfulLogin();
   _commitSession(storedHash, storedSalt);
   showDashboard();
+
+  } catch(loginErr) {
+    console.error('[handleLogin] Error:', loginErr);
+    _showErr('خطأ في تسجيل الدخول: ' + loginErr.message);
+  }
 }
 
 // حفظ بيانات الجلسة بعد نجاح الدخول
