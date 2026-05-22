@@ -4,6 +4,7 @@
 // These are overridden automatically if admin-security.js runs first.
 // ════════════════════════════════════════════════════════════════
 (function installFallbacks() {
+  // ── Security/ID helpers ──────────────────────────────────────
   if (typeof generateSecureId === 'undefined') {
     window.generateSecureId = function() {
       var arr = new Uint8Array(16);
@@ -11,12 +12,51 @@
       return Array.from(arr).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
     };
   }
+  // ── JSON helpers ─────────────────────────────────────────────
   if (typeof safeJSONParse === 'undefined') {
     window.safeJSONParse = function(str, fallback) {
       try { return JSON.parse(str) || fallback; }
       catch(e) { return fallback != null ? fallback : null; }
     };
   }
+  // ── HTML sanitization (critical for rendering products/orders) ─
+  if (typeof escapeHTML === 'undefined') {
+    window.escapeHTML = function(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    };
+  }
+  if (typeof sanitizeHTML === 'undefined') {
+    window.sanitizeHTML = function(str) {
+      if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(str);
+      return window.escapeHTML(str);
+    };
+  }
+  if (typeof safeSanitize === 'undefined') {
+    window.safeSanitize = function(str) { return window.escapeHTML(str); };
+  }
+  // ── Input validation ──────────────────────────────────────────
+  if (typeof validateInput === 'undefined') {
+    window.validateInput = function(value, maxLength) {
+      if (!value) return '';
+      return String(value).substring(0, maxLength || 500);
+    };
+  }
+  if (typeof validateNumber === 'undefined') {
+    window.validateNumber = function(value, min, max) {
+      var n = parseFloat(value);
+      if (isNaN(n)) return 0;
+      if (min != null && n < min) return min;
+      if (max != null && n > max) return max;
+      return n;
+    };
+  }
+  // ── Lockout helpers ───────────────────────────────────────────
   if (typeof isAccountLocked === 'undefined') {
     window.isAccountLocked = function() { return false; };
   }
@@ -29,6 +69,7 @@
   if (typeof recordSuccessfulLogin === 'undefined') {
     window.recordSuccessfulLogin = function() {};
   }
+  // ── Password helpers (localStorage fallback path) ─────────────
   if (typeof isLegacyHash === 'undefined') {
     window.isLegacyHash = function(h) { return !!(h && h.length === 64 && !/[^0-9a-f]/i.test(h)); };
   }
