@@ -666,3 +666,22 @@ button[disabled] {
 .ml-1{margin-left:.25rem}.ml-2{margin-left:.5rem}.ml-3{margin-left:.75rem}
 .ml-4{margin-left:1rem}.ml-6{margin-left:1.5rem}
 @media (min-width:768px){.md\:mr-72{margin-right:18rem}}
+/* Sidebar dark green override */
+#sidebar {
+  background: linear-gradient(to bottom, #1E350F, #254012) !important;
+  color: white !important;
+  width: 16rem;
+  position: fixed;
+  right: 0; top: 0;
+  height: 100%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 768px) { #sidebar { width: 18rem; } }
+.from-brand-900 {
+  --tw-gradient-from: #1E350F var(--tw-gradient-from-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #1E350F00;
+}
+.w-64 { width: 16rem; }
+.z-40 { z-index: 40; }
