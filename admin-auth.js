@@ -431,170 +431,157 @@ function showLoginLockedMessage(minutes) {
 async function handleLogin(e) {
   e.preventDefault();
 
-  // Security: Check for account lockout
   if (isAccountLocked()) {
-    const remainingTime = getRemainingLockoutTime();
-    showLoginLockedMessage(remainingTime);
+    showLoginLockedMessage(getRemainingLockoutTime());
     return;
   }
 
-  const password = document.getElementById('loginPassword').value;
-  const emailInput = document.getElementById('loginEmail');
-  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
-  const storedPasswordHash = localStorage.getItem('adminPasswordHash');
-  const storedSalt = localStorage.getItem('adminPasswordSalt');
-  const storedEmail = localStorage.getItem('adminEmail');
+  var password = document.getElementById('loginPassword').value;
+  var emailEl  = document.getElementById('loginEmail');
+  var email    = emailEl ? emailEl.value.trim().toLowerCase() : '';
+  var errEl    = document.getElementById('loginError');
 
-  // Email validation: if email was previously registered, it must match
-  if (storedEmail && email !== storedEmail) {
-    const errEl = document.getElementById('loginError');
+  function showErr(msg) {
     if (errEl) {
-      errEl.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      errEl.textContent = msg;
       errEl.classList.remove('hidden');
-      setTimeout(function() { errEl.classList.add('hidden'); }, 3000);
+      setTimeout(function() { errEl.classList.add('hidden'); }, 5000);
     }
-    recordAttempt();
-    return;
   }
 
-  // First time setup - save password hash for security
-  if (!storedPasswordHash) {
-    // Minimum password length increased for better security (12 chars instead of 8)
-    if (password.length < 12) {
-      document.getElementById('loginError').textContent = 'كلمة المرور يجب أن تكون 12 حرفاً على الأقل';
-      document.getElementById('loginError').classList.remove('hidden');
-      setTimeout(function() { document.getElementById('loginError').classList.add('hidden'); }, 3000);
-      return;
-    }
+  if (!password) { showErr('أدخل كلمة المرور'); return; }
 
-    // Store password using secure PBKDF2 with unique salt
-    const hashResult = await hashPassword(password);
-    localStorage.setItem('adminPasswordHash', hashResult.hash);
-    localStorage.setItem('adminPasswordSalt', hashResult.salt);
-    localStorage.setItem('adminPasswordIterations', hashResult.iterations.toString());
-    // Save email for future logins
+  // ══════════════════════════════════════════════════
+  // المسار الأول: Supabase (يعمل على جميع الأجهزة)
+  // ══════════════════════════════════════════════════
+  var client = (typeof window.SupaDB !== 'undefined' && window.SupaDB._db) ? window.SupaDB._db : null;
+
+  if (client) {
+    try {
+      var res = await client
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'admin_password_hash')
+        .maybeSingle();
+
+      if (!res.error && res.data) {
+        // كلمة المرور مخزنة في Supabase — تحقق منها
+        var stored = JSON.parse(res.data.value);
+        var ok = await verifyPassword(password, stored.hash, stored.salt);
+        if (!ok) {
+          recordAttempt();
+          showErr('كلمة المرور غير صحيحة');
+          return;
+        }
+
+        // تحقق من البريد إذا كان مخزناً
+        var emailRes = await client
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'admin_email')
+          .maybeSingle();
+        if (!emailRes.error && emailRes.data && email) {
+          if (email !== emailRes.data.value.toLowerCase()) {
+            recordAttempt();
+            showErr('البريد الإلكتروني غير صحيح');
+            return;
+          }
+        }
+
+        recordSuccessfulLogin();
+        _commitSession(stored.hash, stored.salt);
+        showDashboard();
+        return;
+
+      } else {
+        // أول تسجيل دخول — احفظ في Supabase
+        if (password.length < 8) {
+          showErr('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+          return;
+        }
+        var hr = await hashPassword(password);
+        var payload = JSON.stringify({ hash: hr.hash, salt: hr.salt, iterations: hr.iterations });
+
+        await client.from('site_settings').upsert(
+          [{ key: 'admin_password_hash', value: payload }],
+          { onConflict: 'key' }
+        );
+        if (email) {
+          await client.from('site_settings').upsert(
+            [{ key: 'admin_email', value: email }],
+            { onConflict: 'key' }
+          );
+        }
+
+        recordSuccessfulLogin();
+        _commitSession(hr.hash, hr.salt);
+        showDashboard();
+        return;
+      }
+
+    } catch (supErr) {
+      console.warn('[Login] Supabase fallback to localStorage:', supErr.message);
+      // يكمل نحو localStorage أدناه
+    }
+  }
+
+  // ══════════════════════════════════════════════════
+  // المسار الثاني: localStorage (احتياطي عند انقطاع الشبكة)
+  // ══════════════════════════════════════════════════
+  var storedHash = localStorage.getItem('adminPasswordHash');
+  var storedSalt = localStorage.getItem('adminPasswordSalt');
+
+  if (!storedHash) {
+    if (password.length < 8) { showErr('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+    var hr = await hashPassword(password);
+    localStorage.setItem('adminPasswordHash', hr.hash);
+    localStorage.setItem('adminPasswordSalt', hr.salt);
+    localStorage.setItem('adminPasswordIterations', hr.iterations.toString());
     if (email) localStorage.setItem('adminEmail', email);
     recordSuccessfulLogin();
-
-    // Security: Regenerate session ID to prevent session fixation
-    sessionStorage.removeItem('adminLoggedIn');
-    sessionStorage.removeItem('adminLoginTime');
-    sessionStorage.setItem('adminLoggedIn', 'true');
-    sessionStorage.setItem('adminLoginTime', Date.now().toString());
-    // Security: Generate session token for additional validation
-    var sessionToken = generateSecureId();
-    sessionStorage.setItem('adminSessionToken', sessionToken);
-
-    // Store remember token with hash only (not actual password)
-    const rememberToken = { timestamp: new Date().getTime(), passwordHash: hashResult.hash, salt: hashResult.salt, sessionToken: sessionToken };
-    localStorage.setItem('adminRememberToken', JSON.stringify(rememberToken));
+    _commitSession(hr.hash, hr.salt);
     showDashboard();
     return;
   }
 
-  // Check for legacy SHA-256 hash (no salt) and handle migration
-  if (isLegacyHash(storedPasswordHash) && !storedSalt) {
-    // Legacy password detected - verify using old method first
-    // Since we can't reverse SHA-256, we need to ask user to re-login with new secure hash
-    // For backward compatibility, verify against legacy hash first
-    // Then migrate to new format if successful
-    // Legacy SHA-256 fallback using Web Crypto API
-    let inputHash;
+  // تحقق من legacy hash (SHA-256 بدون salt)
+  if (isLegacyHash(storedHash) && !storedSalt) {
     try {
-      if (typeof sha256 === 'function') {
-        inputHash = sha256(password);
-      } else {
-        // Web Crypto fallback for legacy path
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      }
-    } catch(_sha_e) {
-      inputHash = '';
-    }
-    if (inputHash === storedPasswordHash) {
-      // Successful login with legacy hash - migrate to secure PBKDF2
+      var buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+      var hex  = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      if (hex !== storedHash) { recordAttempt(); showErr('كلمة المرور غير صحيحة'); return; }
+      // ترقية إلى PBKDF2
+      var hr = await hashPassword(password);
+      localStorage.setItem('adminPasswordHash', hr.hash);
+      localStorage.setItem('adminPasswordSalt', hr.salt);
+      localStorage.setItem('adminPasswordIterations', hr.iterations.toString());
       recordSuccessfulLogin();
-      if (email && !localStorage.getItem('adminEmail')) localStorage.setItem('adminEmail', email);
-
-      // Migrate to new secure format
-      const hashResult = await hashPassword(password);
-      localStorage.setItem('adminPasswordHash', hashResult.hash);
-      localStorage.setItem('adminPasswordSalt', hashResult.salt);
-      localStorage.setItem('adminPasswordIterations', hashResult.iterations.toString());
-
-      // Security: Regenerate session ID
-      sessionStorage.removeItem('adminLoggedIn');
-      sessionStorage.removeItem('adminLoginTime');
-      sessionStorage.setItem('adminLoggedIn', 'true');
-      sessionStorage.setItem('adminLoginTime', Date.now().toString());
-      var sessionToken = generateSecureId();
-      sessionStorage.setItem('adminSessionToken', sessionToken);
-
-      // Store remember token with new hash format
-      const rememberToken = { timestamp: new Date().getTime(), passwordHash: hashResult.hash, salt: hashResult.salt, sessionToken: sessionToken };
-      localStorage.setItem('adminRememberToken', JSON.stringify(rememberToken));
+      _commitSession(hr.hash, hr.salt);
       showDashboard();
-      return;
-    } else {
-      // Legacy hash verification failed
-      recordFailedLogin();
-      document.getElementById('loginError').classList.remove('hidden');
-      document.getElementById('loginPassword').value = '';
-      const attempts = getLoginAttempts();
-      const remaining = MAX_LOGIN_ATTEMPTS - attempts.count;
-      if (remaining > 0) {
-        document.getElementById('loginError').textContent = 'كلمة المرور غير صحيحة. المتطلبات: ' + remaining + ' محاولات متبقية.';
-      } else {
-        document.getElementById('loginError').textContent = 'تم تجاوز عدد المحاولات. يرجى الانتظار 5 دقائق.';
-      }
-      setTimeout(function() { document.getElementById('loginError').classList.add('hidden'); }, 5000);
-      return;
-    }
+    } catch(_) { showErr('خطأ في التحقق من كلمة المرور'); }
+    return;
   }
 
-  // Verify password against stored PBKDF2 hash
-  try {
-    const isValid = await verifyPassword(password, storedPasswordHash, storedSalt);
-    if (isValid) {
-      recordSuccessfulLogin();
+  // PBKDF2 عادي
+  var ok = await verifyPassword(password, storedHash, storedSalt);
+  if (!ok) { recordAttempt(); showErr('كلمة المرور غير صحيحة'); return; }
+  recordSuccessfulLogin();
+  _commitSession(storedHash, storedSalt);
+  showDashboard();
+}
 
-      // Security: Regenerate session ID to prevent session fixation
-      sessionStorage.removeItem('adminLoggedIn');
-      sessionStorage.removeItem('adminLoginTime');
-      sessionStorage.setItem('adminLoggedIn', 'true');
-      sessionStorage.setItem('adminLoginTime', Date.now().toString());
-      // Security: Generate session token for additional validation
-      var sessionToken = generateSecureId();
-      sessionStorage.setItem('adminSessionToken', sessionToken);
-
-      // Store remember token with hash only (not actual password)
-      const rememberToken = { timestamp: new Date().getTime(), passwordHash: storedPasswordHash, salt: storedSalt, sessionToken: sessionToken };
-      localStorage.setItem('adminRememberToken', JSON.stringify(rememberToken));
-      showDashboard();
-    } else {
-      recordFailedLogin();
-      document.getElementById('loginError').classList.remove('hidden');
-      document.getElementById('loginPassword').value = '';
-
-      const attempts = getLoginAttempts();
-      const remaining = MAX_LOGIN_ATTEMPTS - attempts.count;
-
-      if (remaining > 0) {
-        document.getElementById('loginError').textContent = 'كلمة المرور غير صحيحة. المتطلبات: ' + remaining + ' محاولات متبقية.';
-      } else {
-        document.getElementById('loginError').textContent = 'تم تجاوز عدد المحاولات. يرجى الانتظار 5 دقائق.';
-      }
-
-      setTimeout(function() { document.getElementById('loginError').classList.add('hidden'); }, 5000);
-    }
-  } catch (error) {
-    /* Password verification failed — details hidden */
-    document.getElementById('loginError').textContent = 'خطأ في التحقق من كلمة المرور';
-    document.getElementById('loginError').classList.remove('hidden');
-    setTimeout(function() { document.getElementById('loginError').classList.add('hidden'); }, 5000);
-  }
+// حفظ بيانات الجلسة بعد نجاح الدخول
+function _commitSession(hash, salt) {
+  sessionStorage.removeItem('adminLoggedIn');
+  sessionStorage.removeItem('adminSessionToken');
+  sessionStorage.setItem('adminLoggedIn', 'true');
+  sessionStorage.setItem('adminLoginTime', Date.now().toString());
+  var tok = generateSecureId();
+  sessionStorage.setItem('adminSessionToken', tok);
+  if (hash) localStorage.setItem('adminPasswordHash', hash);
+  if (salt) localStorage.setItem('adminPasswordSalt', salt);
+  var remem = { timestamp: Date.now(), passwordHash: hash, salt: salt, sessionToken: tok };
+  localStorage.setItem('adminRememberToken', JSON.stringify(remem));
 }
 
 function logout(clearRemember) {
