@@ -436,8 +436,11 @@ async function handleLogin(e) {
   }
   try {
 
-  if (isAccountLocked()) {
-    showLoginLockedMessage(getRemainingLockoutTime());
+  // Guard: isAccountLocked قد لا تكون موجودة إذا فشل تحميل admin-security.js
+  if (typeof isAccountLocked === 'function' && isAccountLocked()) {
+    var remaining = typeof getRemainingLockoutTime === 'function' ? getRemainingLockoutTime() : 0;
+    if (typeof showLoginLockedMessage === 'function') showLoginLockedMessage(remaining);
+    else _showErr('الحساب مقفل مؤقتاً. حاول لاحقاً.');
     return;
   }
 
@@ -463,12 +466,12 @@ async function handleLogin(e) {
   if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Auth) {
     try {
       await window.SupaDB.Auth.signIn(email, password);
-      recordSuccessfulLogin();
+      if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
       _commitSession(null, null);
       showDashboard();
       return;
     } catch (authErr) {
-      recordAttempt();
+      if (typeof recordAttempt === 'function') recordAttempt();
       var authMsg = authErr.message || '';
       if (authMsg.includes('Invalid login credentials') || authMsg.includes('invalid_credentials') || authMsg.includes('Invalid email or password')) {
         showErr('البريد الإلكتروني أو كلمة المرور غير صحيحة');
@@ -494,27 +497,39 @@ async function handleLogin(e) {
     return;
   }
 
-  // تحقق من legacy hash (SHA-256 بدون salt)
-  if (isLegacyHash(storedHash) && !storedSalt) {
+  // تحقق من legacy hash
+  if (typeof isLegacyHash === 'function' && isLegacyHash(storedHash) && !storedSalt) {
     try {
       var buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
       var hex  = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-      if (hex !== storedHash) { recordAttempt(); showErr('كلمة المرور غير صحيحة'); return; }
-      var hr = await hashPassword(password);
-      localStorage.setItem('adminPasswordHash', hr.hash);
-      localStorage.setItem('adminPasswordSalt', hr.salt);
-      localStorage.setItem('adminPasswordIterations', hr.iterations.toString());
-      recordSuccessfulLogin();
-      _commitSession(hr.hash, hr.salt);
+      if (hex !== storedHash) {
+        if (typeof recordAttempt === 'function') recordAttempt();
+        showErr('كلمة المرور غير صحيحة');
+        return;
+      }
+      if (typeof hashPassword === 'function') {
+        var hr = await hashPassword(password);
+        localStorage.setItem('adminPasswordHash', hr.hash);
+        localStorage.setItem('adminPasswordSalt', hr.salt);
+        localStorage.setItem('adminPasswordIterations', hr.iterations.toString());
+      }
+      if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
+      _commitSession(storedHash, storedSalt);
       showDashboard();
     } catch(_) { showErr('خطأ في التحقق من كلمة المرور'); }
     return;
   }
 
   // PBKDF2 عادي
-  var ok = await verifyPassword(password, storedHash, storedSalt);
-  if (!ok) { recordAttempt(); showErr('كلمة المرور غير صحيحة'); return; }
-  recordSuccessfulLogin();
+  if (typeof verifyPassword === 'function') {
+    var ok = await verifyPassword(password, storedHash, storedSalt);
+    if (!ok) {
+      if (typeof recordAttempt === 'function') recordAttempt();
+      showErr('كلمة المرور غير صحيحة');
+      return;
+    }
+  }
+  if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
   _commitSession(storedHash, storedSalt);
   showDashboard();
 
