@@ -601,7 +601,6 @@ function logout(clearRemember) {
   sessionStorage.removeItem('adminLoggedIn');
   sessionStorage.removeItem('adminSessionToken');
   sessionStorage.removeItem('adminDeviceToken');
-  stopDeviceCheck();
   if (clearRemember === true) localStorage.removeItem('adminRememberToken');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('adminDashboard').classList.add('hidden');
@@ -609,25 +608,10 @@ function logout(clearRemember) {
 }
 
 async function showDashboard() {
-  // ── Device Binding Check ──
-  var deviceCheck = await checkAndBindDevice();
-  if (!deviceCheck.allowed) {
-    var errEl = document.getElementById('loginError');
-    if (errEl) {
-      errEl.textContent = deviceCheck.reason || 'هذا الجهاز غير مصرح له بالدخول';
-      errEl.classList.remove('hidden');
-    } else {
-      alert(deviceCheck.reason || 'هذا الجهاز غير مصرح له بالدخول');
-    }
-    return; // Block access
-  }
-
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('adminDashboard').classList.remove('hidden');
   loadAllData();
   lucide.createIcons();
-  // Single-device monitoring (keeps existing session monitor)
-  registerDeviceToken().then(function() { startDeviceCheck(); });
 }
 
 function showSection(section) {
