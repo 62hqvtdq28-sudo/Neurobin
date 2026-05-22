@@ -333,30 +333,6 @@ function isLegacyHash(storedHash) {
   return storedHash && storedHash.length === 64 && /^[a-f0-9]+$/.test(storedHash);
 }
 
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        brand: {
-          50: '#F6F7F4',
-          100: '#E8EAD8',
-          200: '#D1D5B1',
-          300: '#AABF89',
-          400: '#83A962',
-          500: '#5C933B',
-          600: '#3D6B2D',
-          700: '#2D5016',
-          800: '#254012',
-          900: '#1E350F',
-        },
-        cream: '#FDFCF8',
-        gold: '#F59E0B',
-      },
-      fontFamily: { heading: ['Cairo', 'sans-serif'] }
-    }
-  }
-}
-
 // =====================================================
 // CSRF PROTECTION - Token Based Security
 // =====================================================
