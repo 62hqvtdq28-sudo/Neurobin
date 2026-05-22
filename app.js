@@ -265,7 +265,7 @@ async function applyDiscountCode() {
 
     appliedDiscount = data;
     updateDiscountDisplay();
-    const displayVal = data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString() + ' \u062f.\u0639';
+    const displayVal = data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString('en-US') + ' \u062f.\u0639';
     showToast('\u2705 \u062a\u0645 \u062a\u0637\u0628\u064a\u0642 \u062e\u0635\u0645 ' + displayVal, 'success');
   } catch(e) {
     showToast('\u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u062a\u062d\u0642\u0642: ' + e.message, 'error');
@@ -282,7 +282,7 @@ function updateDiscountDisplay() {
     row.classList.remove('hidden');
     amt.textContent = appliedDiscount.discount_type === 'percent'
       ? '\u2212 ' + appliedDiscount.discount_value + '%'
-      : '\u2212 ' + appliedDiscount.discount_value.toLocaleString() + ' \u062f.\u0639';
+      : '\u2212 ' + appliedDiscount.discount_value.toLocaleString('en-US') + ' \u062f.\u0639';
   } else {
     row.classList.add('hidden');
   }
