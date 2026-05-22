@@ -1452,8 +1452,8 @@ async function loadCategoryImages() {
         'class="input-field w-full text-sm mb-3" ' +
         'placeholder="https://example.com/image.jpg" ' +
         'value="' + (currentUrl.replace(/"/g,'&quot;')) + '" dir="ltr" ' +
-        'oninput="previewAdminCatImg('' + cat.key + '\', this.value)">' +
-      '<button onclick="saveCatImg('' + cat.key + '\')" ' +
+        'oninput="previewAdminCatImg(\'' + cat.key + '\', this.value)">' +
+      '<button onclick="saveCatImg(\'' + cat.key + '\')" ' +
         'class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm">' +
         '<i data-lucide="save" class="w-4 h-4"></i> حفظ الصورة' +
       '</button>';
