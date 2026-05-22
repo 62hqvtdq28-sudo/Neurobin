@@ -326,8 +326,8 @@ async function sendEmailNotification(orderData) {
       order_items:    itemsList,
       order_total:    formatPrice(orderData.total),
       discount_code:  orderData.discountCode || '\u0644\u0627 \u064a\u0648\u062c\u062f',
-      order_date:     new Date().toLocaleDateString('ar-EG'),
-      order_time:     new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}),
+      order_date:     new Date().toLocaleDateString('en-US'),
+      order_time:     new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
       order_id:       orderData.orderId || '\u2014'
     });
 
@@ -554,7 +554,7 @@ function getCategoryLabel(category) {
 }
 
 function formatPrice(price) {
-  return Number(price).toLocaleString('ar-IQ') + ' \u062f.\u0639';
+  return Number(price).toLocaleString('en-US') + ' \u062f.\u0639';
 }
 
 // FIX #2: \u062a\u0645\u0631\u064a\u0631 event \u0643\u0645\u0639\u0627\u0645\u0644 \u2014 \u0644\u0627 global event object
