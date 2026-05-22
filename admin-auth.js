@@ -439,8 +439,23 @@ async function handleLogin(e) {
   }
 
   const password = document.getElementById('loginPassword').value;
+  const emailInput = document.getElementById('loginEmail');
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
   const storedPasswordHash = localStorage.getItem('adminPasswordHash');
   const storedSalt = localStorage.getItem('adminPasswordSalt');
+  const storedEmail = localStorage.getItem('adminEmail');
+
+  // Email validation: if email was previously registered, it must match
+  if (storedEmail && email !== storedEmail) {
+    const errEl = document.getElementById('loginError');
+    if (errEl) {
+      errEl.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      errEl.classList.remove('hidden');
+      setTimeout(function() { errEl.classList.add('hidden'); }, 3000);
+    }
+    recordAttempt();
+    return;
+  }
 
   // First time setup - save password hash for security
   if (!storedPasswordHash) {
@@ -457,6 +472,8 @@ async function handleLogin(e) {
     localStorage.setItem('adminPasswordHash', hashResult.hash);
     localStorage.setItem('adminPasswordSalt', hashResult.salt);
     localStorage.setItem('adminPasswordIterations', hashResult.iterations.toString());
+    // Save email for future logins
+    if (email) localStorage.setItem('adminEmail', email);
     recordSuccessfulLogin();
 
     // Security: Regenerate session ID to prevent session fixation
@@ -499,6 +516,7 @@ async function handleLogin(e) {
     if (inputHash === storedPasswordHash) {
       // Successful login with legacy hash - migrate to secure PBKDF2
       recordSuccessfulLogin();
+      if (email && !localStorage.getItem('adminEmail')) localStorage.setItem('adminEmail', email);
 
       // Migrate to new secure format
       const hashResult = await hashPassword(password);
