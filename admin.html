@@ -33,7 +33,7 @@
 <!-- DOMPurify: XSS sanitization -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="tailwind.config.js"></script>
+<script src="tailwind.config.js?v=4"></script>
 <!-- [PATCHED CSP-01] Tailwind config moved to external file to remove unsafe-inline -->
 <!-- Additional Security Headers -->
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
@@ -839,14 +839,14 @@
 
 
 <!-- [SUPABASE] DB adapter + patched JS -->
-<script src="supabase-db.js"></script>
-<script src="admin-security.js"></script>
-    <script src="admin-improvements.js"></script>
-    <script src="admin-auth.js"></script>
-    <script src="admin-charts.js"></script>
-    <script src="admin.js"></script>
-<script src="products.js"></script>
-<script src="orders.js"></script>
+<script src="supabase-db.js?v=4"></script>
+<script src="admin-security.js?v=4"></script>
+    <script src="admin-improvements.js?v=4"></script>
+    <script src="admin-auth.js?v=4"></script>
+    <script src="admin-charts.js?v=4"></script>
+    <script src="admin.js?v=4"></script>
+<script src="products.js?v=4"></script>
+<script src="orders.js?v=4"></script>
 
 <div id="createDiscountModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
   <div class="modal-content bg-white rounded-2xl w-full max-w-md p-4 sm:p-5 animate-fade-in overflow-y-auto max-h-screen" style="margin:auto;width:calc(100% - 1.5rem)">
@@ -922,7 +922,7 @@
     </div>
   </div>
 </div>
-<script src="discounts.js"></script>
+<script src="discounts.js?v=4"></script>
 <script>
 function updateDiscountStep() {
   var type = document.getElementById('discountType');
