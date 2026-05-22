@@ -1416,7 +1416,7 @@ function loadCategoryImages() {
               'class="input-field flex-1 text-sm" ' +
               'placeholder="https://example.com/image.jpg" ' +
               'value="' + url.replace(/"/g, '&quot;') + '" dir="ltr">' +
-              '<button onclick="saveCategoryImage('' + cat.filter + '')" ' +
+              '<button onclick="saveCategoryImage(\'' + cat.filter + '\')" ' +
               'class="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-2 rounded-lg ' +
               'font-semibold text-sm transition-colors flex-shrink-0">حفظ</button>' +
             '</div>' +
