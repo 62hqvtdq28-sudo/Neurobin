@@ -1,3 +1,66 @@
+// ════════════════════════════════════════════════════════════════
+// Fallback implementations — used ONLY if admin-security.js fails
+// to load (e.g. Safari/iOS timing or CSP issue).
+// These are overridden automatically if admin-security.js runs first.
+// ════════════════════════════════════════════════════════════════
+(function installFallbacks() {
+  if (typeof generateSecureId === 'undefined') {
+    window.generateSecureId = function() {
+      var arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    };
+  }
+  if (typeof safeJSONParse === 'undefined') {
+    window.safeJSONParse = function(str, fallback) {
+      try { return JSON.parse(str) || fallback; }
+      catch(e) { return fallback != null ? fallback : null; }
+    };
+  }
+  if (typeof isAccountLocked === 'undefined') {
+    window.isAccountLocked = function() { return false; };
+  }
+  if (typeof getRemainingLockoutTime === 'undefined') {
+    window.getRemainingLockoutTime = function() { return 0; };
+  }
+  if (typeof recordAttempt === 'undefined') {
+    window.recordAttempt = function() {};
+  }
+  if (typeof recordSuccessfulLogin === 'undefined') {
+    window.recordSuccessfulLogin = function() {};
+  }
+  if (typeof isLegacyHash === 'undefined') {
+    window.isLegacyHash = function(h) { return !!(h && h.length === 64 && !/[^0-9a-f]/i.test(h)); };
+  }
+  if (typeof hashPassword === 'undefined') {
+    window.hashPassword = async function(password) {
+      var salt = window.generateSecureId();
+      var enc = new TextEncoder().encode(password + salt);
+      var buf = await crypto.subtle.digest('SHA-256', enc);
+      var hash = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      return { hash: hash, salt: salt, iterations: 1 };
+    };
+  }
+  if (typeof verifyPassword === 'undefined') {
+    window.verifyPassword = async function(password, hash, salt) {
+      var enc = new TextEncoder().encode(password + (salt || ''));
+      var buf = await crypto.subtle.digest('SHA-256', enc);
+      var h = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      return h === hash;
+    };
+  }
+  if (typeof showLoginLockedMessage === 'undefined') {
+    window.showLoginLockedMessage = function(ms) {
+      var e = document.getElementById('loginError');
+      if (e) {
+        var mins = Math.max(1, Math.ceil((ms||0)/60000));
+        e.textContent = 'الحساب مقفل مؤقتاً. حاول بعد ' + mins + ' دقيقة.';
+        e.classList.remove('hidden');
+      }
+    };
+  }
+})();
+
 // Automation System - Auto-check for new items
 function initAutomationSystem() {
   // Check for new orders every 30 seconds
