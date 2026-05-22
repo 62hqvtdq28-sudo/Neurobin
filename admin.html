@@ -1496,13 +1496,25 @@ async function saveCatImg(key) {
 
   try {
     if (typeof SupaDB === 'undefined' || !SupaDB._db) throw new Error('Supabase غير متاح — تأكد من تسجيل الدخول');
+
+    // Ensure Supabase session is active (required by RLS policy)
+    var sessResult = await SupaDB._db.auth.getSession();
+    var session = sessResult.data && sessResult.data.session;
+    if (!session) {
+      // Try refreshing the session
+      var refreshResult = await SupaDB._db.auth.refreshSession();
+      session = refreshResult.data && refreshResult.data.session;
+    }
+    if (!session) throw new Error('انتهت جلستك — سجّل الدخول من جديد');
+
     var payload = { key: 'cat_img_' + key, value: url };
     var res = await SupaDB._db.from('site_settings').upsert(payload, { onConflict: 'key' });
     if (res.error) throw res.error;
     if (typeof showToast === 'function') showToast('✅ تم حفظ صورة ' + (cat ? cat.label : key), 'success');
   } catch(e) {
-    console.error('[saveCatImg]', e);
-    if (typeof showToast === 'function') showToast('❌ ' + (e.message || 'خطأ في الحفظ'), 'error');
+    var errMsg = e.message || (e.code ? 'RLS Error ' + e.code : 'خطأ في الحفظ');
+    console.error('[saveCatImg] Error:', errMsg, e);
+    if (typeof showToast === 'function') showToast('❌ ' + errMsg, 'error');
   }
 }
 </script>
