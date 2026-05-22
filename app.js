@@ -10,6 +10,7 @@ function initSupabase() {
   try {
     if (typeof supabase !== 'undefined') {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabaseClient; // expose to window for inline scripts
       console.log('\u2705 Supabase initialized successfully');
     } else {
       console.error('\u274c Supabase SDK not loaded - check script tag in HTML');
