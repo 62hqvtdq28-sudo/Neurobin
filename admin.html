@@ -1414,8 +1414,8 @@ async function loadCategoryImages() {
   // Fetch saved URLs from Supabase
   var saved = {};
   try {
-    if (typeof SupaDB !== 'undefined' && SupaDB.client) {
-      var res = await SupaDB.client
+    if (typeof SupaDB !== 'undefined' && SupaDB._db) {
+      var res = await SupaDB._db
         .from('site_settings')
         .select('key, value')
         .like('key', 'cat_img_%');
@@ -1495,9 +1495,9 @@ async function saveCatImg(key) {
   var cat = ADMIN_CAT_DEFS.find(function(c) { return c.key === key; });
 
   try {
-    if (typeof SupaDB === 'undefined' || !SupaDB.client) throw new Error('Supabase غير متاح — تأكد من تسجيل الدخول');
+    if (typeof SupaDB === 'undefined' || !SupaDB._db) throw new Error('Supabase غير متاح — تأكد من تسجيل الدخول');
     var payload = { key: 'cat_img_' + key, value: url };
-    var res = await SupaDB.client.from('site_settings').upsert(payload, { onConflict: 'key' });
+    var res = await SupaDB._db.from('site_settings').upsert(payload, { onConflict: 'key' });
     if (res.error) throw res.error;
     if (typeof showToast === 'function') showToast('✅ تم حفظ صورة ' + (cat ? cat.label : key), 'success');
   } catch(e) {
