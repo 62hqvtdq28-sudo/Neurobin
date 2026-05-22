@@ -1490,30 +1490,53 @@ function previewAdminCatImg(key, url) {
 
 async function saveCatImg(key) {
   var input = document.getElementById('admInput_' + key);
-  if (!input) return;
+  var btn = document.querySelector('[onclick*="saveCatImg(\''+key+'\')"]') || document.querySelector('[onclick*="saveCatImg(' + String.fromCharCode(39) + key + String.fromCharCode(39) + ')"]');
+
+  // Helper: show status under button
+  function setStatus(msg, isError) {
+    var card = input ? input.closest('.bg-white') : null;
+    var existing = card ? card.querySelector('.save-status') : null;
+    if (!card) { alert(msg); return; }
+    if (!existing) {
+      existing = document.createElement('p');
+      existing.className = 'save-status text-xs mt-1 font-semibold';
+      card.appendChild(existing);
+    }
+    existing.textContent = msg;
+    existing.style.color = isError ? '#dc2626' : '#16a34a';
+    setTimeout(function() { if(existing) existing.textContent = ''; }, 5000);
+  }
+
+  if (!input) { setStatus('❌ خطأ: حقل الإدخال غير موجود (admInput_' + key + ')', true); return; }
   var url = (input.value || '').trim();
   var cat = ADMIN_CAT_DEFS.find(function(c) { return c.key === key; });
 
-  try {
-    if (typeof SupaDB === 'undefined' || !SupaDB._db) throw new Error('Supabase غير متاح — تأكد من تسجيل الدخول');
+  setStatus('⏳ جاري الحفظ...', false);
 
-    // Ensure Supabase session is active (required by RLS policy)
+  try {
+    if (typeof SupaDB === 'undefined' || !SupaDB._db) throw new Error('SupaDB غير متاح');
+
+    // Get/refresh Supabase session
     var sessResult = await SupaDB._db.auth.getSession();
     var session = sessResult.data && sessResult.data.session;
     if (!session) {
-      // Try refreshing the session
       var refreshResult = await SupaDB._db.auth.refreshSession();
       session = refreshResult.data && refreshResult.data.session;
     }
-    if (!session) throw new Error('انتهت جلستك — سجّل الدخول من جديد');
+    if (!session) throw new Error('لا يوجد session — سجّل الدخول بـ Supabase');
 
     var payload = { key: 'cat_img_' + key, value: url };
     var res = await SupaDB._db.from('site_settings').upsert(payload, { onConflict: 'key' });
     if (res.error) throw res.error;
+
+    setStatus('✅ تم الحفظ!', false);
     if (typeof showToast === 'function') showToast('✅ تم حفظ صورة ' + (cat ? cat.label : key), 'success');
+    // Reload preview
+    setTimeout(function() { loadCategoryImages(); }, 1000);
   } catch(e) {
-    var errMsg = e.message || (e.code ? 'RLS Error ' + e.code : 'خطأ في الحفظ');
-    console.error('[saveCatImg] Error:', errMsg, e);
+    var errMsg = e.message || (e.code ? 'كود الخطأ: ' + e.code : 'خطأ غير معروف');
+    console.error('[saveCatImg]', key, errMsg, e);
+    setStatus('❌ ' + errMsg, true);
     if (typeof showToast === 'function') showToast('❌ ' + errMsg, 'error');
   }
 }
