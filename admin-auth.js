@@ -454,79 +454,32 @@ async function handleLogin(e) {
     }
   }
 
+  if (!email) { showErr('أدخل البريد الإلكتروني'); return; }
   if (!password) { showErr('أدخل كلمة المرور'); return; }
 
   // ══════════════════════════════════════════════════
-  // المسار الأول: Supabase (يعمل على جميع الأجهزة)
+  // المسار الأول: Supabase Auth الحقيقي
   // ══════════════════════════════════════════════════
-  var client = (typeof window.SupaDB !== 'undefined' && window.SupaDB._db) ? window.SupaDB._db : null;
-
-  if (client) {
+  if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Auth) {
     try {
-      var res = await client
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'admin_password_hash')
-        .maybeSingle();
-
-      if (!res.error && res.data) {
-        // كلمة المرور مخزنة في Supabase — تحقق منها
-        var stored = JSON.parse(res.data.value);
-        var ok = await verifyPassword(password, stored.hash, stored.salt);
-        if (!ok) {
-          recordAttempt();
-          showErr('كلمة المرور غير صحيحة');
-          return;
-        }
-
-        // تحقق من البريد إذا كان مخزناً
-        var emailRes = await client
-          .from('site_settings')
-          .select('value')
-          .eq('key', 'admin_email')
-          .maybeSingle();
-        if (!emailRes.error && emailRes.data && email) {
-          if (email !== emailRes.data.value.toLowerCase()) {
-            recordAttempt();
-            showErr('البريد الإلكتروني غير صحيح');
-            return;
-          }
-        }
-
-        recordSuccessfulLogin();
-        _commitSession(stored.hash, stored.salt);
-        showDashboard();
-        return;
-
+      await window.SupaDB.Auth.signIn(email, password);
+      recordSuccessfulLogin();
+      _commitSession(null, null);
+      showDashboard();
+      return;
+    } catch (authErr) {
+      recordAttempt();
+      var authMsg = authErr.message || '';
+      if (authMsg.includes('Invalid login credentials') || authMsg.includes('invalid_credentials') || authMsg.includes('Invalid email or password')) {
+        showErr('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      } else if (authMsg.includes('Email not confirmed')) {
+        showErr('يرجى تأكيد البريد الإلكتروني أولاً');
+      } else if (authMsg.includes('Too many requests')) {
+        showErr('محاولات كثيرة — انتظر قليلاً ثم حاول مجدداً');
       } else {
-        // أول تسجيل دخول — احفظ في Supabase
-        if (password.length < 8) {
-          showErr('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
-          return;
-        }
-        var hr = await hashPassword(password);
-        var payload = JSON.stringify({ hash: hr.hash, salt: hr.salt, iterations: hr.iterations });
-
-        await client.from('site_settings').upsert(
-          [{ key: 'admin_password_hash', value: payload }],
-          { onConflict: 'key' }
-        );
-        if (email) {
-          await client.from('site_settings').upsert(
-            [{ key: 'admin_email', value: email }],
-            { onConflict: 'key' }
-          );
-        }
-
-        recordSuccessfulLogin();
-        _commitSession(hr.hash, hr.salt);
-        showDashboard();
-        return;
+        showErr('خطأ في تسجيل الدخول: ' + (authMsg || 'تحقق من بياناتك'));
       }
-
-    } catch (supErr) {
-      console.warn('[Login] Supabase fallback to localStorage:', supErr.message);
-      // يكمل نحو localStorage أدناه
+      return;
     }
   }
 
@@ -537,15 +490,7 @@ async function handleLogin(e) {
   var storedSalt = localStorage.getItem('adminPasswordSalt');
 
   if (!storedHash) {
-    if (password.length < 8) { showErr('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
-    var hr = await hashPassword(password);
-    localStorage.setItem('adminPasswordHash', hr.hash);
-    localStorage.setItem('adminPasswordSalt', hr.salt);
-    localStorage.setItem('adminPasswordIterations', hr.iterations.toString());
-    if (email) localStorage.setItem('adminEmail', email);
-    recordSuccessfulLogin();
-    _commitSession(hr.hash, hr.salt);
-    showDashboard();
+    showErr('تعذر الاتصال — تأكد من اتصالك بالإنترنت');
     return;
   }
 
@@ -555,7 +500,6 @@ async function handleLogin(e) {
       var buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
       var hex  = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
       if (hex !== storedHash) { recordAttempt(); showErr('كلمة المرور غير صحيحة'); return; }
-      // ترقية إلى PBKDF2
       var hr = await hashPassword(password);
       localStorage.setItem('adminPasswordHash', hr.hash);
       localStorage.setItem('adminPasswordSalt', hr.salt);
