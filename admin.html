@@ -12,7 +12,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- Security: Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
@@ -26,15 +26,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="tailwind.css?v=2">
 <link rel="stylesheet" href="admin-styles.css">
 <!-- Supabase JS SDK v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <!-- DOMPurify: XSS sanitization -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="tailwind.config.js?v=5"></script>
-<!-- [PATCHED CSP-01] Tailwind config moved to external file to remove unsafe-inline -->
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.447.0/dist/umd/lucide.min.js"></script>
+<!-- tailwind.config.js removed: using pre-compiled tailwind.css instead -->
 <!-- Additional Security Headers -->
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
