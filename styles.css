@@ -1,3 +1,14 @@
+/* === Cairo Global Font Override === */
+/* Applied at top priority to ensure Cairo font is used everywhere */
+html, body {
+  font-family: 'Cairo', sans-serif !important;
+}
+*, *::before, *::after {
+  font-family: inherit;
+}
+input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label {
+  font-family: 'Cairo', sans-serif !important;
+}
 /* Loading Screen */
 .loading-screen{position:fixed;inset:0;background:#FDFCF8;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s}
 .loading-screen.hidden{opacity:0;pointer-events:none}
