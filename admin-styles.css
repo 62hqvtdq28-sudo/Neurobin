@@ -1,4 +1,4 @@
-main { margin-right: 220px !important; padding: 1.5rem !important; overflow-x: hidden; max-width: calc(100vw - 220px); }
+
 /* ===== RTL Overflow Fix ===== */
 html {
   overflow-x: hidden;
