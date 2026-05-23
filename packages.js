@@ -1,3 +1,106 @@
+// ── FRONTEND: دمج البكجات في شبكة المنتجات ──────────────────────────────
+(function() {
+  // CSS لأيقونة البكجات
+  var _s = document.createElement('style');
+  _s.textContent = '.ci-pkg{background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%)!important;}';
+  document.head.appendChild(_s);
+
+  // بناء كرت البكج بنفس شكل كرت المنتج
+  function _pkgCard(pkg) {
+    var price = pkg.price ? Number(pkg.price).toLocaleString('ar-IQ') + ' \u062f.\u0639' : '';
+    var inStock = pkg.in_stock !== false;
+    var imgHtml = pkg.image
+      ? '<img src="' + pkg.image + '" alt="" class="w-full h-full object-contain bg-white" loading="lazy">'
+      : '<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100"><i class="fa-solid fa-gift" style="font-size:2.2rem;color:#D97706"></i></div>';
+    return '<div class="product-card-main scroll-animate-scale" role="listitem" data-category="packages" data-type="package" data-id="pkg_' + pkg.id + '">' +
+      (!inStock ? '<span class="stock-badge out-of-stock z-10">\u0646\u0641\u0630\u062a \u0627\u0644\u0643\u0645\u064a\u0629</span>' : '') +
+      '<div class="product-image-wrapper">' + imgHtml + '</div>' +
+      '<div class="p-2.5 product-card-body">' +
+        '<span class="inline-block bg-amber-50 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full mb-1">\uD83C\uDF81 \u0628\u0643\u062c</span>' +
+        '<h3 class="font-heading font-bold text-sm text-brand-900 mb-1 leading-snug">' + (pkg.name || '') + '</h3>' +
+        '<div class="flex items-center justify-between">' +
+          (price ? '<span class="text-sm font-bold text-brand-700 leading-none">' + price + '</span>' : '<span></span>') +
+          '<a href="#contact" class="btn-primary bg-amber-500 hover:bg-amber-400 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 flex-shrink-0 transition-all">\u0627\u0637\u0644\u0628</a>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // حقن كروت البكجات في شبكة المنتجات
+  function _injectPkgs(list) {
+    var grid = document.getElementById('productsGrid');
+    if (!grid) return;
+    grid.querySelectorAll('[data-type="package"]').forEach(function(el) { el.remove(); });
+    if (!list || !list.length) return;
+    grid.insertAdjacentHTML('beforeend', list.map(_pkgCard).join(''));
+    if (window.lucide) lucide.createIcons();
+    if (typeof initScrollAnimations === 'function') initScrollAnimations();
+  }
+
+  // إضافة زر فلتر البكجات
+  function _addFilterBtn() {
+    var tabList = document.querySelector('.cat-icon-grid');
+    if (!tabList || tabList.querySelector('[data-filter="packages"]')) return;
+    var btn = document.createElement('button');
+    btn.className = 'cat-icon-btn';
+    btn.setAttribute('data-filter', 'packages');
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', 'false');
+    btn.innerHTML = '<div class="cat-icon-circle ci-pkg"><i class="fa-solid fa-gift"></i></div><span class="cat-icon-label">\u0628\u0643\u062c\u0627\u062a</span>';
+    btn.addEventListener('click', function(e) {
+      document.querySelectorAll('.cat-icon-btn').forEach(function(b) {
+        b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      var g = document.getElementById('productsGrid');
+      if (!g) return;
+      g.querySelectorAll('.product-card-main').forEach(function(c) {
+        c.style.display = c.getAttribute('data-type') === 'package' ? '' : 'none';
+      });
+    });
+    tabList.appendChild(btn);
+  }
+
+  // تعديل filterProducts لإعادة عرض البكجات عند "الكل"
+  function _patchFilter() {
+    if (typeof window.filterProducts === 'undefined' || window._pkgPatch) return;
+    window._pkgPatch = true;
+    var _orig = window.filterProducts;
+    window.filterProducts = function(e, cat) {
+      _orig(e, cat);
+      var g = document.getElementById('productsGrid');
+      if (!g) return;
+      if (cat === 'all') {
+        g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.style.display = ''; });
+      } else {
+        g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.style.display = 'none'; });
+      }
+    };
+  }
+
+  // تهيئة بعد تحميل الصفحة
+  window.addEventListener('load', function() {
+    var attempts = 0;
+    var iv = setInterval(function() {
+      attempts++;
+      var grid = document.getElementById('productsGrid');
+      if ((grid && grid.children.length > 0) || attempts > 20) {
+        clearInterval(iv);
+        _addFilterBtn();
+        _patchFilter();
+        var pkgSec = document.getElementById('packages');
+        if (pkgSec) pkgSec.style.display = 'none';
+        if (typeof SupaDB !== 'undefined' && SupaDB.Packages) {
+          SupaDB.Packages.list().then(function(pkgs) {
+            _allPackages = pkgs || [];
+            _injectPkgs(_allPackages);
+          }).catch(function() {});
+        }
+      }
+    }, 500);
+  });
+})();
+
 // packages.js — Packages management (mirrors products.js)
 var _allPackages = [];
 
