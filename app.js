@@ -550,7 +550,7 @@ function renderProducts(productsToRender) {
 }
 
 function getCategoryLabel(category) {
-  const labels = { medicines: 'أدوية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة طبية', perfumes: 'عطور' };
+  const labels = { medicines: 'أدوية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة', perfumes: 'عطور' };
   return labels[category] || category;
 }
 
