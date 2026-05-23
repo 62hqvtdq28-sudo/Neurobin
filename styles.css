@@ -1,3 +1,5 @@
+@import url("font-override.css");
+
 /* === Cairo Global Font Override === */
 /* Applied at top priority to ensure Cairo font is used everywhere */
 html, body {
