@@ -183,6 +183,10 @@
         <i data-lucide="layout-grid" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">صور الأقسام</span>
       </button>
+      <button onclick="showSection('analytics'); setTimeout(loadAnalytics, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="analytics">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">التحليلات</span>
+      </button>
       <button onclick="showSection('discounts')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="discounts">
         <i data-lucide="tag" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">كودات الخصم</span>
@@ -658,6 +662,66 @@
         </div>
       </div>
     </section>
+
+  <!-- ══ ANALYTICS SECTION ══════════════════════════════════════════════ -->
+  <section id="section-analytics" class="section hidden">
+    <div class="mb-6 sm:mb-8 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h2 class="font-heading font-bold text-2xl sm:text-3xl text-brand-900">التحليلات</h2>
+        <p class="text-brand-600 mt-1 text-sm">إحصائيات ومبيعات Neurobin</p>
+      </div>
+      <button onclick="loadAnalytics()" class="flex items-center gap-2 bg-brand-100 hover:bg-brand-200 text-brand-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث
+      </button>
+    </div>
+
+    <!-- كروت الإحصاء -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6" id="analyticsCards">
+      <div class="col-span-2 lg:col-span-4 text-center py-10 text-brand-400">
+        <p>اضغط "تحديث" لتحميل التحليلات</p>
+      </div>
+    </div>
+
+    <!-- صف الرسوم البيانية -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
+      <!-- أكثر المنتجات مبيعاً -->
+      <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+            <i data-lucide="trophy" class="w-4 h-4 text-brand-700"></i>
+          </div>
+          <h3 class="font-bold text-brand-900 text-base">أكثر المنتجات مبيعاً</h3>
+        </div>
+        <div id="topProductsList">
+          <p class="text-brand-400 text-sm text-center py-6">جاري التحميل...</p>
+        </div>
+      </div>
+
+      <!-- حالات الطلبات -->
+      <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-700"></i>
+          </div>
+          <h3 class="font-bold text-brand-900 text-base">حالات الطلبات</h3>
+        </div>
+        <canvas id="analyticsStatusChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- المبيعات الشهرية -->
+    <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+          <i data-lucide="trending-up" class="w-4 h-4 text-green-700"></i>
+        </div>
+        <h3 class="font-bold text-brand-900 text-base">المبيعات الشهرية — آخر 6 أشهر</h3>
+      </div>
+      <canvas id="analyticsMonthlyChart" height="130"></canvas>
+    </div>
+  </section>
+
 
 </main>
 </div>
@@ -1638,5 +1702,6 @@ async function saveCatImg(key, url) {
 </div>
 
 <script src="packages.js"></script>
+  <script src="admin-analytics.js"></script>
 </body>
 </html>
