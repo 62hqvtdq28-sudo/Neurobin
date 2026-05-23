@@ -1,6 +1,6 @@
-/* Neurobin Pharmacy Chat Widget v4
- * Calls Google Gemini API directly — no backend needed!
- * Replace YOUR_GEMINI_KEY below with your actual key
+/* Neurobin Pharmacy Chat Widget v5
+ * Fixed: uses system_instruction properly for Gemini API
+ * No backend needed — calls Google Gemini directly
  */
 (function () {
   'use strict';
@@ -11,20 +11,19 @@
   var SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
 
-  var SYSTEM_PROMPT = [
-    'أنت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
-    'مهمتك: الإجابة على استفسارات العملاء بالعربية العراقيه المبسّطة.',
-    'عند اقتراح منتج من الكتالوج، اذكر رقمه بصيغة [ID] مثل [46].',
-    'لا تقترح سوى منتجات موجودة في الكتالوج المرفق.',
-    'أجب بشكل مختصر (3-4 جمل فقط).',
-    'لا تقدم استشارات طبية تشخيصية — انصح بمراجعة طبيب.',
-    'الأسعار بالدينار العراقي.'
+  var SYSTEM_BASE = [
+    'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
+    'مهمتك الإجابة على استفسارات العملاء بالعربية.',
+    'عند اقتراح منتج اذكر رقمه بصيغة [ID] مثل [46].',
+    'لا تقترح سوى منتجات موجودة في الكتالوج.',
+    'اجب بشكل مختصر 3 الى 4 جمل فقط.',
+    'لا تقدم استشارات طبية تشخيصية.',
+    'الاسعار بالدينار العراقي.'
   ].join(' ');
 
   var catalog = [];
   var history = [], isOpen = false, loading = false;
 
-  /* ── CSS ─────────────────────────────────────────────────────────── */
   function injectCSS() {
     var s = document.createElement('style');
     s.textContent = [
@@ -33,9 +32,8 @@
       'background:linear-gradient(135deg,#1a5c25,#2d8a40);',
       'border:none;cursor:pointer;font-size:26px;',
       'box-shadow:0 4px 20px rgba(45,138,64,.5);',
-      'transition:transform .2s,box-shadow .2s;}',
+      'transition:transform .2s;}',
       '#nb-fab:hover{transform:scale(1.1);}',
-
       '#nb-box{position:fixed;bottom:162px;right:20px;z-index:99998;',
       'width:440px;max-height:600px;background:#0b1a0e;',
       'border:1px solid #1e3a22;border-radius:20px;',
@@ -44,11 +42,9 @@
       'font-family:"Cairo","Segoe UI",Tahoma,sans-serif;',
       'direction:rtl;transition:opacity .25s,transform .25s;}',
       '#nb-box.nb-h{opacity:0;transform:translateY(14px) scale(.97);pointer-events:none;}',
-
       '@media(max-width:500px){',
-      '#nb-box{width:calc(100vw - 20px);right:10px;left:10px;bottom:162px;}',
+      '#nb-box{width:calc(100vw - 20px);right:10px;left:10px;}',
       '#nb-fab{right:16px;bottom:90px;}}',
-
       '#nb-head{background:linear-gradient(135deg,#163d1e,#1e5228);',
       'padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}',
       '#nb-hico{width:40px;height:40px;border-radius:50%;background:#2d8a40;',
@@ -58,7 +54,6 @@
       '#nb-cls{margin-right:auto;background:none;border:none;',
       'color:#6a9970;font-size:22px;cursor:pointer;padding:4px;}',
       '#nb-cls:hover{color:#a3e4ab;}',
-
       '#nb-msgs{flex:1;overflow-y:auto;padding:14px;',
       'display:flex;flex-direction:column;gap:10px;}',
       '.nb-m{max-width:84%;border-radius:14px;padding:11px 15px;',
@@ -67,9 +62,7 @@
       'border-bottom-right-radius:3px;}',
       '.nb-b{background:#0e1e10;color:#d5ead7;border:1px solid #1e3a22;',
       'align-self:flex-end;border-bottom-left-radius:3px;}',
-      '.nb-err{background:#2a0808;color:#f08080;',
-      'align-self:flex-end;border-radius:10px;}',
-
+      '.nb-err{background:#2a0808;color:#f08080;align-self:flex-end;border-radius:10px;}',
       '.nb-cards{display:flex;flex-direction:column;gap:8px;width:100%;align-self:flex-end;}',
       '.nb-card{display:flex;gap:10px;align-items:center;',
       'background:#0a150c;border:1px solid #1e3a22;border-radius:10px;',
@@ -86,7 +79,6 @@
       'border-radius:6px;padding:5px 10px;white-space:nowrap;',
       'border:none;cursor:pointer;margin-right:auto;flex-shrink:0;}',
       '.nb-ob:hover{background:#3aaa50;}',
-
       '#nb-foot{padding:12px 14px;display:flex;gap:8px;align-items:flex-end;',
       'border-top:1px solid #1e3a22;flex-shrink:0;}',
       '#nb-inp{flex:1;background:#0e1e10;border:1px solid #1e3a22;',
@@ -96,15 +88,13 @@
       '#nb-inp:focus{border-color:#2d8a40;}',
       '#nb-inp::placeholder{color:#3a5a3e;}',
       '#nb-snd{background:#2d8a40;border:none;border-radius:11px;',
-      'width:42px;height:42px;cursor:pointer;flex-shrink:0;font-size:20px;',
-      'transition:background .2s;}',
+      'width:42px;height:42px;cursor:pointer;flex-shrink:0;font-size:20px;}',
       '#nb-snd:hover{background:#3aaa50;}',
-      '#nb-snd:disabled{background:#1a3a20;cursor:not-allowed;opacity:.6;}',
+      '#nb-snd:disabled{background:#1a3a20;cursor:not-allowed;opacity:.6;}'
     ].join('');
     document.head.appendChild(s);
   }
 
-  /* ── DOM ─────────────────────────────────────────────────────────── */
   function el(tag, attrs) {
     var e = document.createElement(tag);
     Object.keys(attrs || {}).forEach(function(k) {
@@ -118,7 +108,6 @@
   function buildUI() {
     var fab = el('button', {id:'nb-fab', title:'مساعد الصيدلية', text:'💬'});
     document.body.appendChild(fab);
-
     var box = el('div', {id:'nb-box', cls:'nb-h'});
     var head = el('div', {id:'nb-head'});
     var ico  = el('div', {id:'nb-hico', text:'💊'});
@@ -134,7 +123,6 @@
     foot.appendChild(snd); foot.appendChild(inp);
     box.appendChild(head); box.appendChild(msgs); box.appendChild(foot);
     document.body.appendChild(box);
-
     fab.addEventListener('click', toggle);
     cls.addEventListener('click', toggle);
     inp.addEventListener('input', function() {
@@ -148,7 +136,6 @@
     snd.addEventListener('click', send);
   }
 
-  /* ── Supabase: fetch products ────────────────────────────────────── */
   function loadCatalog() {
     fetch(SUPABASE_URL + '/rest/v1/products?select=id,name,name_ar,category,price,in_stock,image_url&in_stock=eq.true', {
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
@@ -156,16 +143,15 @@
     .then(function(r) { return r.json(); })
     .then(function(data) {
       catalog = data || [];
-      console.log('[NB Chat] Catalog loaded:', catalog.length, 'products');
+      console.log('[NB Chat] Catalog:', catalog.length, 'products');
     })
-    .catch(function(e) { console.warn('[NB Chat] Catalog load failed:', e); });
+    .catch(function(e) { console.warn('[NB Chat] Catalog failed:', e); });
   }
 
   function buildCatalogText() {
-    if (!catalog.length) return 'لا توجد منتجات متاحة حالياً.';
-    return '=== كتالوج المنتجات ===\n' + catalog.map(function(p) {
-      var name = p.name_ar || p.name || '';
-      return '[' + p.id + '] ' + name + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع';
+    if (!catalog.length) return 'لا توجد منتجات.';
+    return '=== المنتجات المتاحة ===\n' + catalog.map(function(p) {
+      return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع';
     }).join('\n');
   }
 
@@ -176,7 +162,6 @@
     return catalog.filter(function(p) { return ids[p.id]; }).slice(0, 4);
   }
 
-  /* ── Chat ─────────────────────────────────────────────────────────── */
   function toggle() {
     isOpen = !isOpen;
     var box = document.getElementById('nb-box');
@@ -192,17 +177,14 @@
     var msgs = document.getElementById('nb-msgs');
     var t = document.getElementById('nb-typ');
     if (t) t.parentNode.removeChild(t);
-
     var d = el('div', {cls:'nb-m nb-' + type, text:text});
     msgs.appendChild(d);
-
     if (cards && cards.length) {
       var wrap = el('div', {cls:'nb-cards'});
       cards.forEach(function(p) {
         var card = el('div', {cls:'nb-card'});
         if (p.image_url) {
-          var img = el('img', {cls:'nb-ci', src:p.image_url, alt:p.name_ar || p.name || ''});
-          card.appendChild(img);
+          card.appendChild(el('img', {cls:'nb-ci', src:p.image_url, alt:p.name_ar || p.name || ''}));
         } else {
           card.appendChild(el('div', {cls:'nb-cp', text:'💊'}));
         }
@@ -221,7 +203,8 @@
   function showTyping() {
     var msgs = document.getElementById('nb-msgs');
     var d = el('div', {id:'nb-typ', cls:'nb-m nb-b', text:'جاري التفكير...'});
-    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   function send() {
@@ -236,32 +219,27 @@
     history.push({role:'user', parts:[{text:msg}]});
     showTyping();
 
-    /* Build full message list with catalog context */
-    var allMsgs = [{
-      role: 'user',
-      parts: [{text: SYSTEM_PROMPT + '\n\n\n' + buildCatalogText() + '\n\n\nعند اقتراح منتج، اذكر رقمه بين قوسين مربعين مثل [46].'}]
-    }, {
-      role: 'model',
-      parts: [{text: 'حسناً، أنا جاهز للمساعدة. كيف يمكنني خدمتك؟'}]
-    }].concat(history.slice(-10));
+    var systemText = SYSTEM_BASE + '\n\n' + buildCatalogText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
 
-    /* Call Google Gemini API directly */
     fetch(GEMINI_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        contents: allMsgs,
+        system_instruction: {parts: [{text: systemText}]},
+        contents: history.slice(-10),
         generationConfig: {temperature: 0.4, maxOutputTokens: 600}
       })
     })
     .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) {
+        return r.text().then(function(b) { throw new Error('HTTP ' + r.status + ' ' + b.slice(0, 150)); });
+      }
       return r.json();
     })
     .then(function(data) {
+      if (!data.candidates || !data.candidates[0]) throw new Error('لا يوجد رد');
       var text = data.candidates[0].content.parts[0].text;
-      var sugs = extractSuggestions(text);
-      addMsg('b', text, sugs);
+      addMsg('b', text, extractSuggestions(text));
       history.push({role:'model', parts:[{text:text}]});
       if (history.length > 20) history = history.slice(-20);
     })
@@ -275,7 +253,6 @@
     });
   }
 
-  /* ── Init ────────────────────────────────────────────────────────── */
   function init() {
     injectCSS();
     buildUI();
