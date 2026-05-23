@@ -19,7 +19,11 @@ tailwind.config = {
         cream: '#FDFCF8',
         gold: '#F59E0B',
       },
-      fontFamily: { heading: ['Cairo', 'sans-serif'] }
+      fontFamily: {
+        sans: ['Cairo', 'sans-serif'],
+        heading: ['Cairo', 'sans-serif'],
+        body: ['Cairo', 'sans-serif']
+      }
     }
   }
 }
