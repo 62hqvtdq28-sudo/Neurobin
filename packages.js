@@ -1,0 +1,143 @@
+// packages.js — Packages management (mirrors products.js)
+var _allPackages = [];
+
+async function loadPackages() {
+  var grid = document.getElementById('packagesList');
+  if (!grid) return;
+  grid.innerHTML = '<div class="col-span-full text-center py-12"><div class="animate-spin w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full mx-auto"></div></div>';
+  try {
+    _allPackages = await SupaDB.Packages.list();
+    renderPackagesList(_allPackages);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('خطأ: ' + e.message, 'error');
+    grid.innerHTML = '';
+  }
+}
+
+function renderPackagesList(list) {
+  var grid = document.getElementById('packagesList');
+  if (!grid) return;
+  if (!list || !list.length) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400"><i data-lucide="package-open" class="w-12 h-12 mx-auto mb-3 opacity-30"></i><p>لا توجد بكجات — أضف أول بكج</p></div>';
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  grid.innerHTML = list.map(function(pkg) {
+    var id = escapeHTML(String(pkg.id));
+    var img = pkg.image || '';
+    var price = pkg.price ? Number(pkg.price).toLocaleString('ar-IQ') + ' د.ع' : '—';
+    var inStock = pkg.in_stock !== false;
+    return '<div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden animate-fade-in">' +
+      '<div class="relative">' +
+        (img ? '<img src="' + escapeHTML(img) + '" alt="" class="w-full h-44 object-contain bg-white">' :
+               '<div class="w-full h-44 bg-brand-50 flex items-center justify-center"><i data-lucide="gift" class="w-12 h-12 text-brand-300"></i></div>') +
+        '<div class="absolute top-2 left-2"><span class="px-2 py-1 rounded-full text-xs font-bold ' + (inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') + '">' + (inStock ? 'متوفر' : 'نفد المخزون') + '</span></div>' +
+      '</div>' +
+      '<div class="p-4">' +
+        '<h3 class="font-bold text-brand-900 mb-1 text-sm sm:text-base">' + escapeHTML(pkg.name || '') + '</h3>' +
+        (pkg.description ? '<p class="text-brand-500 text-xs sm:text-sm mb-2 line-clamp-2">' + escapeHTML(pkg.description) + '</p>' : '') +
+        '<p class="font-bold text-brand-700 mb-3 text-sm">' + price + '</p>' +
+        '<div class="flex gap-2">' +
+          '<button onclick="openPackageModal(\''+id+'\')" class="flex-1 bg-brand-100 hover:bg-brand-200 text-brand-700 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-1"><i data-lucide="edit-2" class="w-4 h-4"></i> تعديل</button>' +
+          '<button onclick="deletePackage(\''+id+'\')" class="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function searchPackages() {
+  var q = (document.getElementById('packageSearch') ? document.getElementById('packageSearch').value : '').toLowerCase().trim();
+  renderPackagesList(q ? _allPackages.filter(function(p) { return (p.name||'').toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q); }) : _allPackages);
+}
+
+function openPackageModal(id) {
+  var pkg = id ? _allPackages.find(function(p) { return String(p.id) === String(id); }) : null;
+  document.getElementById('pkgModalTitle').textContent = pkg ? 'تعديل بكج' : 'إضافة بكج جديد';
+  document.getElementById('pkgId').value = pkg ? id : '';
+  document.getElementById('pkgName').value = pkg ? (pkg.name || '') : '';
+  document.getElementById('pkgPrice').value = pkg ? (pkg.price || '') : '';
+  document.getElementById('pkgDesc').value = pkg ? (pkg.description || '') : '';
+  document.getElementById('pkgImage').value = pkg ? (pkg.image || '') : '';
+  var prev = document.getElementById('pkgImagePreviewContainer');
+  var area = document.getElementById('pkgImagePreview');
+  if (pkg && pkg.image) {
+    document.getElementById('pkgImagePreviewImg').src = pkg.image;
+    if (prev) prev.classList.remove('hidden');
+    if (area) area.classList.add('hidden');
+  } else {
+    if (prev) prev.classList.add('hidden');
+    if (area) area.classList.remove('hidden');
+  }
+  document.getElementById('pkgModal').classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closePackageModal() { document.getElementById('pkgModal').classList.remove('active'); }
+
+function removePkgImage() {
+  document.getElementById('pkgImage').value = '';
+  document.getElementById('pkgImagePreviewContainer').classList.add('hidden');
+  document.getElementById('pkgImagePreview').classList.remove('hidden');
+}
+
+async function savePackage() {
+  var name  = document.getElementById('pkgName').value.trim();
+  var price = parseFloat(String(document.getElementById('pkgPrice').value).replace(/[^0-9.]/g,'')) || 0;
+  var desc  = document.getElementById('pkgDesc').value.trim();
+  var image = document.getElementById('pkgImage').value.trim();
+  var id    = document.getElementById('pkgId').value || null;
+  if (!name) { if (typeof showToast === 'function') showToast('يرجى إدخال اسم البكج', 'error'); return; }
+  var payload = { name: name, price: price, description: desc, image: image, in_stock: true };
+  try {
+    if (id) { await SupaDB.Packages.update(id, payload); }
+    else    { await SupaDB.Packages.create(payload); }
+    closePackageModal();
+    loadPackages();
+    if (typeof showToast === 'function') showToast(id ? '✅ تم تعديل البكج' : '✅ تم إضافة البكج', 'success');
+  } catch(e) { if (typeof showToast === 'function') showToast('❌ خطأ: ' + e.message, 'error'); }
+}
+
+async function deletePackage(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا البكج؟')) return;
+  try {
+    await SupaDB.Packages.delete(id);
+    loadPackages();
+    if (typeof showToast === 'function') showToast('✅ تم حذف البكج', 'success');
+  } catch(e) { if (typeof showToast === 'function') showToast('❌ خطأ: ' + e.message, 'error'); }
+}
+
+// ── Package Image Upload (iOS-compatible, mirrors product upload) ──────────
+window.handlePkgImageUpload = async function(input) {
+  var file = input && input.files && input.files[0];
+  if (!file) { await new Promise(function(r){setTimeout(r,1500);}); file = input && input.files && input.files[0]; }
+  if (!file) { if(typeof showToast==='function') showToast('⚠️ لم يتم اختيار صورة','error'); return; }
+  if (!file.type.startsWith('image/') && file.type !== '') { if(typeof showToast==='function') showToast('❌ الملف ليس صورة','error'); input.value=''; return; }
+  if (file.size > 10*1024*1024) { if(typeof showToast==='function') showToast('❌ الصورة أكبر من 10MB','error'); input.value=''; return; }
+  var fr = new FileReader();
+  fr.onload = function(e) {
+    document.getElementById('pkgImagePreviewImg').src = e.target.result;
+    document.getElementById('pkgImagePreviewContainer').classList.remove('hidden');
+    document.getElementById('pkgImagePreview').classList.add('hidden');
+    document.getElementById('pkgImage').value = e.target.result;
+  };
+  fr.readAsDataURL(file);
+  if (typeof SupaDB==='undefined'||!SupaDB.ImageStorage||typeof SupaDB.ImageStorage.upload!=='function') {
+    if(typeof showToast==='function') showToast('❌ دالة رفع الصور غير موجودة','error'); return;
+  }
+  var uploadFile = file;
+  try {
+    var _o=URL.createObjectURL(file);
+    var _b=await new Promise(function(res,rej){var _i=new Image();_i.onerror=function(){URL.revokeObjectURL(_o);rej(new Error('fail'));};_i.onload=function(){var _c=document.createElement('canvas'),MAX=1200,w=_i.width,h=_i.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}_c.width=w;_c.height=h;_c.getContext('2d').drawImage(_i,0,0,w,h);_c.toBlob(function(b){URL.revokeObjectURL(_o);b?res(b):rej(new Error('null'));},'image/jpeg',0.88);};_i.src=_o;});
+    uploadFile=new File([_b],'pkg-'+Date.now()+'.jpg',{type:'image/jpeg'});
+  } catch(ce){uploadFile=file;}
+  try {
+    if(typeof showToast==='function') showToast('⏳ جاري رفع الصورة...','info');
+    var url=await SupaDB.ImageStorage.upload(uploadFile);
+    if(!url||!url.startsWith('http')) throw new Error('رابط غير صالح');
+    document.getElementById('pkgImage').value=url;
+    document.getElementById('pkgImagePreviewImg').src=url;
+    if(typeof showToast==='function') showToast('✅ تم رفع الصورة','success');
+  } catch(e){if(typeof showToast==='function') showToast('❌ فشل الرفع: '+(e.message||e),'error');}
+};
