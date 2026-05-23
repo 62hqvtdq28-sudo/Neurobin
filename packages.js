@@ -37,7 +37,7 @@
     if (typeof initScrollAnimations === 'function') initScrollAnimations();
   }
 
-  // إضافة زر فلتر البكجات
+  // إضافة زر فلتر البكجات (مع صورة القسم)
   function _addFilterBtn() {
     var tabList = document.querySelector('.cat-icon-grid');
     if (!tabList || tabList.querySelector('[data-filter="packages"]')) return;
@@ -46,7 +46,12 @@
     btn.setAttribute('data-filter', 'packages');
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', 'false');
-    btn.innerHTML = '<div class="cat-icon-circle ci-pkg"><i class="fa-solid fa-gift"></i></div><span class="cat-icon-label">\u0628\u0643\u062c\u0627\u062a</span>';
+    btn.innerHTML =
+      '<div class="cat-icon-circle ci-pkg" id="cat_circle_packages">' +
+        '<img alt="\u0628\u0643\u062c\u0627\u062a" id="cat_img_packages" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display=\'none\'">' +
+        '<i class="fa-solid fa-gift"></i>' +
+      '</div>' +
+      '<span class="cat-icon-label">\u0628\u0643\u062c\u0627\u062a</span>';
     btn.addEventListener('click', function(e) {
       document.querySelectorAll('.cat-icon-btn').forEach(function(b) {
         b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
@@ -59,6 +64,17 @@
       });
     });
     tabList.appendChild(btn);
+    // تحميل صورة القسم من Supabase إن وجدت
+    if (typeof supabaseClient !== 'undefined') {
+      supabaseClient.from('site_settings').select('value').eq('key', 'cat_img_packages').maybeSingle()
+        .then(function(r) {
+          if (!r || !r.data || !r.data.value) return;
+          var imgEl = document.getElementById('cat_img_packages');
+          if (imgEl) { imgEl.src = r.data.value; imgEl.style.display = ''; }
+          var icon = document.querySelector('#cat_circle_packages i');
+          if (icon) icon.style.display = 'none';
+        }).catch(function(){});
+    }
   }
 
   // تعديل filterProducts لإعادة عرض البكجات عند "الكل"
@@ -95,33 +111,6 @@
             _allPackages = pkgs || [];
             _injectPkgs(_allPackages);
           }).catch(function() {});
-        }
-        // عرض السعر المشطوب (قبل الخصم) على كروت المنتجات
-        if (typeof supabaseClient !== 'undefined') {
-          supabaseClient.from('products').select('id, original_price')
-            .then(function(result) {
-              if (!result || !result.data) return;
-              result.data.forEach(function(p) {
-                if (!p.original_price) return;
-                var op = Number(p.original_price);
-                var id = String(p.id);
-                var card = document.querySelector('[data-id="' + id + '"]');
-                if (!card || card.querySelector('.orig-price')) return;
-                var priceRow = card.querySelector('.flex.items-center.justify-between');
-                if (!priceRow) return;
-                var priceSpan = priceRow.querySelector('span:first-child');
-                if (!priceSpan) return;
-                var productObj = typeof products !== 'undefined' ? products.find(function(q) { return q.id === id; }) : null;
-                var curPrice = productObj ? productObj.price : 0;
-                if (op <= curPrice) return;
-                var origSpan = document.createElement('span');
-                origSpan.className = 'orig-price text-xs line-through text-gray-400 leading-none block mb-0.5';
-                origSpan.textContent = op.toLocaleString('en-US') + ' د.ع';
-                priceSpan.parentNode.insertBefore(origSpan, priceSpan);
-                priceSpan.classList.remove('text-brand-700');
-                priceSpan.classList.add('text-red-600');
-              });
-            }).catch(function() {});
         }
       }
     }, 500);
