@@ -1,17 +1,32 @@
-/* Neurobin Pharmacy Chat Widget v3
- * Uses createElement only — no innerHTML, no copy-paste issues
- * Add before </body>: <script src="neurobin-chat.js"></script>
+/* Neurobin Pharmacy Chat Widget v4
+ * Calls Google Gemini API directly — no backend needed!
+ * Replace YOUR_GEMINI_KEY below with your actual key
  */
 (function () {
   'use strict';
 
-  var API = 'https://runtime.codewords.ai/run/neurobin_pharmacy_chat_8f619152';
+  var GEMINI_KEY = 'AIzaSyCScys0gl2glKgK2rYb0qdwU7huxddz8M8';
+  var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+
+  var SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+  var SYSTEM_PROMPT = [
+    'أنت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
+    'مهمتك: الإجابة على استفسارات العملاء بالعربية العراقيه المبسّطة.',
+    'عند اقتراح منتج من الكتالوج، اذكر رقمه بصيغة [ID] مثل [46].',
+    'لا تقترح سوى منتجات موجودة في الكتالوج المرفق.',
+    'أجب بشكل مختصر (3-4 جمل فقط).',
+    'لا تقدم استشارات طبية تشخيصية — انصح بمراجعة طبيب.',
+    'الأسعار بالدينار العراقي.'
+  ].join(' ');
+
+  var catalog = [];
   var history = [], isOpen = false, loading = false;
 
   /* ── CSS ─────────────────────────────────────────────────────────── */
   function injectCSS() {
     var s = document.createElement('style');
-    s.id = 'nb-styles';
     s.textContent = [
       '#nb-fab{position:fixed;bottom:90px;right:20px;z-index:99999;',
       'width:60px;height:60px;border-radius:50%;',
@@ -36,13 +51,13 @@
 
       '#nb-head{background:linear-gradient(135deg,#163d1e,#1e5228);',
       'padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}',
-      '#nb-head-ico{width:40px;height:40px;border-radius:50%;background:#2d8a40;',
+      '#nb-hico{width:40px;height:40px;border-radius:50%;background:#2d8a40;',
       'display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}',
-      '#nb-head-title{color:#a3e4ab;font-weight:700;font-size:15px;}',
-      '#nb-head-sub{color:#6a9970;font-size:12px;margin-top:2px;}',
-      '#nb-close{margin-right:auto;background:none;border:none;',
+      '#nb-htit{color:#a3e4ab;font-weight:700;font-size:15px;}',
+      '#nb-hsub{color:#6a9970;font-size:12px;margin-top:2px;}',
+      '#nb-cls{margin-right:auto;background:none;border:none;',
       'color:#6a9970;font-size:22px;cursor:pointer;padding:4px;}',
-      '#nb-close:hover{color:#a3e4ab;}',
+      '#nb-cls:hover{color:#a3e4ab;}',
 
       '#nb-msgs{flex:1;overflow-y:auto;padding:14px;',
       'display:flex;flex-direction:column;gap:10px;}',
@@ -52,24 +67,25 @@
       'border-bottom-right-radius:3px;}',
       '.nb-b{background:#0e1e10;color:#d5ead7;border:1px solid #1e3a22;',
       'align-self:flex-end;border-bottom-left-radius:3px;}',
-      '.nb-err{background:#2a0808;color:#f0a0a0;border:1px solid #5a1010;',
+      '.nb-err{background:#2a0808;color:#f08080;',
       'align-self:flex-end;border-radius:10px;}',
 
-      '.nb-cards{display:flex;flex-direction:column;gap:8px;',
-      'align-self:flex-end;width:100%;}',
+      '.nb-cards{display:flex;flex-direction:column;gap:8px;width:100%;align-self:flex-end;}',
       '.nb-card{display:flex;gap:10px;align-items:center;',
       'background:#0a150c;border:1px solid #1e3a22;border-radius:10px;',
-      'padding:9px 12px;cursor:pointer;transition:border-color .2s;}',
+      'padding:9px 12px;transition:border-color .2s;}',
       '.nb-card:hover{border-color:#2d8a40;}',
-      '.nb-card-img{width:46px;height:46px;border-radius:8px;object-fit:cover;',
+      '.nb-ci{width:46px;height:46px;border-radius:8px;object-fit:cover;',
       'background:#1a2e1c;flex-shrink:0;}',
-      '.nb-card-name{color:#a3e4ab;font-weight:700;font-size:13px;',
+      '.nb-cp{width:46px;height:46px;border-radius:8px;background:#1a2e1c;',
+      'flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}',
+      '.nb-cn{color:#a3e4ab;font-weight:700;font-size:13px;',
       'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.nb-card-price{color:#6ee87a;font-size:12px;margin-top:2px;}',
-      '.nb-order{font-size:11.5px;color:#fff;background:#2d8a40;',
+      '.nb-cpr{color:#6ee87a;font-size:12px;margin-top:2px;}',
+      '.nb-ob{font-size:11.5px;color:#fff;background:#2d8a40;',
       'border-radius:6px;padding:5px 10px;white-space:nowrap;',
       'border:none;cursor:pointer;margin-right:auto;flex-shrink:0;}',
-      '.nb-order:hover{background:#3aaa50;}',
+      '.nb-ob:hover{background:#3aaa50;}',
 
       '#nb-foot{padding:12px 14px;display:flex;gap:8px;align-items:flex-end;',
       'border-top:1px solid #1e3a22;flex-shrink:0;}',
@@ -79,58 +95,46 @@
       'resize:none;direction:rtl;max-height:90px;line-height:1.5;}',
       '#nb-inp:focus{border-color:#2d8a40;}',
       '#nb-inp::placeholder{color:#3a5a3e;}',
-      '#nb-send{background:#2d8a40;border:none;border-radius:11px;',
+      '#nb-snd{background:#2d8a40;border:none;border-radius:11px;',
       'width:42px;height:42px;cursor:pointer;flex-shrink:0;font-size:20px;',
       'transition:background .2s;}',
-      '#nb-send:hover{background:#3aaa50;}',
-      '#nb-send:disabled{background:#1a3a20;cursor:not-allowed;opacity:.6;}',
+      '#nb-snd:hover{background:#3aaa50;}',
+      '#nb-snd:disabled{background:#1a3a20;cursor:not-allowed;opacity:.6;}',
     ].join('');
     document.head.appendChild(s);
   }
 
-  /* ── DOM builders ────────────────────────────────────────────────── */
-  function el(tag, props) {
+  /* ── DOM ─────────────────────────────────────────────────────────── */
+  function el(tag, attrs) {
     var e = document.createElement(tag);
-    Object.keys(props || {}).forEach(function(k) {
-      if (k === 'text') { e.textContent = props[k]; }
-      else if (k === 'cls') { e.className = props[k]; }
-      else { e.setAttribute(k, props[k]); }
+    Object.keys(attrs || {}).forEach(function(k) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'cls') e.className = attrs[k];
+      else e.setAttribute(k, attrs[k]);
     });
     return e;
   }
 
   function buildUI() {
-    /* Floating button */
     var fab = el('button', {id:'nb-fab', title:'مساعد الصيدلية', text:'💬'});
     document.body.appendChild(fab);
 
-    /* Chat box */
     var box = el('div', {id:'nb-box', cls:'nb-h'});
-
-    /* Header */
     var head = el('div', {id:'nb-head'});
-    var ico  = el('div', {id:'nb-head-ico', text:'💊'});
+    var ico  = el('div', {id:'nb-hico', text:'💊'});
     var info = el('div', {});
-    var t    = el('div', {id:'nb-head-title', text:'مساعد صيدلية Neurobin'});
-    var sub  = el('div', {id:'nb-head-sub',   text:'مدعوم بـ Gemini AI ✨'});
-    var cls  = el('button', {id:'nb-close', text:'✕'});
-    info.appendChild(t); info.appendChild(sub);
+    var cls  = el('button', {id:'nb-cls', text:'✕'});
+    info.appendChild(el('div', {id:'nb-htit', text:'مساعد صيدلية Neurobin'}));
+    info.appendChild(el('div', {id:'nb-hsub', text:'مدعوم بـ Gemini AI ✨'}));
     head.appendChild(ico); head.appendChild(info); head.appendChild(cls);
-
-    /* Messages */
     var msgs = el('div', {id:'nb-msgs'});
-
-    /* Footer / input */
     var foot = el('div', {id:'nb-foot'});
-    var inp  = el('textarea', {id:'nb-inp', rows:'1',
-                  placeholder:'اسألني عن أي منتج أو دواء...'});
-    var snd  = el('button', {id:'nb-send', text:'➤', disabled:'true'});
+    var inp  = el('textarea', {id:'nb-inp', rows:'1', placeholder:'اسألني عن أي منتج أو دواء...'});
+    var snd  = el('button', {id:'nb-snd', text:'➤', disabled:'true'});
     foot.appendChild(snd); foot.appendChild(inp);
-
     box.appendChild(head); box.appendChild(msgs); box.appendChild(foot);
     document.body.appendChild(box);
 
-    /* Events */
     fab.addEventListener('click', toggle);
     cls.addEventListener('click', toggle);
     inp.addEventListener('input', function() {
@@ -144,13 +148,41 @@
     snd.addEventListener('click', send);
   }
 
-  /* ── Chat logic ──────────────────────────────────────────────────── */
+  /* ── Supabase: fetch products ────────────────────────────────────── */
+  function loadCatalog() {
+    fetch(SUPABASE_URL + '/rest/v1/products?select=id,name,name_ar,category,price,in_stock,image_url&in_stock=eq.true', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      catalog = data || [];
+      console.log('[NB Chat] Catalog loaded:', catalog.length, 'products');
+    })
+    .catch(function(e) { console.warn('[NB Chat] Catalog load failed:', e); });
+  }
+
+  function buildCatalogText() {
+    if (!catalog.length) return 'لا توجد منتجات متاحة حالياً.';
+    return '=== كتالوج المنتجات ===\n' + catalog.map(function(p) {
+      var name = p.name_ar || p.name || '';
+      return '[' + p.id + '] ' + name + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع';
+    }).join('\n');
+  }
+
+  function extractSuggestions(text) {
+    var ids = {};
+    var m, rx = /\[(\d+)\]/g;
+    while ((m = rx.exec(text)) !== null) ids[parseInt(m[1])] = true;
+    return catalog.filter(function(p) { return ids[p.id]; }).slice(0, 4);
+  }
+
+  /* ── Chat ─────────────────────────────────────────────────────────── */
   function toggle() {
     isOpen = !isOpen;
     var box = document.getElementById('nb-box');
     if (isOpen) {
       box.classList.remove('nb-h');
-      if (!history.length) addMsg('b', 'مرحباً! أنا مساعدك الصيدلاني في Neurobin. كيف يمكنني مساعدتك؟ 🌿');
+      if (!history.length) addMsg('b', 'مرحباً! أنا مساعدك الصيدلاني في Neurobin. كيف يمكنني مساعدتك اليوم؟ 🌿');
     } else {
       box.classList.add('nb-h');
     }
@@ -158,28 +190,27 @@
 
   function addMsg(type, text, cards) {
     var msgs = document.getElementById('nb-msgs');
-    var t = document.getElementById('nb-typing');
+    var t = document.getElementById('nb-typ');
     if (t) t.parentNode.removeChild(t);
 
-    var d = el('div', {cls: 'nb-m nb-' + type, text: text});
+    var d = el('div', {cls:'nb-m nb-' + type, text:text});
     msgs.appendChild(d);
 
     if (cards && cards.length) {
-      var wrap = el('div', {cls: 'nb-cards'});
+      var wrap = el('div', {cls:'nb-cards'});
       cards.forEach(function(p) {
-        var card = el('div', {cls: 'nb-card'});
+        var card = el('div', {cls:'nb-card'});
         if (p.image_url) {
-          var img = el('img', {cls:'nb-card-img', src:p.image_url, alt:p.name});
+          var img = el('img', {cls:'nb-ci', src:p.image_url, alt:p.name_ar || p.name || ''});
           card.appendChild(img);
         } else {
-          card.appendChild(el('div', {cls:'nb-card-img', text:'💊'}));
+          card.appendChild(el('div', {cls:'nb-cp', text:'💊'}));
         }
         var info = el('div', {style:'flex:1;min-width:0'});
-        info.appendChild(el('div', {cls:'nb-card-name', text:p.name}));
-        info.appendChild(el('div', {cls:'nb-card-price',
-          text: Number(p.price).toLocaleString('ar-IQ') + ' د.ع'}));
-        var btn = el('button', {cls:'nb-order', text:'اطلب الآن'});
-        card.appendChild(info); card.appendChild(btn);
+        info.appendChild(el('div', {cls:'nb-cn', text:p.name_ar || p.name || ''}));
+        info.appendChild(el('div', {cls:'nb-cpr', text:Number(p.price).toLocaleString('ar-IQ') + ' د.ع'}));
+        card.appendChild(info);
+        card.appendChild(el('button', {cls:'nb-ob', text:'اطلب الآن'}));
         wrap.appendChild(card);
       });
       msgs.appendChild(wrap);
@@ -189,9 +220,8 @@
 
   function showTyping() {
     var msgs = document.getElementById('nb-msgs');
-    var d = el('div', {id:'nb-typing', cls:'nb-m nb-b', text:'جاري التفكير...'});
-    msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
+    var d = el('div', {id:'nb-typ', cls:'nb-m nb-b', text:'جاري التفكير...'});
+    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
   }
 
   function send() {
@@ -201,33 +231,47 @@
     if (!msg) return;
     inp.value = ''; inp.style.height = 'auto';
     loading = true;
-    document.getElementById('nb-send').disabled = true;
-
+    document.getElementById('nb-snd').disabled = true;
     addMsg('u', msg);
-    history.push({role:'user', content:msg});
+    history.push({role:'user', parts:[{text:msg}]});
     showTyping();
 
-    fetch(API, {
+    /* Build full message list with catalog context */
+    var allMsgs = [{
+      role: 'user',
+      parts: [{text: SYSTEM_PROMPT + '\n\n\n' + buildCatalogText() + '\n\n\nعند اقتراح منتج، اذكر رقمه بين قوسين مربعين مثل [46].'}]
+    }, {
+      role: 'model',
+      parts: [{text: 'حسناً، أنا جاهز للمساعدة. كيف يمكنني خدمتك؟'}]
+    }].concat(history.slice(-10));
+
+    /* Call Google Gemini API directly */
+    fetch(GEMINI_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message:msg, history:history.slice(-8)})
+      body: JSON.stringify({
+        contents: allMsgs,
+        generationConfig: {temperature: 0.4, maxOutputTokens: 600}
+      })
     })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     })
-    .then(function(d) {
-      addMsg('b', d.response, d.suggestions || []);
-      history.push({role:'assistant', content:d.response});
+    .then(function(data) {
+      var text = data.candidates[0].content.parts[0].text;
+      var sugs = extractSuggestions(text);
+      addMsg('b', text, sugs);
+      history.push({role:'model', parts:[{text:text}]});
       if (history.length > 20) history = history.slice(-20);
     })
     .catch(function(e) {
-      addMsg('err', 'خطأ في الاتصال: ' + e.message);
+      addMsg('err', 'خطأ: ' + e.message);
       console.error('[NB Chat]', e);
     })
     .finally(function() {
       loading = false;
-      document.getElementById('nb-send').disabled = false;
+      document.getElementById('nb-snd').disabled = false;
     });
   }
 
@@ -235,6 +279,7 @@
   function init() {
     injectCSS();
     buildUI();
+    loadCatalog();
   }
 
   if (document.readyState === 'loading') {
