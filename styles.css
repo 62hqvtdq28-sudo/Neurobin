@@ -294,3 +294,38 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .ci-all{background:linear-gradient(135deg,#e8f5ee,#c0e6d0)}.ci-meds{background:linear-gradient(135deg,#fef3e2,#fde0a0)}.ci-skin{background:linear-gradient(135deg,#fce4ec,#f8bbd9)}.ci-hair{background:linear-gradient(135deg,#e8eaf6,#c5cae9)}.ci-teeth{background:linear-gradient(135deg,#e0f7fa,#b2ebf2)}.ci-makeup{background:linear-gradient(135deg,#f3e5f5,#e1bee7)}.ci-device{background:linear-gradient(135deg,#e3f2fd,#bbdefb)}.ci-perf{background:linear-gradient(135deg,#fff8e1,#ffe082)}
 /* Icon colors */
 .ci-all i{color:#1a6e3c}.ci-meds i{color:#d4820a}.ci-skin i{color:#c2185b}.ci-hair i{color:#3949ab}.ci-teeth i{color:#00838f}.ci-makeup i{color:#8e24aa}.ci-device i{color:#1565c0}.ci-perf i{color:#f9a825}
+
+
+/* ═══════════════════════════════════════════════════════
+   إصلاح المشاكل الثلاث
+   ═══════════════════════════════════════════════════════ */
+
+/* 1. إصلاح لون زر السلة — من البرتقالي إلى الأخضر */
+button[aria-label="فتح سلة التسوق"],
+button[title="السلة"] {
+  background: linear-gradient(135deg, #2D5016, #3D6B2D) !important;
+  box-shadow: 0 4px 15px rgba(45,80,22,0.35) !important;
+}
+button[aria-label="فتح سلة التسوق"]:hover,
+button[title="السلة"]:hover {
+  background: linear-gradient(135deg, #254012, #2D5016) !important;
+}
+
+/* 2. إخفاء عنصر الفيديو عندما لا يوجد ملف
+      (الخلفية الخضراء + الغراديانت تظهر بدلاً منه) */
+.hero-video {
+  display: none !important;
+}
+
+/* 3. إصلاح ظهور زر "تابعنا" — إخفاؤه على الشاشات المتوسطة
+      حتى لا يضغط على باقي أزرار التنقل */
+@media (max-width: 1279px) {
+  #followDropdownWrap {
+    display: none !important;
+  }
+}
+@media (min-width: 1280px) {
+  #followDropdownWrap {
+    display: block !important;
+  }
+}
