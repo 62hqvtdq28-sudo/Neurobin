@@ -188,16 +188,33 @@ async function saveProduct() {
     updated_at: new Date().toISOString()
   };
   if (stock) row.stock = parseInt(stock);
+  // حذف الصورة القديمة من السحابة عند تغييرها
+  if (id && row.image_url) {
+    var _oldProd = _allProducts.find(function(p){ return String(p.id)===String(id); });
+    var _oldImg  = _oldProd && (_oldProd.image_url || _oldProd.image || '');
+    if (_oldImg && _oldImg !== row.image_url && _oldImg.startsWith('http') && _oldImg.includes('/product-images/')) {
+      try { await SupaDB.ImageStorage.remove(_oldImg); } catch(_e) { /* silent */ }
+    }
+  }
   try {
     if (id) { await SupaDB.Products.update(id, row); } else { row.created_at = new Date().toISOString(); await SupaDB.Products.create(row); }
-    closeProductModal(); loadProducts(); showSuccessAnimation('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u0646\u062A\u062C \u0628\u0646\u062C\u0627\u062D!');
-  } catch(e) { showToast('\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u0641\u0638: ' + e.message,'error'); }
+    closeProductModal(); loadProducts(); showSuccessAnimation('تم حفظ المنتج بنجاح!');
+  } catch(e) { showToast('خطأ في الحفظ: ' + e.message,'error'); }
 }
 
 async function deleteProduct(id) {
-  if (!confirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0645\u0646\u062A\u062C\u061F')) return;
-  try { await SupaDB.Products.delete(id); loadProducts(); showToast('\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0646\u062A\u062C','warning'); }
-  catch(e) { showToast('\u062E\u0637\u0623: ' + e.message,'error'); }
+  if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+  try {
+    // حذف صورة المنتج من السحابة أولاً
+    var _dp = _allProducts.find(function(p){ return String(p.id)===String(id); });
+    var _di = _dp && (_dp.image_url || _dp.image || '');
+    if (_di && _di.startsWith('http') && _di.includes('/product-images/')) {
+      try { await SupaDB.ImageStorage.remove(_di); } catch(_e) { /* silent */ }
+    }
+    await SupaDB.Products.delete(id);
+    loadProducts();
+    showToast('تم حذف المنتج', 'warning');
+  } catch(e) { showToast('خطأ: ' + e.message, 'error'); }
 }
 
 async function loadTestimonials() {
