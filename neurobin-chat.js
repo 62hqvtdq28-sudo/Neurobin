@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var API = 'https://app.codewords.agemo.ai/run/neurobin_pharmacy_chat_8f619152';
+  var API = 'https://runtime.codewords.ai/run/neurobin_pharmacy_chat_8f619152';
   var history = [], isOpen = false, loading = false;
 
   /* ── CSS ─────────────────────────────────────────────────────────── */
