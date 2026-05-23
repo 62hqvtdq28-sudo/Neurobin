@@ -107,6 +107,7 @@ section, div { max-width: 100%; }
     <div class="hidden md:flex items-center gap-2">
       <a href="#about" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">من نحن</a>
       <a href="#products" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">المنتجات</a>
+      <a href="#packages" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">البكجات</a>
       <a href="#features" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">المميزات</a>
       <a href="#comments" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">تواصل معنا</a>
     </div>
@@ -551,6 +552,23 @@ section, div { max-width: 100%; }
   </div>
 </section>
 
+<!-- Packages Section -->
+<section id="packages" class="py-20 md:py-28 bg-white" aria-labelledby="packages-title">
+  <div class="container mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 md:mb-14">
+      <h2 id="packages-title" class="font-heading font-bold text-3xl md:text-4xl text-brand-900 mb-4">بكجاتنا المميزة</h2>
+      <p class="text-brand-600 text-lg max-w-2xl mx-auto">اختر البكج المناسب لاحتياجاتك بأفضل الأسعار</p>
+    </div>
+    <div id="packagesGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
+    <div id="packagesEmpty" class="hidden text-center py-16 text-brand-400">
+      <i data-lucide="gift" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+      <p class="text-lg">لا توجد بكجات متاحة حالياً</p>
+    </div>
+  </div>
+</section>
+
+
+
 <!-- Features Section -->
 <section id="features" class="py-24 md:py-32 bg-gradient-to-b from-cream to-brand-50" aria-labelledby="features-title">
   <div class="max-w-7xl mx-auto px-6">
@@ -765,6 +783,7 @@ section, div { max-width: 100%; }
         <ul class="space-y-3">
           <li><a href="#about" class="text-white/70 hover:text-white transition-colors">من نحن</a></li>
           <li><a href="#products" class="text-white/70 hover:text-white transition-colors">المنتجات</a></li>
+            <li><a href="#packages" class="text-white/70 hover:text-white transition-colors">البكجات</a></li>
           <li><a href="#features" class="text-white/70 hover:text-white transition-colors">المميزات</a></li>
           <li><a href="#comments" class="text-white/70 hover:text-white transition-colors">تواصل معنا</a></li>
         </ul>
@@ -896,5 +915,52 @@ function toggleFollowMenu(e) {
   }
 }
 </script>
+<script src="packages.js"></script>
+<script>
+// ── Load and render packages on the customer site ────────────────────────
+function renderPackagesGrid(list) {
+  var grid = document.getElementById('packagesGrid');
+  var empty = document.getElementById('packagesEmpty');
+  if (!grid) return;
+  if (!list || !list.length) {
+    grid.innerHTML = '';
+    if (empty) empty.classList.remove('hidden');
+    return;
+  }
+  if (empty) empty.classList.add('hidden');
+  grid.innerHTML = list.map(function(pkg) {
+    var price = pkg.price ? Number(pkg.price).toLocaleString('ar-IQ') + ' د.ع' : '';
+    var inStock = pkg.in_stock !== false;
+    return '<div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">' +
+      '<div class="relative overflow-hidden">' +
+        (pkg.image ? '<img src="' + pkg.image + '" alt="' + (pkg.name||'') + '" class="w-full h-44 object-contain bg-white group-hover:scale-105 transition-transform duration-300">' :
+                     '<div class="w-full h-44 bg-brand-50 flex items-center justify-center"><i data-lucide="gift" class="w-14 h-14 text-brand-300"></i></div>') +
+        (!inStock ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="bg-white text-brand-900 font-bold px-4 py-2 rounded-full text-sm">نفد المخزون</span></div>' : '') +
+      '</div>' +
+      '<div class="p-4">' +
+        '<h3 class="font-bold text-brand-900 text-sm sm:text-base mb-1">' + (pkg.name||'') + '</h3>' +
+        (pkg.description ? '<p class="text-brand-500 text-xs mb-3 line-clamp-2">' + pkg.description + '</p>' : '') +
+        (price ? '<p class="font-bold text-brand-700 text-base">' + price + '</p>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+window.addEventListener('load', function() {
+  setTimeout(async function() {
+    try {
+      var pkgs = await SupaDB.Packages.list();
+      renderPackagesGrid(pkgs);
+    } catch(e) {
+      var g = document.getElementById('packagesGrid');
+      if (g) g.innerHTML = '';
+      var emp = document.getElementById('packagesEmpty');
+      if (emp) emp.classList.remove('hidden');
+    }
+  }, 1200);
+});
+</script>
+
 </body>
 </html>
