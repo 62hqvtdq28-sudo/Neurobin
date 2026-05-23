@@ -37,8 +37,8 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 @keyframes fadeScale { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
 /* Page Transitions */
-.page-transition-enter { animation: fadeScale 0.3s ease-out forwards; }
-.page-transition-exit { animation: slideOutRight 0.2s ease-in forwards; }
+.page-transition-enter { animation: fadeScale 0.1s ease-out forwards; }
+.page-transition-exit { animation: slideOutRight 0.1s ease-in forwards; }
 
 /* Section transition container */
 .section-content { animation: fadeScale 0.3s ease-out; }
