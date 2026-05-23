@@ -230,12 +230,12 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 
 /* Responsive */
 @media(max-width:767px){
-  .products-grid{grid-template-columns:repeat(3,1fr);gap:0.4rem}
-  .product-image-wrapper{height:120px}
+  .products-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem}
+  .product-image-wrapper{height:145px}
   .product-card-main>div:last-child{padding:0.4rem}
-  .product-card-main h3{font-size:0.72rem!important;margin-bottom:0.15rem!important;line-height:1.2!important}
+  .product-card-main h3{font-size:0.8rem!important;margin-bottom:0.2rem!important;line-height:1.25!important}
   .product-card-main .text-xl{font-size:0.75rem!important}
-  .product-card-main .inline-block.bg-brand-50{display:none}
+  .product-card-main .inline-block.bg-brand-50{font-size:0.6rem;padding:1px 5px}
   .product-card-main .flex.items-center.justify-between{flex-direction:column;align-items:stretch;gap:0.25rem}
   .product-card-main .add-to-cart-btn span,.product-card-main button span.btn-text{font-size:0.65rem}
   .stock-badge{font-size:0.6rem!important;padding:2px 5px!important;top:6px!important;right:6px!important}
@@ -247,8 +247,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
   .whatsapp-float svg{width:28px;height:28px}
 }
 @media(min-width:768px) and (max-width:1024px){
-  .products-grid{grid-template-columns:repeat(4,1fr);gap:0.75rem}
-  .product-image-wrapper{height:150px}
+  .products-grid{grid-template-columns:repeat(3,1fr);gap:0.85rem}
+  .product-image-wrapper{height:165px}
   .product-card-main>div:last-child{padding:0.6rem}
   .product-card-main h3{font-size:0.85rem!important}
   .product-card-main .text-xl{font-size:0.9rem!important}
@@ -313,9 +313,8 @@ button[title="السلة"]:hover {
 
 /* 2. إخفاء عنصر الفيديو عندما لا يوجد ملف
       (الخلفية الخضراء + الغراديانت تظهر بدلاً منه) */
-.hero-video {
-  display: none !important;
-}
+/* hero-video: shown if video loads, hidden via JS if not */
+.hero-video { display: block; }
 
 /* 3. إصلاح ظهور زر "تابعنا" — إخفاؤه على الشاشات المتوسطة
       حتى لا يضغط على باقي أزرار التنقل */
