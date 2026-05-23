@@ -1,7 +1,3 @@
-/** Neurobin Pharmacy Chat Widget v2 — Powered by Gemini AI
- *  FIX v2: positioned above WhatsApp, bigger window, CORS fixed
- *  Usage: add before </body> → <script src="neurobin-chat.js"></script>
- */
 (function () {
   'use strict';
 
