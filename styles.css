@@ -269,7 +269,7 @@
 @media(min-width:640px){.cat-icon-grid{max-width:620px;gap:24px 16px}}
 .cat-icon-btn{display:flex;flex-direction:column;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px;border-radius:14px;transition:transform .2s ease;-webkit-tap-highlight-color:transparent}
 .cat-icon-btn:active{transform:scale(.93)}
-.cat-icon-circle{width:72px;height:72px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:all .25s ease;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.cat-icon-circle{width:72px;height:72px;border-radius:50%;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;transition:all .25s ease;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 @media(min-width:640px){.cat-icon-circle{width:80px;height:80px}}
 .cat-icon-circle i{font-size:26px;line-height:1;transition:color .2s}
 @media(min-width:640px){.cat-icon-circle i{font-size:30px}}
