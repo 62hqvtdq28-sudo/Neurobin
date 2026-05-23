@@ -1,3 +1,5 @@
+@import url("font-override.css");
+
 /* ===== RTL Overflow Fix ===== */
 html {
   overflow-x: hidden;
@@ -12,8 +14,8 @@ html {
     margin-right: 18rem;
     overflow-x: hidden;
     max-width: calc(100vw - 18rem);
-
-@import url("font-override.css");
+  }
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E350F; }
@@ -118,7 +120,7 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .modal.active .modal-content { transform: scale(1); }
 
 /* Toast */
-.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: linear-gradient(135deg, #2D5016, #3D6B2D); color: white; padding: 1rem 2rem; border-radius: 1rem; font-weight: 600; z-index: 9999; opacity: 0; transition: all 0.3s ease; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: linear-gradient(135deg, #2D5016, #3D6B2D); color: white; padding: 1rem 2rem; border-radius: 1rem; opacity: 0; transition: all 0.3s ease; z-index: 9999; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.success { background: linear-gradient(135deg, #10B981, #059669); }
 .toast.error { background: linear-gradient(135deg, #EF4444, #DC2626); }
@@ -160,7 +162,8 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .order-cancelled { background: #FEE2E2; color: #991B1B; }
 
 /* Mobile Menu Button */
-.mobile-menu-btn { display: none; position: fixed; top: 1rem; right: 1rem; z-index: 1003; background: #2D5016; color: white; padding: 0.875rem; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.25); min-width: 56px; min-height: 56px; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.mobile-menu-btn { display: none; position: fixed; top: 1rem; right: 1rem; z-index: 1003; background: #2D5016; color: white; padding: 0.875rem; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.2s ease; }
+.mobile-menu-btn:hover { transform: scale(1.05); }
 .mobile-menu-btn:active { transform: scale(0.95); background: #254012; }
 .mobile-menu-btn i { width: 28px !important; height: 28px !important; }
 
@@ -175,7 +178,7 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .trend-down { color: #EF4444; }
 
 /* Loading Overlay */
-.loading-overlay { position: fixed; inset: 0; background: rgba(253, 252, 248, 0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+.loading-overlay { position: fixed; inset: 0; background: rgba(253, 252, 248, 0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.2s ease; }
 .loading-overlay.active { opacity: 1; visibility: visible; }
 
 /* Form validation errors */
@@ -220,7 +223,7 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .card-shadow-modern { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
 
 /* Notification Panel */
-.notification-panel { position: fixed; top: 80px; left: 20px; width: 360px; max-height: 480px; overflow-y: auto; background: white; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; }
+.notification-panel { position: fixed; top: 80px; left: 20px; width: 360px; max-height: 480px; overflow-y: auto; background: white; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 998; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; }
 .notification-panel.active { opacity: 1; visibility: visible; transform: translateY(0); }
 .notification-item { padding: 1rem; border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.2s ease; cursor: pointer; }
 .notification-item:hover { background: rgba(45,80,22,0.05); }
@@ -505,7 +508,6 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
   transform: translateX(-50%) translateY(0);
 }
 
-
 /* ============================================ */
 /* SECURITY ENHANCEMENTS */
 /* ============================================ */
@@ -683,6 +685,7 @@ button[disabled] {
 .ml-1{margin-left:.25rem}.ml-2{margin-left:.5rem}.ml-3{margin-left:.75rem}
 .ml-4{margin-left:1rem}.ml-6{margin-left:1.5rem}
 @media (min-width:768px){.md\:mr-72{margin-right:18rem}}
+
 /* Sidebar dark green override */
 #sidebar {
   background: linear-gradient(to bottom, #1E350F, #254012) !important;
