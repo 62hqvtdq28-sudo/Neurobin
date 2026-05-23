@@ -185,3 +185,47 @@ const AdminImprovements = (() => {
     }
   };
 })();
+
+
+// ── إضافة البكجات كقسم كامل في الأدمن ─────────────────────────────────────
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+
+      // 1. أضف "بكجات" إلى ADMIN_CAT_DEFS (صور الأقسام)
+      if (typeof ADMIN_CAT_DEFS !== 'undefined' &&
+          !ADMIN_CAT_DEFS.find(function(c) { return c.key === 'packages'; })) {
+        ADMIN_CAT_DEFS.push({
+          key: 'packages',
+          label: '\u0628\u0643\u062c\u0627\u062a',
+          icon: 'fa-gift',
+          bg: 'bg-amber-50',
+          iconColor: 'text-amber-600'
+        });
+      }
+
+      // 2. أضف تبويب "بكجات" في فلتر المنتجات (الأدمن)
+      var dentalBtn = document.querySelector('[onclick*="filterProductsAdmin(\'dental\')"]');
+      if (dentalBtn && !document.querySelector('[data-pkg-filter]')) {
+        var pkgBtn = document.createElement('button');
+        pkgBtn.setAttribute('onclick', "filterProductsAdmin('packages')");
+        pkgBtn.className = dentalBtn.className;
+        pkgBtn.setAttribute('data-pkg-filter', '1');
+        pkgBtn.innerHTML = '\uD83C\uDF81 \u0628\u0643\u062c\u0627\u062a';
+        dentalBtn.insertAdjacentElement('afterend', pkgBtn);
+      }
+
+      // 3. أضف "بكجات" إلى select التصنيف في نموذج المنتج
+      var catSel = document.getElementById('productCategory');
+      if (catSel && !catSel.querySelector('option[value="packages"]')) {
+        var opt = document.createElement('option');
+        opt.value = 'packages';
+        opt.textContent = '\uD83C\uDF81 \u0628\u0643\u062c\u0627\u062a';
+        catSel.appendChild(opt);
+      }
+
+      // 4. إضافة "بكجات" إلى catLabels وcatColors في admin renderProductsList
+      if (typeof catLabels !== 'undefined') catLabels['packages'] = '\u0628\u0643\u062c\u0627\u062a';
+    }, 400);
+  });
+})();
