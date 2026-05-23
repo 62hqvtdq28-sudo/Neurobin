@@ -560,16 +560,16 @@ function formatPrice(price) {
 
 // FIX #2: \u062a\u0645\u0631\u064a\u0631 event \u0643\u0645\u0639\u0627\u0645\u0644 \u2014 \u0644\u0627 global event object
 function filterProducts(e, category) {
-  document.querySelectorAll('.cat-icon-btn').forEach(btn => {
+  // Remove active from all
+  document.querySelectorAll('.cat-icon-btn').forEach(function(btn) {
     btn.classList.remove('active');
     btn.setAttribute('aria-selected', 'false');
   });
-  if (e && e.target) {
-    const activeBtn = e.target.closest('.cat-icon-btn');
-    if (activeBtn) {
-      activeBtn.classList.add('active');
-      activeBtn.setAttribute('aria-selected', 'true');
-    }
+  // Set active via data-filter (reliable on all browsers/iOS)
+  var activeBtn = document.querySelector('.cat-icon-btn[data-filter="' + category + '"]');
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.setAttribute('aria-selected', 'true');
   }
   displayedProducts = category === 'all' ? [...products] : products.filter(p => p.category === category);
   renderProducts(displayedProducts);
