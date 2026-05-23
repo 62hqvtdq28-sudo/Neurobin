@@ -274,3 +274,22 @@ window.handlePkgImageUpload = async function(input) {
     if(typeof showToast==='function') showToast('✅ تم رفع الصورة','success');
   } catch(e){if(typeof showToast==='function') showToast('❌ فشل الرفع: '+(e.message||e),'error');}
 };
+
+// ── إدارة فيديو الهيرو: إظهار إن وُجد، إخفاء إن لم يُحمَّل ──────────────
+(function() {
+  window.addEventListener('DOMContentLoaded', function() {
+    var video = document.querySelector('.hero-video');
+    if (!video) return;
+    // إخفاء إن فشل التحميل
+    function hideVideo() { video.style.display = 'none'; }
+    video.addEventListener('error', hideVideo);
+    var src = video.querySelector('source');
+    if (src) src.addEventListener('error', hideVideo);
+    // تحقق بعد ثانية واحدة إن كان الفيديو يُحمَّل
+    setTimeout(function() {
+      if (video.readyState === 0 && video.networkState === 3) {
+        hideVideo();
+      }
+    }, 1500);
+  });
+})();
