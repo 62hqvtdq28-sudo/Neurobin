@@ -436,6 +436,28 @@ async function checkAuth() {
     return;
   }
 
+  // ✅ FIX: Check Supabase session FIRST — persists across page refreshes
+  // Supabase SDK stores the session in localStorage automatically and renews it
+  if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Auth) {
+    try {
+      const isAuth = await window.SupaDB.Auth.isAuthenticated();
+      if (isAuth) {
+        // Restore sessionStorage so downstream code works correctly
+        if (!sessionStorage.getItem('adminSessionToken')) {
+          sessionStorage.setItem('adminLoggedIn', 'true');
+          sessionStorage.setItem('adminLoginTime', Date.now().toString());
+          sessionStorage.setItem('adminLastActivity', Date.now().toString());
+          sessionStorage.setItem('adminSessionToken', generateSecureId());
+        }
+        showDashboard();
+        return;
+      }
+    } catch(e) {
+      console.warn('[checkAuth] Supabase session check failed:', e.message);
+      // Fall through to localStorage / sessionStorage check
+    }
+  }
+
   const rememberToken = localStorage.getItem('adminRememberToken');
   const storedPasswordHash = localStorage.getItem('adminPasswordHash');
   const storedSalt = localStorage.getItem('adminPasswordSalt');
@@ -652,11 +674,16 @@ function _commitSession(hash, salt) {
   sessionStorage.removeItem('adminSessionToken');
   sessionStorage.setItem('adminLoggedIn', 'true');
   sessionStorage.setItem('adminLoginTime', Date.now().toString());
+  sessionStorage.setItem('adminLastActivity', Date.now().toString());
   var tok = generateSecureId();
   sessionStorage.setItem('adminSessionToken', tok);
   if (hash) localStorage.setItem('adminPasswordHash', hash);
   if (salt) localStorage.setItem('adminPasswordSalt', salt);
-  var remem = { timestamp: Date.now(), passwordHash: hash, salt: salt, sessionToken: tok };
+  // ✅ FIX: When Supabase auth passes null, use existing stored hash/salt
+  // so that rememberToken verification doesn't fail on next refresh
+  var effectiveHash = (hash !== null && hash !== undefined) ? hash : localStorage.getItem('adminPasswordHash');
+  var effectiveSalt = (salt !== null && salt !== undefined) ? salt : localStorage.getItem('adminPasswordSalt');
+  var remem = { timestamp: Date.now(), passwordHash: effectiveHash, salt: effectiveSalt, sessionToken: tok };
   localStorage.setItem('adminRememberToken', JSON.stringify(remem));
 }
 
