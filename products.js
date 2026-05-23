@@ -1,3 +1,21 @@
+// ── حقل السعر قبل الخصم: حقن ديناميكي في نموذج المنتج ──────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var _pi = document.getElementById('productPrice');
+  if (!_pi || document.getElementById('productOriginalPrice')) return;
+  var _pd = _pi.closest('div') || _pi.parentNode;
+  var _nd = document.createElement('div');
+  _nd.innerHTML =
+    '<label class="block text-sm font-semibold text-brand-700 mb-2">' +
+      '\u0627\u0644\u0633\u0639\u0631 \u0642\u0628\u0644 \u0627\u0644\u062e\u0635\u0645 ' +
+      '<span class="text-xs font-normal text-brand-400">(\u0627\u062e\u062a\u064a\u0627\u0631\u064a)</span>' +
+    '</label>' +
+    '<input type="number" id="productOriginalPrice" class="input-field" ' +
+      'placeholder="\u0627\u062a\u0631\u0643\u0647 \u0641\u0627\u0631\u063a\u0627\u064b \u0625\u0630\u0627 \u0644\u0645 \u064a\u0643\u0646 \u0647\u0646\u0627\u0643 \u062e\u0635\u0645" ' +
+      'inputmode="numeric" min="0">' +
+    '<p class="text-xs text-brand-400 mt-1 mb-1">\u0633\u064a\u0638\u0647\u0631 \u0645\u0634\u0637\u0648\u0628\u0627\u064b \u0641\u0648\u0642 \u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u062d\u0627\u0644\u064a</p>';
+  _pd.insertAdjacentElement('afterend', _nd);
+});
+
 // products.js \u2014 Migrated to Supabase + Supabase Storage for images
 var _allProducts = [];
 
@@ -105,6 +123,8 @@ async function openProductModal(id) {
   document.getElementById('productCategory').value = product ? (product.category||'medicines') : 'medicines';
   document.getElementById('productPrice').value    = product ? (product.price||'') : '';
   document.getElementById('productStock').value    = product ? (product.stock!==undefined ? product.stock : '') : '';
+  var _opEl2 = document.getElementById('productOriginalPrice');
+  if (_opEl2) _opEl2.value = product && product.original_price ? product.original_price : '';
   document.getElementById('productDesc').value     = product ? (product.description||'') : '';
   var imgUrl = product ? (product.image_url||product.image||'') : '';
   if (imgUrl) {
@@ -178,10 +198,14 @@ async function saveProduct() {
     showToast('\u062A\u0645 \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0633\u0639\u0631 \u0625\u0644\u0649 ' + price.toLocaleString() + ' \u062F.\u0639 (\u0645\u0636\u0627\u0639\u0641 250)', 'info');
   }
   var id  = document.getElementById('productId').value || null;
+  var _opEl = document.getElementById('productOriginalPrice');
+  var originalPrice = _opEl ? (parseInt(_opEl.value) || null) : null;
+  if (originalPrice && originalPrice <= price) originalPrice = null; // must be > sale price
   var row = {
     name: name, name_ar: name,
     category: document.getElementById('productCategory').value,
     price: price,
+    original_price: originalPrice,
     description: document.getElementById('productDesc').value.trim() || null,
     image_url: document.getElementById('productImage').value || null,
     in_stock: true, stock_level: 'in',
