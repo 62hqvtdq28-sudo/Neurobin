@@ -96,6 +96,33 @@
             _injectPkgs(_allPackages);
           }).catch(function() {});
         }
+        // عرض السعر المشطوب (قبل الخصم) على كروت المنتجات
+        if (typeof supabaseClient !== 'undefined') {
+          supabaseClient.from('products').select('id, original_price')
+            .then(function(result) {
+              if (!result || !result.data) return;
+              result.data.forEach(function(p) {
+                if (!p.original_price) return;
+                var op = Number(p.original_price);
+                var id = String(p.id);
+                var card = document.querySelector('[data-id="' + id + '"]');
+                if (!card || card.querySelector('.orig-price')) return;
+                var priceRow = card.querySelector('.flex.items-center.justify-between');
+                if (!priceRow) return;
+                var priceSpan = priceRow.querySelector('span:first-child');
+                if (!priceSpan) return;
+                var productObj = typeof products !== 'undefined' ? products.find(function(q) { return q.id === id; }) : null;
+                var curPrice = productObj ? productObj.price : 0;
+                if (op <= curPrice) return;
+                var origSpan = document.createElement('span');
+                origSpan.className = 'orig-price text-xs line-through text-gray-400 leading-none block mb-0.5';
+                origSpan.textContent = op.toLocaleString('en-US') + ' د.ع';
+                priceSpan.parentNode.insertBefore(origSpan, priceSpan);
+                priceSpan.classList.remove('text-brand-700');
+                priceSpan.classList.add('text-red-600');
+              });
+            }).catch(function() {});
+        }
       }
     }, 500);
   });
