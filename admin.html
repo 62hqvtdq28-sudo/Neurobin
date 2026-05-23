@@ -1448,15 +1448,17 @@ async function loadCategoryImages() {
           '<p class="text-brand-400 text-xs mt-0.5" id="admSubtitle_' + cat.key + '">' + (currentUrl ? '✅ صورة محفوظة' : 'اضغط لاختيار صورة') + '</p>' +
         '</div>' +
       '</div>' +
-      '<input type="file" id="admFileInput_' + cat.key + '" accept="image/*" style="display:none"' +
-        ' onchange="handleCatImageUpload(\\\'' + cat.key + '\\\', this)">' +
-      '<button id="admUploadBtn_' + cat.key + '"' +
-        ' onclick="(function(k){var el=document.getElementById(\'admFileInput_\'+k);if(el)el.click();})(\\\'' + cat.key + '\\\')"' +
-        ' class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm">' +
+      '<input type="file" id="admFileInput_' + cat.key + '" accept="image/*" style="display:none">' +
+      '<label for="admFileInput_' + cat.key + '" id="admUploadBtn_' + cat.key + '"' +
+        ' class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer">' +
         '<i data-lucide="upload" class="w-4 h-4"></i> ارفع صورة' +
-      '</button>';
+      '</label>';
 
     grid.appendChild(card);
+    (function(key) {
+      var fi = card.querySelector('input[type="file"]');
+      if (fi) fi.addEventListener('change', function() { handleCatImageUpload(key, this); });
+    })(cat.key);
     if (window.lucide) lucide.createIcons({ nodes: [card] });
   });
 
