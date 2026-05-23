@@ -90,6 +90,14 @@ async function savePackage() {
   var id    = document.getElementById('pkgId').value || null;
   if (!name) { if (typeof showToast === 'function') showToast('يرجى إدخال اسم البكج', 'error'); return; }
   var payload = { name: name, price: price, description: desc, image: image, in_stock: true };
+  // حذف الصورة القديمة من السحابة عند تغييرها
+  if (id && image) {
+    var _oldPkg = _allPackages.find(function(p){ return String(p.id)===String(id); });
+    var _oldImg = _oldPkg && (_oldPkg.image || '');
+    if (_oldImg && _oldImg !== image && _oldImg.startsWith('http') && _oldImg.includes('/product-images/')) {
+      try { await SupaDB.ImageStorage.remove(_oldImg); } catch(_e) { /* silent */ }
+    }
+  }
   try {
     if (id) { await SupaDB.Packages.update(id, payload); }
     else    { await SupaDB.Packages.create(payload); }
@@ -102,6 +110,12 @@ async function savePackage() {
 async function deletePackage(id) {
   if (!confirm('هل أنت متأكد من حذف هذا البكج؟')) return;
   try {
+    // حذف صورة البكج من السحابة أولاً
+    var _dp = _allPackages.find(function(p){ return String(p.id)===String(id); });
+    var _di = _dp && (_dp.image || '');
+    if (_di && _di.startsWith('http') && _di.includes('/product-images/')) {
+      try { await SupaDB.ImageStorage.remove(_di); } catch(_e) { /* silent */ }
+    }
     await SupaDB.Packages.delete(id);
     loadPackages();
     if (typeof showToast === 'function') showToast('✅ تم حذف البكج', 'success');
