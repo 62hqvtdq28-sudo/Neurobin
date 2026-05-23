@@ -171,6 +171,10 @@
         <i data-lucide="package" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">المنتجات</span>
       </button>
+      <button onclick="showSection('packages'); setTimeout(loadPackages, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="packages">
+        <i data-lucide="gift" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">البكجات</span>
+      </button>
       <button onclick="showSection('testimonials')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="testimonials">
         <i data-lucide="message-circle" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">آراء العملاء</span>
@@ -551,6 +555,33 @@
       </div>
 
       <div id="productsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"></div>
+    </section>
+
+
+    <!-- Packages Section -->
+    <section id="section-packages" class="section-content hidden">
+      <div class="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <i data-lucide="gift" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">البكجات</h1>
+            <p class="text-brand-600 text-xs sm:text-sm">إدارة بكجات الصيدلية</p>
+          </div>
+        </div>
+        <button onclick="openPackageModal()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+          <i data-lucide="plus" class="w-4 h-4 sm:w-5"></i>
+          <span>إضافة بكج</span>
+        </button>
+      </div>
+      <div class="mb-4">
+        <div class="search-box">
+          <i data-lucide="search" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-400"></i>
+          <input type="text" id="packageSearch" class="input-field" placeholder="ابحث عن بكج..." oninput="searchPackages()">
+        </div>
+      </div>
+      <div id="packagesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"></div>
     </section>
 
     <!-- Testimonials Section -->
@@ -1554,5 +1585,58 @@ async function saveCatImg(key, url) {
 }
 </script>
 
+
+<!-- Package Modal -->
+<div id="pkgModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+  <div class="modal-content bg-white rounded-2xl w-full max-w-lg p-5 max-h-[95vh] overflow-y-auto animate-fade-in" style="margin: auto; width: calc(100% - 1.5rem);">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900" id="pkgModalTitle">إضافة بكج جديد</h2>
+      <button onclick="closePackageModal()" class="p-2 hover:bg-brand-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-600"></i>
+      </button>
+    </div>
+    <input type="hidden" id="pkgId">
+    <div class="space-y-4 sm:space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">اسم البكج *</label>
+        <input type="text" id="pkgName" class="input-field" placeholder="اسم البكج" required>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">السعر (د.ع) *</label>
+        <input type="number" id="pkgPrice" class="input-field" placeholder="25000" inputmode="numeric">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">صورة البكج</label>
+        <input type="file" id="pkgImageFile" accept="image/*" style="display:none" onchange="handlePkgImageUpload(this)">
+        <div class="relative">
+          <div id="pkgImagePreview" class="border-2 border-dashed border-brand-200 rounded-xl text-center hover:border-brand-400 hover:bg-brand-50 transition-colors" style="position:relative;min-height:120px;cursor:pointer;overflow:visible">
+            <label for="pkgImageFile" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;z-index:10;-webkit-tap-highlight-color:transparent;background:transparent;display:block;" aria-label="اختر صورة البكج"></label>
+            <div style="pointer-events:none;padding:1.5rem">
+              <i data-lucide="image-plus" class="w-12 h-12 text-brand-300 mx-auto mb-3"></i>
+              <p class="text-brand-600 font-medium mb-1 text-sm">اضغط هنا لاختيار صورة</p>
+              <p class="text-brand-400 text-xs">PNG, JPG, HEIC — حتى 10MB</p>
+            </div>
+          </div>
+          <div id="pkgImagePreviewContainer" class="hidden relative">
+            <img id="pkgImagePreviewImg" src="" class="w-full h-32 sm:h-40 md:h-48 object-contain bg-white rounded-xl">
+            <button type="button" onclick="removePkgImage()" class="absolute top-2 left-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <input type="hidden" id="pkgImage">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الوصف (اختياري)</label>
+        <textarea id="pkgDesc" rows="3" class="input-field" placeholder="وصف البكج..."></textarea>
+      </div>
+      <button onclick="savePackage()" class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-3 sm:py-4 rounded-xl font-semibold transition-all text-sm sm:text-base md:text-lg shadow-lg">
+        <span>حفظ البكج</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="packages.js"></script>
 </body>
 </html>
