@@ -178,9 +178,12 @@ async function loadProductsFromSupabase() {
   }
 }
 
+function generateTrackingCode(){return 'NB-'+Math.floor(1000+Math.random()*9000);}
+
 async function saveOrderToSupabase(orderData) {
   if (!supabaseClient) return null;
   try {
+    var _tCode=generateTrackingCode();
     const { data: order, error: orderError } = await supabaseClient
       .from('orders')
       .insert({
@@ -188,7 +191,8 @@ async function saveOrderToSupabase(orderData) {
         customer_phone: orderData.phone,
         customer_address: orderData.address || null,
         notes: orderData.notes || null,
-        total_amount: orderData.total
+        total_amount: orderData.total,
+        tracking_code: _tCode
       })
       .select()
       .single();
@@ -211,7 +215,7 @@ async function saveOrderToSupabase(orderData) {
     }
 
     console.log('\u2705 Order saved to Supabase:', order.id);
-    return order.id;
+    return { id: order.id, tracking_code: order.tracking_code || _tCode };
   } catch (e) {
     console.warn('\u26a0\ufe0f Order not saved to Supabase:', e.message);
     return null;
@@ -805,7 +809,9 @@ async function sendToWhatsApp() {
   message += '\n\u{1F69A} *\u0631\u0633\u0648\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(DELIVERY_FEE);
   if (appliedDiscount) { const dD = appliedDiscount.discount_type==='percent' ? appliedDiscount.discount_value+'%' : formatPrice(appliedDiscount.discount_value); message += '\n\u{1F3F7}\uFE0F *\u0643\u0648\u062f \u0627\u0644\u062e\u0635\u0645:* ' + appliedDiscount.code + ' (' + dD + ')'; message += '\n\u{1F4B0} *\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0634\u0627\u0645\u0644 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(discountedTotal + DELIVERY_FEE); } else { message += '\n\u{1F4B0} *\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0634\u0627\u0645\u0644 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(total + DELIVERY_FEE); }
 
-  const orderId = await saveOrderToSupabase({ name, phone, address, notes, total: (appliedDiscount ? discountedTotal : total) + DELIVERY_FEE, items: orderItems });
+  var _oRes=await saveOrderToSupabase({ name, phone, address, notes, total: (appliedDiscount ? discountedTotal : total) + DELIVERY_FEE, items: orderItems });
+  var orderId=_oRes?(typeof _oRes==='object'?_oRes.id:_oRes):null;
+  var trackingCode=_oRes&&_oRes.tracking_code?_oRes.tracking_code:null;
   // \u0625\u0631\u0633\u0627\u0644 \u0625\u0634\u0639\u0627\u0631 \u0625\u064a\u0645\u064a\u0644 \u0644\u0644\u0645\u0634\u0631\u0641
   sendEmailNotification({
     name, phone, address,
@@ -815,6 +821,7 @@ async function sendToWhatsApp() {
     orderId: orderId ? orderId.slice(-8).toUpperCase() : null
   });
   if (orderId) message += '\n\u{1F516} *\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628:* #' + orderId.slice(-8).toUpperCase();
+  if(trackingCode){message+='\n📱 *\u0643\u0648\u062f \u0627\u0644\u062a\u062a\u0628\u0639:* '+trackingCode;showTrackingCodeModal(trackingCode);}
 
   window.open('https://wa.me/9647870404967?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
   if (appliedDiscount && supabaseClient) {
@@ -830,6 +837,31 @@ async function sendToWhatsApp() {
   closeCheckout();
   showToast('\u0634\u0643\u0631\u0627\u064b \u0644\u0643! \u0633\u064a\u062a\u0645 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0642\u0631\u064a\u0628\u0627\u064b', 'success');
   if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+}
+
+function showTrackingCodeModal(code){
+  var ex=document.getElementById('TCM');if(ex)ex.remove();
+  var ov=document.createElement('div');ov.id='TCM';
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);padding:16px;';
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+  var bx=document.createElement('div');
+  bx.style.cssText='background:white;border-radius:22px;padding:32px 28px;max-width:360px;width:100%;text-align:center;font-family:Cairo,sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.35);';
+  var icon=document.createElement('div');
+  icon.style.cssText='width:60px;height:60px;background:#2D5016;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;';
+  icon.innerHTML='<svg width="28" height="28" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+  var h2=document.createElement('h2');h2.style.cssText='font-size:20px;font-weight:900;color:#1E350F;margin-bottom:6px;';h2.textContent='تم استلام طلبك!';
+  var p1=document.createElement('p');p1.style.cssText='color:#83A962;font-size:13px;margin-bottom:22px;';p1.textContent='احتفظ بكود التتبع لمتابعة طلبك';
+  var bxIn=document.createElement('div');bxIn.style.cssText='background:#F6F7F4;border:2px dashed #5C933B;border-radius:16px;padding:20px;margin-bottom:22px;';
+  var lbl=document.createElement('p');lbl.style.cssText='font-size:11px;color:#83A962;margin-bottom:8px;';lbl.textContent='كود التتبع';
+  var codeEl=document.createElement('p');codeEl.style.cssText='font-size:34px;font-weight:900;color:#1E350F;letter-spacing:4px;font-family:monospace;';codeEl.textContent=code||'';
+  var hint=document.createElement('p');hint.style.cssText='font-size:11px;color:#AABF89;margin-top:6px;';hint.textContent='احتفظ بهذا الكود';
+  bxIn.appendChild(lbl);bxIn.appendChild(codeEl);bxIn.appendChild(hint);
+  var lnk=document.createElement('a');lnk.href='track.html?code='+(code||'');lnk.textContent='تتبع طلبك الآن';
+  lnk.style.cssText='display:block;background:#2D5016;color:white;padding:13px;border-radius:13px;font-weight:800;font-size:15px;text-decoration:none;margin-bottom:10px;';
+  var btn=document.createElement('button');btn.textContent='إغلاق';btn.onclick=function(){ov.remove();};
+  btn.style.cssText='background:#F6F7F4;color:#5C933B;padding:11px;border-radius:13px;font-family:Cairo,sans-serif;font-weight:700;font-size:14px;border:none;cursor:pointer;width:100%;';
+  bx.appendChild(icon);bx.appendChild(h2);bx.appendChild(p1);bx.appendChild(bxIn);bx.appendChild(lnk);bx.appendChild(btn);
+  ov.appendChild(bx);document.body.appendChild(ov);
 }
 
 function openQuickView(productId) {
