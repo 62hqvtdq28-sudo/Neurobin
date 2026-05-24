@@ -418,6 +418,7 @@ function openProductModal(id) {
       document.getElementById('productModalTitle').textContent = 'تعديل منتج';
       document.getElementById('productId').value = id;
       document.getElementById('productName').value = product.name;
+      var _pna = document.getElementById('productNameAr'); if (_pna) _pna.value = product.nameAr || product.name_ar || '';
       document.getElementById('productCategory').value = product.category;
       document.getElementById('productPrice').value = product.price;
       document.getElementById('productStock').value = product.stock !== undefined ? product.stock : '';
@@ -433,6 +434,7 @@ function openProductModal(id) {
     document.getElementById('productModalTitle').textContent = 'إضافة منتج جديد';
     document.getElementById('productId').value = '';
     document.getElementById('productName').value = '';
+    var _pnar = document.getElementById('productNameAr'); if (_pnar) _pnar.value = '';
     document.getElementById('productCategory').value = 'medicines';
     document.getElementById('productPrice').value = '';
     document.getElementById('productStock').value = '';
@@ -486,12 +488,15 @@ async function saveProduct() {
     var id = document.getElementById('productId').value;
 
     var safeName = escapeHTML(name);
+    var _nameArEl = document.getElementById('productNameAr');
+    var safeNameAr = escapeHTML((_nameArEl && _nameArEl.value.trim()) || name);
     var safeDesc = escapeHTML(document.getElementById('productDesc').value.trim());
 
     var productData = {
       id: id ? parseInt(id) : Date.now(),
       name: safeName,
-      nameAr: safeName,
+      nameAr: safeNameAr,
+      name_ar: safeNameAr,
       category: escapeHTML(document.getElementById('productCategory').value),
       price: price,
       stock: stock, // Already validated by InputValidator.stock
@@ -506,6 +511,7 @@ async function saveProduct() {
         products[index].id = productData.id;
         products[index].name = productData.name;
         products[index].nameAr = productData.nameAr;
+        products[index].name_ar = productData.nameAr;
         products[index].category = productData.category;
         products[index].price = productData.price;
         if (productData.stock !== undefined) products[index].stock = productData.stock;
@@ -519,6 +525,7 @@ async function saveProduct() {
         id: productData.id,
         name: productData.name,
         nameAr: productData.nameAr,
+        name_ar: productData.nameAr,
         category: productData.category,
         price: productData.price,
         description: productData.description,
