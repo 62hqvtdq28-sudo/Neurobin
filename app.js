@@ -184,19 +184,18 @@ async function saveOrderToSupabase(orderData) {
   if (!supabaseClient) return null;
   try {
     var _tCode=generateTrackingCode();
-    const { data: order, error: orderError } = await supabaseClient
-      .from('orders')
-      .insert({
-        customer_name: orderData.name,
-        customer_phone: orderData.phone,
-        customer_address: orderData.address || null,
-        notes: orderData.notes || null,
-        total_amount: orderData.total,
-        tracking_code: _tCode
-      })
-      .select()
-      .single();
-
+    // Try to insert WITH tracking_code first
+    var orderInsert = { customer_name: orderData.name, customer_phone: orderData.phone, customer_address: orderData.address || null, notes: orderData.notes || null, total_amount: orderData.total, tracking_code: _tCode };
+    var { data: order, error: orderError } = await supabaseClient.from('orders').insert(orderInsert).select().single();
+    // Fallback: if tracking_code column doesn't exist yet, save without it (run SQL migration)
+    if (orderError && (orderError.code === '42703' || (orderError.message && orderError.message.includes('tracking_code')))) {
+      console.warn('\u26a0\ufe0f tracking_code column missing - saving without it. Run SQL migration.');
+      var orderInsert2 = { customer_name: orderData.name, customer_phone: orderData.phone, customer_address: orderData.address || null, notes: orderData.notes || null, total_amount: orderData.total };
+      var { data: order2, error: err2 } = await supabaseClient.from('orders').insert(orderInsert2).select().single();
+      if (err2) throw err2;
+      order = order2;
+      orderError = null;
+    }
     if (orderError) throw orderError;
 
     if (orderData.items && orderData.items.length > 0) {
@@ -837,6 +836,17 @@ async function sendToWhatsApp() {
   closeCheckout();
   showToast('\u0634\u0643\u0631\u0627\u064b \u0644\u0643! \u0633\u064a\u062a\u0645 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0642\u0631\u064a\u0628\u0627\u064b', 'success');
   if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+}
+
+
+// ── Track Order from main page ────────────────────────────────────
+function goTrackOrder() {
+  var val = (document.getElementById('trackInputMain').value || '').trim();
+  if (!val) { alert('يرجى إدخال رقم الهاتف أو كود التتبع'); return; }
+  var url = (val.toUpperCase().startsWith('NB-'))
+    ? 'track.html?code=' + encodeURIComponent(val.toUpperCase())
+    : 'track.html?phone=' + encodeURIComponent(val.replace(/\s/g,''));
+  window.open(url, '_blank');
 }
 
 function showTrackingCodeModal(code){
