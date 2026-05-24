@@ -777,8 +777,12 @@
     <input type="hidden" id="productId">
     <div class="space-y-4 sm:space-y-5">
       <div>
-        <label class="block text-sm font-semibold text-brand-700 mb-2">اسم المنتج *</label>
-        <input type="text" id="productName" class="input-field" placeholder="اسم المنتج" required>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">اسم المنتج (English) *</label>
+        <input type="text" id="productName" class="input-field" placeholder="Product name in English" required dir="ltr" style="text-align:left">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-brand-700 mb-2">الاسم العربي</label>
+        <input type="text" id="productNameAr" class="input-field" placeholder="اسم المنتج بالعربي" dir="rtl">
       </div>
       <div>
         <label class="block text-sm font-semibold text-brand-700 mb-2">التصنيف *</label>
