@@ -184,9 +184,26 @@ function generateTrackingCode(){return 'NB-'+Math.floor(1000+Math.random()*9000)
 async function saveOrderToSupabase(orderData) {
   if (!supabaseClient) return null;
   try {
-    var _tCode=generateTrackingCode();
     // Try to insert WITH tracking_code first
-    var orderInsert = { customer_name: orderData.name, customer_phone: orderData.phone, customer_address: orderData.address || null, notes: orderData.notes || null, total_amount: orderData.total, tracking_code: _tCode };
+    var _itemsArr = (orderData.items || []).map(function(it) {
+      return { name: it.productName || it.name || '', quantity: it.quantity || 1, price: it.price || 0 };
+    });
+    var _tCode = orderData.trackingCode || generateTrackingCode();
+    // Use ACTUAL orders table column names: name, phone, address, total, items, status
+    var orderInsert = {
+      name:             orderData.name,
+      phone:            orderData.phone || '',
+      address:          orderData.address || '',
+      total:            orderData.total || 0,
+      status:           'new',
+      items:            _itemsArr,
+      tracking_code:    _tCode,
+      notes:            orderData.notes || null,
+      customer_name:    orderData.name,
+      customer_phone:   orderData.phone || '',
+      customer_address: orderData.address || null,
+      total_amount:     orderData.total || 0
+    };
     var { data: order, error: orderError } = await supabaseClient.from('orders').insert(orderInsert).select().single();
     // Fallback: if tracking_code column doesn't exist yet, save without it (run SQL migration)
     if (orderError && (orderError.code === '42703' || (orderError.message && orderError.message.includes('tracking_code')))) {
@@ -813,21 +830,21 @@ async function sendToWhatsApp() {
   message += '\n\u{1F69A} *\u0631\u0633\u0648\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(DELIVERY_FEE);
   if (appliedDiscount) { const dD = appliedDiscount.discount_type==='percent' ? appliedDiscount.discount_value+'%' : formatPrice(appliedDiscount.discount_value); message += '\n\u{1F3F7}\uFE0F *\u0643\u0648\u062f \u0627\u0644\u062e\u0635\u0645:* ' + appliedDiscount.code + ' (' + dD + ')'; message += '\n\u{1F4B0} *\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0634\u0627\u0645\u0644 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(discountedTotal + DELIVERY_FEE); } else { message += '\n\u{1F4B0} *\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0634\u0627\u0645\u0644 \u0627\u0644\u062a\u0648\u0635\u064a\u0644:* ' + formatPrice(total + DELIVERY_FEE); }
 
-  var _oRes=await saveOrderToSupabase({ name, phone, address, notes, total: (appliedDiscount ? discountedTotal : total) + DELIVERY_FEE, items: orderItems });
-  var orderId=_oRes?(typeof _oRes==='object'?_oRes.id:_oRes):null;
-  var trackingCode=_oRes&&_oRes.tracking_code?_oRes.tracking_code:null;
-  // \u0625\u0631\u0633\u0627\u0644 \u0625\u0634\u0639\u0627\u0631 \u0625\u064a\u0645\u064a\u0644 \u0644\u0644\u0645\u0634\u0631\u0641
-  sendEmailNotification({
-    name, phone, address,
-    total: calcTotal(total),
-    items: orderItems,
-    discountCode: appliedDiscount ? appliedDiscount.code : null,
-    orderId: orderId ? orderId.slice(-8).toUpperCase() : null
-  });
-  if (orderId) message += '\n\u{1F516} *\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628:* #' + orderId.slice(-8).toUpperCase();
-  if(trackingCode){message+='\n📱 *\u0643\u0648\u062f \u0627\u0644\u062a\u062a\u0628\u0639:* '+trackingCode;showTrackingCodeModal(trackingCode);}
+  // ── Pre-generate tracking code (BEFORE any await — needed for iOS) ──
+  const _waTrackingCode = generateTrackingCode();
+  message += '\n📱 *كود التتبع:* ' + _waTrackingCode;
 
+  // ── CRITICAL: Open WhatsApp FIRST (must be in user-gesture context for iOS Safari) ──
   window.open('https://wa.me/9647870404967?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+
+  // ── Save order to Supabase in background (after opening WhatsApp) ──
+  var _saveTotal = (appliedDiscount ? discountedTotal : total) + DELIVERY_FEE;
+  var _oRes = null;
+  try {
+    _oRes = await saveOrderToSupabase({ name, phone, address, notes, total: _saveTotal, items: orderItems, trackingCode: _waTrackingCode });
+  } catch(_saveErr) { console.warn('[order save]', _saveErr); }
+  var orderId = _oRes ? (typeof _oRes === 'object' ? _oRes.id : _oRes) : null;
+  var trackingCode = _oRes && _oRes.tracking_code ? _oRes.tracking_code : _waTrackingCode;
   if (appliedDiscount && supabaseClient) {
     const discId = appliedDiscount.id;
     supabaseClient.from('discount_codes').select('used_count').eq('id', discId).single()
