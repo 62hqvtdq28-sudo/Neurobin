@@ -412,6 +412,37 @@ function searchProducts() {
 
 function openProductModal(id) {
   if (id) {
+    // Load from Supabase first (supports products with Supabase IDs)
+    if (typeof SupaDB !== 'undefined' && SupaDB.Products) {
+      SupaDB.Products.list().then(function(supProds) {
+        var product = supProds.find(function(p) { return String(p.id) === String(id); });
+        if (!product) {
+          var ls = safeJSONParse(localStorage.getItem('phProducts'), []) || [];
+          product = ls.find(function(p) { return String(p.id) === String(id); });
+        }
+        if (product) {
+          document.getElementById('productModalTitle').textContent = 'تعديل منتج';
+          document.getElementById('productId').value = id;
+          document.getElementById('productName').value = product.name || '';
+          var _pna = document.getElementById('productNameAr');
+          if (_pna) _pna.value = product.name_ar || product.nameAr || '';
+          document.getElementById('productCategory').value = product.category || 'medicines';
+          document.getElementById('productPrice').value = product.price || '';
+          document.getElementById('productStock').value = product.stock !== undefined ? product.stock : '';
+          document.getElementById('productDesc').value = product.description || '';
+          var imgSrc = product.image_url || product.image || '';
+          if (imgSrc) {
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            document.getElementById('imagePreviewImg').src = imgSrc;
+            document.getElementById('productImage').value = imgSrc;
+          }
+          document.getElementById('productModal').classList.add('active');
+          lucide.createIcons();
+        }
+      });
+      return;
+    }
     var products = safeJSONParse(localStorage.getItem('phProducts'), []) || [];
     var product = products.find(function(p) { return p.id === id; });
     if (product) {
