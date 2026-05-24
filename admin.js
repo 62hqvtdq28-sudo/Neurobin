@@ -537,6 +537,26 @@ async function saveProduct() {
     }
 
     StorageManager.setItem('phProducts', products);
+    // ── Also save to Supabase ──
+    try {
+      if (typeof SupaDB !== 'undefined' && SupaDB.Products) {
+        var _spData = {
+          name: safeName,
+          name_ar: safeNameAr,
+          category: escapeHTML(document.getElementById('productCategory').value),
+          price: price,
+          description: safeDesc,
+          in_stock: true
+        };
+        if (id) {
+          // Try updating existing Supabase product by id
+          await SupaDB.Products.update(parseInt(id), _spData);
+        } else {
+          await SupaDB.Products.create(_spData);
+        }
+        console.log('✅ Product saved to Supabase');
+      }
+    } catch(e) { console.warn('[saveProduct] Supabase save failed (localStorage only):', e.message); }
     logAction(id ? 'product_updated' : 'product_created', { name: safeName, price: price }, 'success');
     closeProductModal();
     loadProducts();
@@ -682,10 +702,37 @@ function deleteTestimonial(id) {
   showToast('تم حذف الرأي', 'warning');
 }
 
-function loadOrders() {
-  var orders = safeJSONParse(localStorage.getItem('phOrders'), []) || [];
+async function loadOrders() {
   var container = document.getElementById('ordersList');
   var noOrders = document.getElementById('noOrders');
+  if (container) container.innerHTML = '<div class="text-center py-8 text-brand-400">جاري التحميل...</div>';
+
+  var rawOrders = [];
+  // ── Load from Supabase ──
+  try {
+    if (typeof SupaDB !== 'undefined' && SupaDB.Orders) {
+      rawOrders = await SupaDB.Orders.list();
+    }
+  } catch(e) {
+    console.warn('[loadOrders] Supabase failed, using localStorage fallback:', e.message);
+    rawOrders = safeJSONParse(localStorage.getItem('phOrders'), []) || [];
+  }
+
+  // ── Normalize field names (Supabase ↔ localStorage) ──
+  var orders = rawOrders.map(function(o) {
+    return {
+      id:      o.id,
+      name:    o.customer_name  || o.name    || '',
+      phone:   o.customer_phone || o.phone   || '',
+      address: o.customer_address || o.address || '',
+      notes:   o.notes || '',
+      total:   o.total_amount   || o.total   || 0,
+      status:  o.status || 'new',
+      date:    o.created_at     || o.date    || new Date().toISOString(),
+      items:   o.items          || [],
+      tracking_code: o.tracking_code || ''
+    };
+  });
 
   var searchQuery = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
 
@@ -728,9 +775,15 @@ function loadOrders() {
       html += '<p class="text-brand-500 text-sm mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline-block ml-1"></i>' + escapeHTML(order.address) + '</p>';
     }
 
+    if (order.tracking_code) {
+      html += '<p class="text-xs text-brand-400 mb-1">📱 كود التتبع: <strong>' + escapeHTML(order.tracking_code) + '</strong></p>';
+    }
+    if (order.notes) {
+      html += '<p class="text-xs text-brand-400 mb-1">📝 ' + escapeHTML(order.notes) + '</p>';
+    }
     html += '<div class="text-sm text-brand-600 mb-3">';
     (order.items || []).forEach(function(item) {
-      html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded mr-2 mb-1">' + escapeHTML(item.name || '') + ' × ' + (item.quantity || 1) + '</span>';
+      html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded mr-2 mb-1">' + escapeHTML(item.name || item.productName || '') + ' × ' + (item.quantity || 1) + '</span>';
     });
     html += '</div>' +
       '<div class="flex items-center justify-between">' +
@@ -809,6 +862,12 @@ function updateOrderStatus(orderId, status) {
     orders[orderIndex].status = sanitizedStatus;
     orders[orderIndex].updatedAt = new Date().toISOString();
     localStorage.setItem('phOrders', JSON.stringify(orders));
+    // ── Also update in Supabase ──
+    try {
+      if (typeof SupaDB !== 'undefined' && SupaDB.Orders && SupaDB.Orders.updateStatus) {
+        await SupaDB.Orders.updateStatus(orderId, status);
+      }
+    } catch(e) { console.warn('[updateOrderStatus] Supabase update failed:', e.message); }
     loadOrders();
     updateOrdersBadge();
     showToast('تم تحديث حالة الطلب', 'success');
