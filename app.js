@@ -166,7 +166,8 @@ async function loadProductsFromSupabase() {
         price: Number(p.price) || 0,
         image: p.image_url || '',
         inStock: Boolean(p.in_stock),
-        stockLevel: p.stock_level || 'in'
+        stockLevel: p.stock_level || 'in',
+        description: p.description || ''
       }));
       displayedProducts = [...products];
       renderProducts(products);
@@ -507,7 +508,9 @@ function renderProducts(productsToRender) {
   grid.innerHTML = productsToRender.map(product => {
     const safeId = SecurityValidator.escapeHtml(product.id);
     const safeCategory = SecurityValidator.escapeHtml(product.category);
-    const safeName = SecurityValidator.escapeHtml(product.nameAr);
+    const safeName   = SecurityValidator.escapeHtml(product.nameAr);
+    const safeNameEn = SecurityValidator.escapeHtml(product.name);
+    const safeDesc   = SecurityValidator.escapeHtml(product.description || '');
     const isFavorite = favorites.includes(product.id);
     let stockBadge = '';
     if (!product.inStock) {
@@ -536,7 +539,9 @@ function renderProducts(productsToRender) {
           <span class="inline-block bg-brand-50 text-brand-600 text-xs font-medium px-2 py-0.5 rounded-full mb-1">
             ${SecurityValidator.escapeHtml(getCategoryLabel(product.category))}
           </span>
-          <h3 class="font-heading font-bold text-sm text-brand-900 mb-1 leading-snug">${safeName}</h3>
+          <h3 class="font-heading font-bold text-sm text-brand-900 leading-snug">${safeName}</h3>
+          ${safeNameEn && safeNameEn !== safeName ? `<p class="text-xs text-brand-500 leading-snug mb-1">${safeNameEn}</p>` : '<div class="mb-1"></div>'}
+          ${safeDesc ? `<p class="text-xs text-brand-400 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
           <div class="flex items-center justify-between">
             <span class="text-sm font-bold text-brand-700 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
             <button onclick="addToCart('${safeId}')" class="btn-primary ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'} text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all" >
@@ -880,7 +885,9 @@ function openQuickView(productId) {
   const modal = document.getElementById('quickViewModal');
   const content = document.getElementById('quickViewContent');
   const safeId = SecurityValidator.escapeHtml(product.id);
-  const safeName = SecurityValidator.escapeHtml(product.nameAr);
+  const safeName   = SecurityValidator.escapeHtml(product.nameAr);
+  const safeNameEn = SecurityValidator.escapeHtml(product.name);
+  const safeDesc   = SecurityValidator.escapeHtml(product.description || '');
   const safeCategory = SecurityValidator.escapeHtml(getCategoryLabel(product.category));
   const safePrice = SecurityValidator.escapeHtml(formatPrice(product.price));
   const stockText = product.inStock ? '\u0645\u062a\u0648\u0641\u0631 \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0648\u0646' : '\u0646\u0641\u0630\u062a \u0627\u0644\u0643\u0645\u064a\u0629';
@@ -892,7 +899,9 @@ function openQuickView(productId) {
     }
     <div class="p-2.5 product-card-body">
       <span class="inline-block bg-brand-50 text-brand-600 text-sm font-medium px-3 py-1 rounded-full mb-3">${safeCategory}</span>
-      <h3 class="font-heading font-bold text-2xl text-brand-900 mb-2">${safeName}</h3>
+      <h3 class="font-heading font-bold text-2xl text-brand-900 leading-snug mb-1">${safeName}</h3>
+      ${safeNameEn && safeNameEn !== safeName ? `<p class="text-base text-brand-500 mb-3">${safeNameEn}</p>` : '<div class="mb-2"></div>'}
+      ${safeDesc ? `<p class="text-sm text-brand-600 leading-relaxed mb-3">${safeDesc}</p>` : ''}
       <p class="text-3xl font-bold text-brand-700 mb-4">${safePrice}</p>
       <p class="text-brand-600/80 mb-6">${SecurityValidator.escapeHtml(stockText)}</p>
       <div class="flex gap-3">
