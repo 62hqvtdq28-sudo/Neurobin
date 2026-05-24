@@ -1,15 +1,14 @@
-/* Neurobin Pharmacy Chat Widget v5
- * Fixed: uses system_instruction properly for Gemini API
- * No backend needed — calls Google Gemini directly
+/* Neurobin Pharmacy Chat Widget v6
+ * Security: Gemini API key moved to Supabase Edge Function.
+ * Frontend never sees the key. Calls /functions/v1/gemini-proxy instead.
  */
 (function () {
   'use strict';
 
-  var GEMINI_KEY = 'AIzaSyCScys0gl2glKgK2rYb0qdwU7huxddz8M8';
-  var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
-
+  // ── Edge Function URL (no API key here!) ─────────────────
   var SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var GEMINI_PROXY = SUPABASE_URL + '/functions/v1/gemini-proxy';
 
   var SYSTEM_BASE = [
     'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
@@ -221,7 +220,8 @@
 
     var systemText = SYSTEM_BASE + '\n\n' + buildCatalogText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
 
-    fetch(GEMINI_URL, {
+    // ── Call Edge Function (NOT Gemini directly) ─────────────
+    fetch(GEMINI_PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
