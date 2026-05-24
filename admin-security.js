@@ -624,7 +624,7 @@ function validateNumber(value, min = 0, max = Infinity) {
 
 // Security: Validate order status
 function isValidOrderStatus(status) {
-  const validStatuses = ['new', 'progress', 'delivered', 'cancelled'];
+  const validStatuses = ['new','pending','preparing','progress','on_the_way','delivered','cancelled'];
   return validStatuses.includes(status);
 }
 
