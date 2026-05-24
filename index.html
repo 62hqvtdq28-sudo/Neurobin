@@ -728,6 +728,46 @@ section, div { max-width: 100%; }
 </section>
 
 <!-- Comments/Contact Section -->
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION: تتبع الطلب -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="track-order" class="py-20 md:py-24 bg-white" aria-labelledby="track-order-title">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-10 scroll-animate">
+      <span class="inline-flex items-center gap-2 bg-brand-100 text-brand-700 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        تتبع طلبك
+      </span>
+      <h2 id="track-order-title" class="font-heading font-bold text-3xl md:text-4xl text-brand-900 mb-3">اعرف حالة طلبك الآن</h2>
+      <p class="text-brand-600 text-lg">أدخل رقم هاتفك أو كود التتبع الذي وصلك بعد الطلب</p>
+    </div>
+    <div class="bg-gradient-to-br from-brand-50 to-cream rounded-3xl p-8 md:p-10 scroll-animate shadow-sm border border-brand-100">
+      <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <input
+          type="text"
+          id="trackInputMain"
+          placeholder="رقم الهاتف  07XXXXXXXXX  أو كود التتبع  NB-XXXX"
+          class="flex-1 px-5 py-4 border-2 border-brand-200 rounded-2xl font-heading text-right text-brand-900 bg-white focus:outline-none focus:border-brand-500 transition-colors text-base"
+          aria-label="رقم الهاتف أو كود التتبع"
+        />
+        <button
+          onclick="goTrackOrder()"
+          class="btn-primary px-8 py-4 rounded-2xl font-heading font-bold text-white flex items-center gap-2 justify-center flex-shrink-0 text-base"
+          aria-label="تتبع طلبك"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          تتبع طلبك
+        </button>
+      </div>
+      <div class="flex items-start gap-3 bg-amber-50 rounded-xl p-3 text-right">
+        <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <p class="text-amber-700 text-sm font-medium">كود التتبع يظهر لك في نافذة التأكيد بعد الطلب مباشرة. يمكنك أيضاً البحث برقم هاتفك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="comments" class="py-24 md:py-32 bg-gradient-to-b from-brand-50 to-cream" aria-labelledby="contact-title">
   <div class="max-w-3xl mx-auto px-6">
     <div class="text-center mb-12 scroll-animate">
