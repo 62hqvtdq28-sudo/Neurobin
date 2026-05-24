@@ -16,8 +16,8 @@ async function loadOrders() {
     if (q) orders = orders.filter(function(o){ return (o.customer_name||'').toLowerCase().includes(q) || (o.customer_phone||'').includes(q); });
     if (!orders.length) { container.classList.add('hidden'); noOrders.classList.remove('hidden'); return; }
     container.classList.remove('hidden'); noOrders.classList.add('hidden');
-    var statusLabels = { new:'\u062C\u062F\u064A\u062F', pending:'\u062C\u062F\u064A\u062F', progress:'\u0642\u064A\u062F \u0627\u0644\u062A\u0648\u0635\u064A\u0644', delivered:'\u062A\u0645 \u0627\u0644\u062A\u0648\u0635\u064A\u0644', cancelled:'\u0645\u0644\u063A\u0649' };
-    var statusClasses= { new:'order-new', pending:'order-new', progress:'order-progress', delivered:'order-delivered', cancelled:'order-cancelled' };
+    var statusLabels={new:'قيد المراجعة',pending:'قيد المراجعة',preparing:'قيد التحضير',progress:'في الطريق 🚚',on_the_way:'في الطريق 🚚',delivered:'تم التسليم ✅',cancelled:'ملغى ❌'};
+    var statusClasses={new:'order-new',pending:'order-new',preparing:'order-progress',progress:'order-progress',on_the_way:'order-progress',delivered:'order-delivered',cancelled:'order-cancelled'};
     var html = '';
     orders.forEach(function(order) {
       var oid = escapeHTML(String(order.id));
@@ -26,7 +26,7 @@ async function loadOrders() {
       html += '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100 animate-fade-in">' +
         '<div class="flex items-start justify-between mb-3">' +
         '<div><h3 class="font-bold text-brand-900">' + escapeHTML(order.customer_name||order.name||'') + '</h3>' +
-        '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'') + '</p></div>' +
+        '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'')+'</p>'+(order.tracking_code?'<p class="text-xs font-bold text-amber-700">📱 '+escapeHTML(order.tracking_code)+'</p>':'')+'</div>' +
         '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'\u062C\u062F\u064A\u062F') + '</span>' +
         '</div>';
       if (order.customer_address||order.address) {
@@ -45,6 +45,7 @@ async function loadOrders() {
         '<span class="text-brand-400 text-xs">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</span>' +
         '</div>' +
         '<div class="flex gap-2 flex-wrap">' +
+        '<button data-action="status-preparing" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-indigo-50 text-indigo-700 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors">قيد التحضير</button>' +
         '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">\u0642\u064A\u062F \u0627\u0644\u062A\u0648\u0635\u064A\u0644</button>' +
         '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">\u062A\u0645 \u0627\u0644\u062A\u0648\u0635\u064A\u0644</button>' +
         '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">\u0625\u0644\u063A\u0627\u0621</button>' +
@@ -152,6 +153,7 @@ document.addEventListener('click', function(e) {
   if (!btn) return;
   var action = btn.dataset.action;
   switch(action) {
+    case 'status-preparing': updateOrderStatus(btn.dataset.orderId,'preparing'); break;
     case 'status-progress':  updateOrderStatus(btn.dataset.orderId,'progress');  break;
     case 'status-delivered': updateOrderStatus(btn.dataset.orderId,'delivered'); break;
     case 'status-cancelled': updateOrderStatus(btn.dataset.orderId,'cancelled'); break;
