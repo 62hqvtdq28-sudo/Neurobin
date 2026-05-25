@@ -23,41 +23,69 @@ async function loadOrders() {
       var oid = escapeHTML(String(order.id));
       var status = order.status || 'new';
       var items = order.order_items || order.items || [];
-      html += '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100 animate-fade-in">' +
-        '<div class="flex items-start justify-between mb-3">' +
-        '<div><h3 class="font-bold text-brand-900">' + escapeHTML(order.customer_name||order.name||'') + '</h3>' +
-        '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'')+'</p>'+(order.tracking_code?'<p class="text-xs font-bold text-amber-700">📱 '+escapeHTML(order.tracking_code)+'</p>':'') +
-        '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'جديد') + '</span>' +
-        '</div>';
-      if (order.customer_address||order.address) {
-        html += '<p class="text-brand-500 text-sm mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline-block ml-1"></i>' + escapeHTML(order.customer_address||order.address||'') + '</p>';
-      }
-      if (order.discount_code) {
-        html += '<p class="text-amber-600 text-sm mb-2"><i data-lucide="tag" class="w-4 h-4 inline-block ml-1"></i>كود خصم: <strong>' + escapeHTML(order.discount_code) + '</strong></p>';
-      }
-      html += '<div class="text-sm text-brand-600 mb-3 flex flex-wrap gap-1">';
-      items.forEach(function(item) {
-        html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded">' + escapeHTML(item.product_name||item.name||'') + ' × ' + (item.quantity||1) + '</span>';
-      });
-      // إظهار الأزرار حسب حالة الطلب فقط
+
+      // ─── بناء أزرار الإجراءات حسب الحالة ───
       var actionBtns = '';
       if (status === 'delivered') {
         actionBtns = '<p class="text-center text-sm text-green-700 font-bold py-2 bg-green-50 rounded-lg">✅ تم تسليم الطلب</p>';
       } else if (status === 'cancelled') {
-        actionBtns = '<p class="text-center text-sm text-red-600 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
+        actionBtns = '<p class="text-center text-sm text-red-500 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
       } else {
         if (status !== 'progress' && status !== 'on_the_way') {
-          actionBtns += '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>';
+          actionBtns += '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>';
         }
-        actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التسليم ✓</button>' +
-          '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء ✕</button>';
+        actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التسليم ✓</button>' +
+          '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء ✕</button>';
       }
-      html += '</div>' +
-        '<div class="flex items-center justify-between mb-3">' +
-        '<span class="font-bold text-brand-900">' + ((order.total_amount||order.total||0)).toLocaleString() + ' د.ع</span>' +
-        '<span class="text-brand-400 text-xs">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</span>' +
-        '</div>' +
-        '<div class="flex gap-2 flex-wrap">' + actionBtns + '</div></div>';
+
+      // ─── بناء HTML الكارد بشكل صحيح ───
+      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100 animate-fade-in">';
+
+      // رأس الكارد: الاسم + الحالة
+      cardHtml += '<div class="flex items-start justify-between mb-3">';
+      cardHtml += '<div>';
+      cardHtml += '<h3 class="font-bold text-brand-900">' + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
+      cardHtml += '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'') + '</p>';
+      if (order.tracking_code) {
+        cardHtml += '<p class="text-xs font-bold text-amber-700">📱 ' + escapeHTML(order.tracking_code) + '</p>';
+      }
+      cardHtml += '</div>';
+      cardHtml += '<div class="text-left">';
+      cardHtml += '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'جديد') + '</span>';
+      cardHtml += '<p class="text-brand-400 text-xs mt-1">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</p>';
+      cardHtml += '</div>';
+      cardHtml += '</div>'; // end header
+
+      // العنوان
+      if (order.customer_address||order.address) {
+        cardHtml += '<p class="text-brand-500 text-sm mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline-block ml-1"></i>' + escapeHTML(order.customer_address||order.address||'') + '</p>';
+      }
+
+      // كود الخصم
+      if (order.discount_code) {
+        cardHtml += '<p class="text-amber-600 text-sm mb-2"><i data-lucide="tag" class="w-4 h-4 inline-block ml-1"></i>كود خصم: <strong>' + escapeHTML(order.discount_code) + '</strong></p>';
+      }
+
+      // المنتجات
+      if (items.length > 0) {
+        cardHtml += '<div class="text-sm text-brand-600 mb-3 flex flex-wrap gap-1">';
+        items.forEach(function(item) {
+          cardHtml += '<span class="inline-block bg-brand-50 px-2 py-1 rounded">' + escapeHTML(item.product_name||item.name||'') + ' × ' + (item.quantity||1) + '</span>';
+        });
+        cardHtml += '</div>';
+      }
+
+      // السعر الإجمالي
+      cardHtml += '<div class="flex items-center justify-between mb-3">';
+      cardHtml += '<span class="font-bold text-brand-900">' + ((order.total_amount||order.total||0)).toLocaleString() + ' د.ع</span>';
+      cardHtml += '</div>';
+
+      // أزرار الإجراءات
+      cardHtml += '<div class="flex gap-2 flex-wrap">' + actionBtns + '</div>';
+
+      cardHtml += '</div>'; // end card
+
+      html += cardHtml;
     });
     container.innerHTML = html;
     lucide.createIcons();
