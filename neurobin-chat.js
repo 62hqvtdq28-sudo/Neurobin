@@ -81,7 +81,7 @@
       '.nb-ob{font-size:11.5px;color:#fff;background:#2d8a40;',
       'border-radius:6px;padding:5px 10px;white-space:nowrap;',
       'border:none;cursor:pointer;margin-right:auto;flex-shrink:0;}',
-      '.nb-ob:hover{background:#3aaa50;}',
+      '.nb-ob:hover{background:#3aaa50;}','div.nb-card-btns{display:flex;gap:6px;margin-top:6px;}','.nb-ob2{font-size:11px;color:#2d8a40;background:transparent;border:1px solid #2d8a40;border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:Cairo,sans-serif;}',
       '#nb-foot{padding:12px 14px;display:flex;gap:8px;align-items:flex-end;',
       'border-top:1px solid #1e3a22;flex-shrink:0;}',
       '#nb-inp{flex:1;background:#0e1e10;border:1px solid #1e3a22;',
@@ -141,7 +141,7 @@
   }
 
   function loadCatalog() {
-    fetch(SUPABASE_URL + '/rest/v1/products?select=id,name,name_ar,category,price,in_stock,image_url&in_stock=eq.true', {
+    fetch(SUPABASE_URL + '/rest/v1/products?select=id,name,name_ar,category,price,in_stock,image_url,description&in_stock=eq.true', {
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
     })
     .then(function(r) { return r.json(); })
@@ -186,7 +186,7 @@
   function buildCatalogText() {
     if (!catalog.length) return 'لا توجد منتجات.';
     return '=== المنتجات المتاحة ===\n' + catalog.map(function(p) {
-      return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع';
+      var desc = p.description ? ' | ' + p.description.substring(0, 50) : ''; return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع' + desc;
     }).join('\n');
   }
 
@@ -225,7 +225,7 @@
         }
         var info = el('div', {style:'flex:1;min-width:0'});
         info.appendChild(el('div', {cls:'nb-cn', text:p.name_ar || p.name || ''}));
-        info.appendChild(el('div', {cls:'nb-cpr', text:Number(p.price).toLocaleString('ar-IQ') + ' د.ع'}));
+        info.appendChild(el('div', {cls:'nb-cpr', text:Number(p.price).toLocaleString('ar-IQ') + ' د.ع'})); if (p.description) { var desc = el('div', {cls:'nb-cdesc', style:'font-size:11px;color:#6a9970;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;', text:p.description.substring(0,80)}); info.appendChild(desc); }
         card.appendChild(info);
         card.appendChild(el('button', {cls:'nb-ob', text:'اطلب الآن'}));
         wrap.appendChild(card);
@@ -244,6 +244,7 @@
 
   function send() {
     if (loading) return;
+    if (!catalog.length) { addMsg('err', 'جاري تحميل الكتالوج، حاول مرة أخرى بعد ثانية...'); return; }
     var inp = document.getElementById('nb-inp');
     var msg = inp.value.trim();
     if (!msg) return;
