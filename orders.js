@@ -39,16 +39,25 @@ async function loadOrders() {
       items.forEach(function(item) {
         html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded">' + escapeHTML(item.product_name||item.name||'') + ' × ' + (item.quantity||1) + '</span>';
       });
+      // إظهار الأزرار حسب حالة الطلب فقط
+      var actionBtns = '';
+      if (status === 'delivered') {
+        actionBtns = '<p class="text-center text-sm text-green-700 font-bold py-2 bg-green-50 rounded-lg">✅ تم تسليم الطلب</p>';
+      } else if (status === 'cancelled') {
+        actionBtns = '<p class="text-center text-sm text-red-600 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
+      } else {
+        if (status !== 'progress' && status !== 'on_the_way') {
+          actionBtns += '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>';
+        }
+        actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التسليم ✓</button>' +
+          '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء ✕</button>';
+      }
       html += '</div>' +
         '<div class="flex items-center justify-between mb-3">' +
         '<span class="font-bold text-brand-900">' + ((order.total_amount||order.total||0)).toLocaleString() + ' د.ع</span>' +
         '<span class="text-brand-400 text-xs">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</span>' +
         '</div>' +
-        '<div class="flex gap-2 flex-wrap">' +
-        '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>' +
-        '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التسليم ✓</button>' +
-        '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[80px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء ✕</button>' +
-        '</div></div>';
+        '<div class="flex gap-2 flex-wrap">' + actionBtns + '</div></div>';
     });
     container.innerHTML = html;
     lucide.createIcons();
