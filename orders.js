@@ -104,15 +104,19 @@ function filterOrders(filter) {
 function searchOrders() { loadOrders(); }
 
 async function updateOrderStatus(orderId, status) {
-  if (!isAuthenticated()) { showToast('يجب تسجيل الدخول أولاً','error'); return; }
-  if (!isValidOrderStatus(status)) { showToast('حالة غير صالحة','error'); return; }
-  if (!orderId) { showToast('معرف الطلب غير صالح','error'); return; }
+  // Validate inputs directly (no sessionStorage dependency)
+  if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
+  var validStatuses = ['new','pending','preparing','progress','on_the_way','delivered','cancelled'];
+  if (!validStatuses.includes(status)) { showToast('حالة غير صالحة: ' + status,'error'); return; }
   try {
-    await SupaDB.Orders.updateStatus(orderId, status);
-    loadOrders();
-    updateOrdersBadge();
-    showToast('تم تحديث حالة الطلب','success');
-  } catch(e) { showToast('خطأ: ' + e.message,'error'); }
+    await SupaDB.Orders.updateStatus(String(orderId), status);
+    await loadOrders();
+    if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+    showToast('تم تحديث حالة الطلب ✅','success');
+  } catch(e) {
+    console.error('updateOrderStatus error:', e);
+    showToast('خطأ في تحديث الطلب: ' + (e.message||'غير معروف'),'error');
+  }
 }
 
 async function loadComments() {
