@@ -259,7 +259,7 @@
     // ── Call Edge Function (NOT Gemini directly) ─────────────
     fetch(GEMINI_PROXY, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY},
       body: JSON.stringify({
         system_instruction: {parts: [{text: systemText}]},
         contents: history.slice(-10),
