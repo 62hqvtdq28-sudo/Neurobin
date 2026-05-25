@@ -41,5 +41,5 @@ async function trackOrder(){var code=document.getElementById('codeInput').value.
 function setLoad(v){document.getElementById('loading').style.display=v?'block':'none';document.getElementById('trackBtn').disabled=v;}
 function showErr(m){var el=document.getElementById('error');el.textContent=m;el.style.display='block';}
 function hideErr(){document.getElementById('error').style.display='none';}
-document.addEventListener('DOMContentLoaded',function(){var p=new URLSearchParams(location.search),c=p.get('code');if(c){document.getElementById('codeInput').value=c.toUpperCase();trackOrder();}document.getElementById('codeInput').addEventListener('input',function(){this.value=this.value.toUpperCase();});document.addEventListener('keydown',function(e){if(e.key==='Enter')trackOrder();});});
+document.addEventListener('DOMContentLoaded',function(){var p=new URLSearchParams(location.search),c=p.get('code'),ph=p.get('phone');if(c){document.getElementById('codeInput').value=c.toUpperCase();trackOrder();}else if(ph){document.getElementById('phoneInput').value=ph;trackOrder();}document.getElementById('codeInput').addEventListener('input',function(){this.value=this.value.toUpperCase();});document.addEventListener('keydown',function(e){if(e.key==='Enter')trackOrder();});});
 </script></body></html>
