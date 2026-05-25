@@ -9,10 +9,12 @@ async function loadOrders() {
   var container = document.getElementById('ordersList');
   var noOrders  = document.getElementById('noOrders');
   try {
-    var allOrders = await SupaDB.Orders.list();
+    var allOrders = currentOrderFilter === 'deleted'
+      ? await SupaDB.Orders.listDeleted()
+      : await SupaDB.Orders.list();
     var orders = allOrders;
     var q = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
-    if (currentOrderFilter !== 'all') orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
+    if (currentOrderFilter !== 'all' && currentOrderFilter !== 'deleted') orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
     if (q) orders = orders.filter(function(o){ return (o.name||o.customer_name||'').toLowerCase().includes(q) || (o.phone||o.customer_phone||'').includes(q); });
     if (!orders.length) { container.classList.add('hidden'); noOrders.classList.remove('hidden'); return; }
     container.classList.remove('hidden'); noOrders.classList.add('hidden');
@@ -22,14 +24,20 @@ async function loadOrders() {
     orders.forEach(function(order) {
       var oid = escapeHTML(String(order.id));
       var status = order.status || 'new';
-      var items = order.order_items || order.items || [];
+      var items = (Array.isArray(order.order_items) && order.order_items.length > 0) ? order.order_items : (Array.isArray(order.items) ? order.items : []);
 
       // ─── بناء أزرار الإجراءات حسب الحالة ───
       var actionBtns = '';
-      if (status === 'delivered') {
+      var isDeleted = !!order.deleted_at;
+      if (isDeleted) {
+        actionBtns = '<button data-action="restore-order" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-amber-100 text-amber-700 py-2 rounded-lg text-sm font-semibold hover:bg-amber-200 transition-colors">↩ استعادة</button>' +
+          '<button data-action="hard-delete-order" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">🗑️ حذف نهائي</button>';
+      } else if (status === 'delivered') {
         actionBtns = '<p class="text-center text-sm text-green-700 font-bold py-2 bg-green-50 rounded-lg">✅ تم تسليم الطلب</p>';
+        actionBtns += '<button data-action="delete-order" data-order-id="' + oid + '" class="w-full mt-2 bg-red-50 text-red-400 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors">🗑️ حذف</button>';
       } else if (status === 'cancelled') {
         actionBtns = '<p class="text-center text-sm text-red-500 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
+        actionBtns += '<button data-action="delete-order" data-order-id="' + oid + '" class="w-full mt-2 bg-red-50 text-red-400 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors">🗑️ حذف</button>';
       } else {
         if (status !== 'progress' && status !== 'on_the_way') {
           actionBtns += '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>';
@@ -197,6 +205,40 @@ document.addEventListener('click', function(e) {
     case 'status-progress':  updateOrderStatus(btn.dataset.orderId,'progress');  break;
     case 'status-delivered': updateOrderStatus(btn.dataset.orderId,'delivered'); break;
     case 'status-cancelled': updateOrderStatus(btn.dataset.orderId,'cancelled'); break;
+    case 'delete-order':      deleteOrder(btn.dataset.orderId);     break;
+    case 'restore-order':     restoreOrder(btn.dataset.orderId);    break;
+    case 'hard-delete-order': hardDeleteOrder(btn.dataset.orderId); break;
     case 'view-comment': { var id = btn.dataset.id; if (id) openViewComment(id); break; }
   }
 });
+
+async function deleteOrder(orderId) {
+  if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
+  if (!confirm('هل تريدين حذف هذا الطلب؟ يمكنك استعادته لاحقاً من قائمة المحذوفات.')) return;
+  try {
+    await SupaDB.Orders.softDelete(String(orderId));
+    await loadOrders();
+    if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+    showToast('تم حذف الطلب ✅ يمكنك استعادته من المحذوفات','success');
+  } catch(e) { showToast('خطأ في حذف الطلب: ' + (e.message||'غير معروف'),'error'); }
+}
+
+async function restoreOrder(orderId) {
+  if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
+  try {
+    await SupaDB.Orders.restore(String(orderId));
+    await loadOrders();
+    if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+    showToast('تم استعادة الطلب ✅','success');
+  } catch(e) { showToast('خطأ في استعادة الطلب: ' + (e.message||'غير معروف'),'error'); }
+}
+
+async function hardDeleteOrder(orderId) {
+  if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
+  if (!confirm('⚠️ هل أنتِ متأكدة؟ سيتم حذف الطلب نهائياً ولا يمكن استعادته.')) return;
+  try {
+    await SupaDB.Orders.hardDelete(String(orderId));
+    await loadOrders();
+    showToast('تم الحذف النهائي 🗑️','success');
+  } catch(e) { showToast('خطأ في الحذف: ' + (e.message||'غير معروف'),'error'); }
+}
