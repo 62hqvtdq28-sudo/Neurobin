@@ -1,6 +1,8 @@
 // supabase/functions/gemini-proxy/index.ts
-// Neurobin Pharmacy — Secure Gemini Proxy v2
-// Stores GEMINI_API_KEY in Supabase secrets, not in frontend code.
+// Neurobin Pharmacy — Secure Gemini Proxy v3
+// NOW: reads system_prompt from Supabase ai_config table (admin-configurable)
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +12,17 @@ const CORS_HEADERS = {
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+// Fallback system prompt (used if DB is unreachable)
+const FALLBACK_SYSTEM_PROMPT = [
+  'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
+  'مهمتك الإجابة على استفسارات العملاء بالعربية.',
+  'عند اقتراح منتج اذكر رقمه بصيغة [ID] مثل [46].',
+  'لا تقترح سوى منتجات موجودة في الكتالوج.',
+  'اجب بشكل مختصر 3 الى 4 جمل فقط.',
+  'لا تقدم استشارات طبية تشخيصية.',
+  'الاسعار بالدينار العراقي.'
+].join(' ');
 
 Deno.serve(async (req: Request) => {
 
@@ -36,7 +49,6 @@ Deno.serve(async (req: Request) => {
     // ── Parse frontend request body ──────────────────────────
     const body = await req.json();
 
-    // Basic validation — ensure contents array exists
     if (!body.contents || !Array.isArray(body.contents)) {
       return new Response(
         JSON.stringify({ error: 'Invalid request: contents array required' }),
@@ -44,15 +56,50 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ── Load system_prompt from Supabase ai_config table ─────
+    let systemPrompt = FALLBACK_SYSTEM_PROMPT;
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+      if (supabaseUrl && supabaseServiceKey) {
+        const db = createClient(supabaseUrl, supabaseServiceKey);
+        const { data, error } = await db
+          .from('ai_config')
+          .select('system_prompt')
+          .eq('id', 1)
+          .single();
+
+        if (!error && data?.system_prompt) {
+          systemPrompt = data.system_prompt;
+          console.log('[gemini-proxy] Loaded system_prompt from Supabase ai_config ✓');
+        } else {
+          console.warn('[gemini-proxy] Could not load ai_config, using fallback:', error?.message);
+        }
+      } else {
+        console.warn('[gemini-proxy] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set, using fallback');
+      }
+    } catch (dbErr: unknown) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      console.warn('[gemini-proxy] DB error, using fallback system prompt:', msg);
+    }
+
+    // ── Build request with dynamic system instruction ─────────
+    const geminiBody = {
+      ...body,
+      system_instruction: {
+        parts: [{ text: systemPrompt }]
+      }
+    };
+
     // ── Forward to Gemini API ────────────────────────────────
     const geminiUrl = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
-
     console.log(`[gemini-proxy] Calling Gemini ${GEMINI_MODEL}...`);
 
     const geminiRes = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(geminiBody),
     });
 
     const data = await geminiRes.json();
