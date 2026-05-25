@@ -1,4 +1,4 @@
-/* Neurobin Pharmacy Chat Widget v6
+/* Neurobin Pharmacy Chat Widget v7 — Quick Replies from Supabase
  * Security: Gemini API key moved to Supabase Edge Function.
  * Frontend never sees the key. Calls /functions/v1/gemini-proxy instead.
  */
@@ -21,6 +21,7 @@
   ].join(' ');
 
   var catalog = [];
+  var quickReplies = [];
   var history = [], isOpen = false, loading = false;
 
   function injectCSS() {
@@ -53,6 +54,9 @@
       '#nb-cls{margin-right:auto;background:none;border:none;',
       'color:#6a9970;font-size:22px;cursor:pointer;padding:4px;}',
       '#nb-cls:hover{color:#a3e4ab;}',
+      '#nb-qr{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;border-top:1px solid #1e3a22;flex-shrink:0;}',
+      '.nb-qrbtn{background:#1a3d1f;border:1px solid #2d8a40;color:#a3e4ab;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:Cairo,sans-serif;transition:all .2s;}',
+      '.nb-qrbtn:hover{background:#2d8a40;color:#fff;}',
       '#nb-msgs{flex:1;overflow-y:auto;padding:14px;',
       'display:flex;flex-direction:column;gap:10px;}',
       '.nb-m{max-width:84%;border-radius:14px;padding:11px 15px;',
@@ -120,7 +124,8 @@
     var inp  = el('textarea', {id:'nb-inp', rows:'1', placeholder:'اسألني عن أي منتج أو دواء...'});
     var snd  = el('button', {id:'nb-snd', text:'➤', disabled:'true'});
     foot.appendChild(snd); foot.appendChild(inp);
-    box.appendChild(head); box.appendChild(msgs); box.appendChild(foot);
+    var qr = el('div', {id:'nb-qr'});
+    box.appendChild(head); box.appendChild(msgs); box.appendChild(qr); box.appendChild(foot);
     document.body.appendChild(box);
     fab.addEventListener('click', toggle);
     cls.addEventListener('click', toggle);
@@ -145,6 +150,37 @@
       console.log('[NB Chat] Catalog:', catalog.length, 'products');
     })
     .catch(function(e) { console.warn('[NB Chat] Catalog failed:', e); });
+  }
+  function loadQuickReplies() {
+    fetch(SUPABASE_URL + '/rest/v1/ai_quick_replies?select=button_text,response_text&is_active=eq.true&order=sort_order.asc', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      quickReplies = data || [];
+      console.log('[NB Chat] Quick replies:', quickReplies.length);
+      renderQuickReplies();
+    })
+    .catch(function(e) { console.warn('[NB Chat] Quick replies failed:', e); });
+  }
+
+  function renderQuickReplies() {
+    var qr = document.getElementById('nb-qr');
+    if (!qr) return;
+    qr.innerHTML = '';
+    if (!quickReplies.length) { qr.style.display = 'none'; return; }
+    qr.style.display = 'flex';
+    quickReplies.forEach(function(item) {
+      var btn = document.createElement('button');
+      btn.className = 'nb-qrbtn';
+      btn.textContent = item.button_text;
+      btn.onclick = function() {
+        addMsg('u', item.button_text);
+        addMsg('b', item.response_text);
+        if (history.length > 20) history = history.slice(-20);
+      };
+      qr.appendChild(btn);
+    });
   }
 
   function buildCatalogText() {
@@ -257,6 +293,7 @@
     injectCSS();
     buildUI();
     loadCatalog();
+    loadQuickReplies();
   }
 
   if (document.readyState === 'loading') {
