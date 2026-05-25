@@ -191,6 +191,10 @@
         <i data-lucide="tag" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">كودات الخصم</span>
       </button>
+      <button onclick="showSection('ai')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="ai">
+        <i data-lucide="bot" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">إعدادات AI</span>
+      </button>
     </nav>
 
     <div class="p-3 sm:p-4 border-t border-brand-700/50">
@@ -722,6 +726,77 @@
     </div>
   </section>
 
+
+  <!-- ===== AI Config Section ===== -->
+  <section id="section-ai" class="section-content hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-12 h-12 bg-gradient-to-br from-green-600 to-green-800 rounded-xl flex items-center justify-center">
+          <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-brand-900">إعدادات المساعد الذكي</h1>
+          <p class="text-brand-600 text-sm">اضبط شخصية وردود مساعد AI</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Prompt Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5 sm:p-6 mb-6">
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="brain" class="w-5 h-5 text-brand-600"></i>
+        <h2 class="font-bold text-brand-900 text-lg">شخصية المساعد</h2>
+      </div>
+      <p class="text-sm text-brand-600 mb-3">اكتب هنا كيف تريد المساعد أن يتكلم ويتصرف مع الزبائن.</p>
+      <textarea id="ai-system-prompt"
+        class="w-full border border-brand-200 rounded-xl p-4 text-sm text-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y min-h-[160px] font-medium"
+        placeholder="مثال: أنت مساعد صيدلاني ودود واحترافي لصيدلية نيوروبين في العراق. تتحدث بالعربية دائماً..."
+        dir="rtl"></textarea>
+      <div class="flex items-center justify-between mt-4">
+        <span id="ai-prompt-status" class="text-sm text-green-600 hidden">تم الحفظ بنجاح!</span>
+        <button onclick="saveAIConfig()" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-6 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2 mr-auto">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          حفظ الشخصية
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Replies Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5 sm:p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="message-square" class="w-5 h-5 text-brand-600"></i>
+          <h2 class="font-bold text-brand-900 text-lg">الردود الجاهزة</h2>
+        </div>
+        <button onclick="showAddQRForm()" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          إضافة رد
+        </button>
+      </div>
+      <p class="text-sm text-brand-600 mb-4">هذه الأزرار تظهر في واجهة الشات للعملاء - اضغط عليها فتظهر الإجابة مباشرة.</p>
+      <div id="ai-add-qr-form" class="hidden bg-brand-50 rounded-xl p-4 mb-4 border border-brand-200">
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-brand-800 mb-1">نص الزر (قصير)</label>
+            <input id="ai-qr-btn" type="text" placeholder="مثال: سعر التوصيل؟"
+              class="w-full border border-brand-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" dir="rtl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-800 mb-1">الرد الجاهز</label>
+            <textarea id="ai-qr-resp" placeholder="مثال: سعر التوصيل 3000 دينار لجميع مناطق العراق..."
+              class="w-full border border-brand-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none h-20" dir="rtl"></textarea>
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button onclick="hideAddQRForm()" class="text-brand-600 text-sm px-4 py-2 rounded-lg border border-brand-200 hover:bg-brand-50">إلغاء</button>
+            <button onclick="addQuickReply()" class="bg-brand-700 hover:bg-brand-600 text-white text-sm font-bold px-5 py-2 rounded-lg">إضافة</button>
+          </div>
+        </div>
+      </div>
+      <div id="ai-qr-list" class="space-y-3">
+        <div class="text-center text-brand-400 py-6 text-sm">جاري التحميل...</div>
+      </div>
+    </div>
+  </section>
 
 </main>
 </div>
@@ -1707,5 +1782,81 @@ async function saveCatImg(key, url) {
 
 <script src="packages.js"></script>
   <script src="admin-analytics.js"></script>
+<script>
+(function() {
+  'use strict';
+  var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H = { 'Content-Type': 'application/json', apikey: SKEY, Authorization: 'Bearer ' + SKEY };
+  var _origShow = window.showSection;
+  window.showSection = function(s) { if (_origShow) _origShow(s); if (s === 'ai') { loadAIConfig(); loadQRList(); } };
+  window.loadAIConfig = function() {
+    fetch(SURL + '/rest/v1/ai_config?id=eq.1&select=system_prompt', { headers: H })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d && d[0]) document.getElementById('ai-system-prompt').value = d[0].system_prompt || ''; })
+    .catch(function(e) { console.warn('[AI Admin] load config:', e); });
+  };
+  window.saveAIConfig = function() {
+    var p = document.getElementById('ai-system-prompt').value.trim();
+    if (!p) { alert('يرجى كتابة شخصية المساعد'); return; }
+    fetch(SURL + '/rest/v1/ai_config?id=eq.1', {
+      method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+      body: JSON.stringify({ system_prompt: p, updated_at: new Date().toISOString() })
+    }).then(function(r) {
+      if (r.ok) { var s = document.getElementById('ai-prompt-status'); s.classList.remove('hidden'); setTimeout(function() { s.classList.add('hidden'); }, 3000); }
+      else alert('خطأ في الحفظ');
+    }).catch(function(e) { alert('خطأ: ' + e.message); });
+  };
+  window.loadQRList = function() {
+    fetch(SURL + '/rest/v1/ai_quick_replies?select=id,button_text,response_text,is_active,sort_order&order=sort_order.asc', { headers: H })
+    .then(function(r) { return r.json(); })
+    .then(function(items) {
+      var list = document.getElementById('ai-qr-list');
+      if (!items || !items.length) { list.innerHTML = '<div class="text-center text-brand-400 py-6 text-sm">لا توجد ردود بعد. اضغط إضافة رد.</div>'; return; }
+      list.innerHTML = items.map(function(r) {
+        var safeBtn = DOMPurify.sanitize(r.button_text);
+        var safeResp = DOMPurify.sanitize(r.response_text);
+        return '<div class="flex items-start gap-3 p-3 bg-brand-50 rounded-xl border border-brand-100">' +
+          '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center gap-2 mb-1">' +
+          '<span class="bg-brand-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg">' + safeBtn + '</span>' +
+          (r.is_active ? '<span class="text-green-600 text-xs font-semibold">نشط</span>' : '<span class="text-gray-400 text-xs">مخفي</span>') + '</div>' +
+          '<p class="text-sm text-brand-700 leading-relaxed">' + safeResp + '</p></div>' +
+          '<div class="flex gap-1 flex-shrink-0">' +
+          '<button onclick="toggleQR(' + r.id + ',' + !r.is_active + ')" title="' + (r.is_active ? 'إخفاء' : 'إظهار') + '" class="text-brand-500 hover:text-brand-700 p-1.5 rounded-lg hover:bg-brand-100"><i data-lucide="' + (r.is_active ? 'eye-off' : 'eye') + '" class="w-4 h-4"></i></button>' +
+          '<button onclick="deleteQR(' + r.id + ')" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>';
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }).catch(function(e) { console.warn('[AI Admin] load QR:', e); });
+  };
+  window.showAddQRForm = function() { document.getElementById('ai-add-qr-form').classList.remove('hidden'); };
+  window.hideAddQRForm = function() {
+    document.getElementById('ai-add-qr-form').classList.add('hidden');
+    document.getElementById('ai-qr-btn').value = '';
+    document.getElementById('ai-qr-resp').value = '';
+  };
+  window.addQuickReply = function() {
+    var btn = document.getElementById('ai-qr-btn').value.trim();
+    var resp = document.getElementById('ai-qr-resp').value.trim();
+    if (!btn || !resp) { alert('يرجى ملء نص الزر والرد'); return; }
+    fetch(SURL + '/rest/v1/ai_quick_replies', {
+      method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+      body: JSON.stringify({ button_text: btn, response_text: resp, is_active: true, sort_order: 99 })
+    }).then(function(r) { if (r.ok) { hideAddQRForm(); loadQRList(); } else alert('خطأ في الإضافة'); })
+    .catch(function(e) { alert('خطأ: ' + e.message); });
+  };
+  window.toggleQR = function(id, active) {
+    fetch(SURL + '/rest/v1/ai_quick_replies?id=eq.' + id, {
+      method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+      body: JSON.stringify({ is_active: active })
+    }).then(function() { loadQRList(); });
+  };
+  window.deleteQR = function(id) {
+    if (!confirm('هل تريد حذف هذا الرد؟')) return;
+    fetch(SURL + '/rest/v1/ai_quick_replies?id=eq.' + id, { method: 'DELETE', headers: H })
+    .then(function() { loadQRList(); });
+  };
+})();
+</script>
 </body>
 </html>
