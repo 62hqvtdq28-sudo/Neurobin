@@ -7,8 +7,8 @@
 
   // ── Edge Function URL (no API key here!) ─────────────────
   var SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var GEMINI_PROXY = SUPABASE_URL + '/functions/v1/gemini-proxy';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx4ndWTkUS-MeqLcfaN1zS4k';
+  var GEMINI_PROXY = 'https://hczsskviliuqyayylutv.supabase.co/functions/v1/gemini-proxy';
 
   var SYSTEM_BASE = [
     'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
