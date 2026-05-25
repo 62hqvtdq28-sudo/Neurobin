@@ -112,12 +112,32 @@
   const Orders = {
     async list() {
       const { data, error } = await _db.from('orders')
-        .select('*')
+        .select('*, order_items(*)')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    updateStatus: (id,s) => upd('orders', id, { status:s, updated_at: new Date().toISOString() })
+    async listDeleted() {
+      const { data, error } = await _db.from('orders')
+        .select('*, order_items(*)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    updateStatus: (id,s) => upd('orders', id, { status:s, updated_at: new Date().toISOString() }),
+    softDelete: async (id) => {
+      await _requireSession();
+      const { error } = await _db.from('orders').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+    },
+    restore: async (id) => {
+      await _requireSession();
+      const { error } = await _db.from('orders').update({ deleted_at: null }).eq('id', id);
+      if (error) throw error;
+    },
+    hardDelete: (id) => del('orders', id)
   };
   const Comments     = { list: () => all('contact_messages','created_at'), updateStatus: (id,s) => upd('contact_messages', id, { is_read: s==='read' }), delete: id => del('contact_messages', id) };
   const Features     = { list: () => all('features','display_order'), save: (f,id) => id ? upd('features',id,f) : ins('features',f), delete: id => del('features',id) };
