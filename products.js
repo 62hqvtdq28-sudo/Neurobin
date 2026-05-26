@@ -74,6 +74,7 @@ async function loadProducts(filter) {
     _allProducts = await SupaDB.Products.list();
     renderProductsList(_allProducts, filter);
     renderCategoryStats(_allProducts);
+    _loadPackagesBadge();
   } catch(e) {
     el.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">\u062E\u0637\u0623: ' + escapeHTML(e.message) + '</div>';
   }
@@ -144,6 +145,36 @@ function renderCategoryStats(products) {
     if(!badge){badge=document.createElement('span');badge.className='cat-count-badge';badge.style.cssText='display:inline-flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.18);border-radius:9999px;font-size:10px;font-weight:700;min-width:18px;height:18px;padding:0 5px;margin-right:4px;vertical-align:middle;';btn.appendChild(badge);}
     badge.textContent=n;
   });
+
+// ── عداد البكجات: يُحدَّث باستقلالية لأن الزر يُحقن من packages.js ──────
+async function _loadPackagesBadge() {
+  try {
+    var pkgs = await SupaDB.Packages.list();
+    var pkgCount = pkgs ? pkgs.length : 0;
+    // انتظر حتى يُضيف packages.js زر البكجات
+    var attempts = 0;
+    function _tryBadge() {
+      var btn = document.querySelector('#section-products [data-filter="packages"]');
+      if (btn) {
+        var badge = btn.querySelector('.cat-count-badge');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'cat-count-badge';
+          badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;' +
+            'background:rgba(0,0,0,0.18);border-radius:9999px;font-size:10px;font-weight:700;' +
+            'min-width:18px;height:18px;padding:0 5px;margin-right:4px;vertical-align:middle;';
+          btn.appendChild(badge);
+        }
+        badge.textContent = pkgCount;
+      } else if (attempts < 15) {
+        attempts++;
+        setTimeout(_tryBadge, 300);
+      }
+    }
+    _tryBadge();
+  } catch(e) { /* silent */ }
+}
+
 }
 
 async function openProductModal(id) {
