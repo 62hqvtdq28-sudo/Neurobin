@@ -119,7 +119,8 @@ async function openProductModal(id) {
   if (id) { try { var list = await SupaDB.Products.list(); product = list.find(function(p){ return String(p.id)===String(id); }); } catch(e) { showToast('\u062E\u0637\u0623: '+e.message,'error'); return; } }
   document.getElementById('productModalTitle').textContent = product ? '\u062A\u0639\u062F\u064A\u0644 \u0645\u0646\u062A\u062C' : '\u0625\u0636\u0627\u0641\u0629 \u0645\u0646\u062A\u062C \u062C\u062F\u064A\u062F';
   document.getElementById('productId').value       = product ? id : '';
-  document.getElementById('productName').value     = product ? (product.name_ar||product.name||'') : '';
+  document.getElementById('productName').value     = product ? (product.name||'') : '';
+  var _arEl = document.getElementById('productNameAr'); if (_arEl) _arEl.value = product ? (product.name_ar||'') : '';
   document.getElementById('productCategory').value = product ? (product.category||'medicines') : 'medicines';
   document.getElementById('productPrice').value    = product ? (product.price||'') : '';
   document.getElementById('productStock').value    = product ? (product.stock!==undefined ? product.stock : '') : '';
@@ -186,6 +187,8 @@ function removeImage() {
 
 async function saveProduct() {
   var name  = validateInput(document.getElementById('productName').value.trim(), 200);
+  var _nameArEl = document.getElementById('productNameAr');
+  var nameAr = validateInput((_nameArEl ? _nameArEl.value.trim() : '') || name, 200);
   var price = parseInt(document.getElementById('productPrice').value);
   var stock = document.getElementById('productStock').value;
   if (!name)            { showToast('\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062A\u062C','error'); return; }
@@ -202,7 +205,7 @@ async function saveProduct() {
   var originalPrice = _opEl ? (parseInt(_opEl.value) || null) : null;
   if (originalPrice && originalPrice <= price) originalPrice = null; // must be > sale price
   var row = {
-    name: name, name_ar: name,
+    name: name, name_ar: nameAr,
     category: document.getElementById('productCategory').value,
     price: price,
     original_price: originalPrice,
