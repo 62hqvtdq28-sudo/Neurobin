@@ -73,6 +73,7 @@ async function loadProducts(filter) {
   try {
     _allProducts = await SupaDB.Products.list();
     renderProductsList(_allProducts, filter);
+    renderCategoryStats(_allProducts);
   } catch(e) {
     el.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">\u062E\u0637\u0623: ' + escapeHTML(e.message) + '</div>';
   }
@@ -113,6 +114,37 @@ function filterProductsAdmin(filter) {
   renderProductsList(_allProducts, filter);
 }
 function searchProducts() { var af = document.querySelector('#section-products .tab-btn.active'); renderProductsList(_allProducts, af ? af.dataset.filter : 'all'); }
+
+// ── إحصائيات عدد المنتجات لكل قسم ──────────────────────────────────────
+function renderCategoryStats(products) {
+  var container = document.getElementById('categoryStats');
+  if (!container) return;
+  var cats = [
+    { key:'all',      label:'إجمالي المنتجات', icon:'package',  c1:'#6366f1',c2:'#7c3aed' },
+    { key:'medicines',label:'الأدوية',          icon:'pill',     c1:'#3b82f6',c2:'#1d4ed8' },
+    { key:'skincare', label:'العناية بالبشرة',  icon:'sparkles', c1:'#ec4899',c2:'#be185d' },
+    { key:'makeup',   label:'المكياج',           icon:'palette',  c1:'#a855f7',c2:'#7e22ce' },
+    { key:'devices',  label:'الأجهزة',           icon:'cpu',      c1:'#64748b',c2:'#334155' },
+    { key:'perfumes', label:'العطور',            icon:'wind',     c1:'#f59e0b',c2:'#b45309' },
+    { key:'haircare', label:'العناية بالشعر',    icon:'scissors', c1:'#14b8a6',c2:'#0f766e' },
+    { key:'dental',   label:'عناية بالأسنان',    icon:'smile',    c1:'#06b6d4',c2:'#0369a1' }
+  ];
+  var counts = {};
+  products.forEach(function(p){ var c=p.category||'other'; counts[c]=(counts[c]||0)+1; });
+  container.innerHTML = cats.map(function(c) {
+    var n = c.key==='all' ? products.length : (counts[c.key]||0);
+    return '<div onclick="filterProductsAdmin(\'' + c.key + '\')" style="cursor:pointer;background:linear-gradient(135deg,'+c.c1+','+c.c2+');border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;color:white;transition:transform 0.15s;box-shadow:0 2px 8px '+c.c1+'40;" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'"><div style="width:38px;height:38px;background:rgba(255,255,255,0.22);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="'+c.icon+'" style="width:18px;height:18px;"></i></div><div><div style="font-size:22px;font-weight:800;line-height:1;">'+n+'</div><div style="font-size:11px;opacity:0.88;margin-top:2px;white-space:nowrap;">'+c.label+'</div></div></div>';
+  }).join('');
+  if(typeof lucide!=='undefined') lucide.createIcons();
+  cats.forEach(function(c){
+    var btn=document.querySelector('#section-products [data-filter="'+c.key+'"]');
+    if(!btn) return;
+    var n=c.key==='all'?products.length:(counts[c.key]||0);
+    var badge=btn.querySelector('.cat-count-badge');
+    if(!badge){badge=document.createElement('span');badge.className='cat-count-badge';badge.style.cssText='display:inline-flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.18);border-radius:9999px;font-size:10px;font-weight:700;min-width:18px;height:18px;padding:0 5px;margin-right:4px;vertical-align:middle;';btn.appendChild(badge);}
+    badge.textContent=n;
+  });
+}
 
 async function openProductModal(id) {
   var product = null;
