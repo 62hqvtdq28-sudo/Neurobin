@@ -2,6 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>لوحة التحكم - ph.neurobin</title>
 
@@ -27,14 +29,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="tailwind.css?v=2">
+<link rel="stylesheet" href="tailwind.css?v=10">
 <link rel="stylesheet" href="admin-styles.css">
 <!-- Supabase JS SDK v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <!-- DOMPurify: XSS sanitization -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.447.0/dist/umd/lucide.min.js"></script>
-<script src="tailwind.config.js?v=6"></script>
+<script src="tailwind.config.js?v=10"></script>
 <!-- Additional Security Headers -->
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -1014,14 +1016,14 @@
 
 
 <!-- [SUPABASE] DB adapter + patched JS -->
-<script src="supabase-db.js?v=6"></script>
-<script src="admin-security.js?v=6"></script>
-    <script src="admin-improvements.js?v=6"></script>
-    <script src="admin-auth.js?v=6"></script>
-    <script src="admin-charts.js?v=6"></script>
-    <script src="admin.js?v=6"></script>
-<script src="products.js?v=6"></script>
-<script src="orders.js?v=7"></script>
+<script src="supabase-db.js?v=10"></script>
+<script src="admin-security.js?v=10"></script>
+    <script src="admin-improvements.js?v=10"></script>
+    <script src="admin-auth.js?v=10"></script>
+    <script src="admin-charts.js?v=10"></script>
+    <script src="admin.js?v=10"></script>
+<script src="products.js?v=10"></script>
+<script src="orders.js?v=10"></script>
 
 <div id="createDiscountModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
   <div class="modal-content bg-white rounded-2xl w-full max-w-md p-4 sm:p-5 animate-fade-in overflow-y-auto max-h-screen" style="margin:auto;width:calc(100% - 1.5rem)">
@@ -1097,7 +1099,7 @@
     </div>
   </div>
 </div>
-<script src="discounts.js?v=6"></script>
+<script src="discounts.js?v=10"></script>
 <script>
 function updateDiscountStep() {
   var type = document.getElementById('discountType');
