@@ -693,7 +693,8 @@ var CATEGORY_DEFS_ADMIN = [
   { filter:'dental',    label:'عناية بالأسنان',  icon:'fa-tooth',               bg:'#F0F9FF', iconColor:'#0EA5E9' },
   { filter:'makeup',    label:'مكياج',            icon:'fa-wand-magic-sparkles', bg:'#FAF5FF', iconColor:'#8B5CF6' },
   { filter:'devices',   label:'أجهزة طبية',       icon:'fa-heart-pulse',         bg:'#FEF2F2', iconColor:'#EF4444' },
-  { filter:'perfumes',  label:'عطور',             icon:'fa-spray-can-sparkles',  bg:'#F0FDF4', iconColor:'#16A34A' }
+  { filter:'perfumes',  label:'عطور',             icon:'fa-spray-can-sparkles',  bg:'#F0FDF4', iconColor:'#16A34A' },
+  { filter:'bundles',   label:'عروض التوفير',       icon:'fa-tags',                bg:'#FEF2F2', iconColor:'#EF4444' }
 ];
 
 function loadCategoryImages() {
