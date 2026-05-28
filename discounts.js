@@ -262,7 +262,7 @@ async function saveDiscountCode() {
   if (!isAuthenticated()) {
     _showModalMsg('❌ يرجى تسجيل الدخول أولاً', true);
     return;
-  }'\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
+  }
   var code = document.getElementById('discountCode').value.trim().toUpperCase();
   var dType = document.getElementById('discountType').value;
   var dVal  = parseInt(document.getElementById('discountValue').value);
