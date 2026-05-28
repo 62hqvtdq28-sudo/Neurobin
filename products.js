@@ -186,7 +186,8 @@ async function openProductModal(id) {
   var _arEl = document.getElementById('productNameAr'); if (_arEl) _arEl.value = product ? (product.name_ar||'') : '';
   document.getElementById('productCategory').value = product ? (product.category||'medicines') : 'medicines';
   document.getElementById('productPrice').value    = product ? (product.price||'') : '';
-  document.getElementById('productStock').value    = product ? (product.stock!==undefined ? product.stock : '') : '';
+  var _sk = product && product.stock !== undefined && product.stock !== null ? Number(product.stock) : 99;
+  document.getElementById('productStock').value = (_sk === 0) ? '0' : (_sk === 1) ? '1' : (_sk === 2) ? '2' : '99';
   var _opEl2 = document.getElementById('productOriginalPrice');
   if (_opEl2) _opEl2.value = product && product.original_price ? product.original_price : '';
   document.getElementById('productDesc').value     = product ? (product.description||'') : '';
@@ -274,10 +275,12 @@ async function saveProduct() {
     original_price: originalPrice,
     description: document.getElementById('productDesc').value.trim() || null,
     image_url: document.getElementById('productImage').value || null,
-    in_stock: true, stock_level: 'in',
     updated_at: new Date().toISOString()
   };
-  if (stock) row.stock = parseInt(stock);
+  var _sv = parseInt(stock);
+  row.stock = isNaN(_sv) ? 99 : _sv;
+  row.in_stock = row.stock > 0;
+  row.stock_level = row.stock > 2 ? 'in' : (row.stock > 0 ? 'low' : 'out');
   // حذف الصورة القديمة من السحابة عند تغييرها
   if (id && row.image_url) {
     var _oldProd = _allProducts.find(function(p){ return String(p.id)===String(id); });
