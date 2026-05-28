@@ -14,6 +14,26 @@ document.addEventListener('DOMContentLoaded', function() {
       'inputmode="numeric" min="0">' +
     '<p class="text-xs text-brand-400 mt-1 mb-1">\u0633\u064a\u0638\u0647\u0631 \u0645\u0634\u0637\u0648\u0628\u0627\u064b \u0641\u0648\u0642 \u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u062d\u0627\u0644\u064a</p>';
   _pd.insertAdjacentElement('afterend', _nd);
+
+  // Qty discount fields
+  var _priceEl = document.getElementById('productPrice');
+  if (_priceEl && !document.getElementById('productQty2Price')) {
+    var _qnd = document.createElement('div');
+    _qnd.className = 'grid grid-cols-2 gap-3';
+    _qnd.innerHTML =
+      '<div>' +
+        '<label class="block text-sm font-semibold text-brand-700 mb-1">سعر 2 قطعة <span class="text-xs font-normal text-brand-400">(اختياري)</span></label>' +
+        '<input type="number" id="productQty2Price" class="input-field" placeholder="سعر القطعتين" inputmode="numeric" min="0">' +
+      '</div>' +
+      '<div>' +
+        '<label class="block text-sm font-semibold text-brand-700 mb-1">سعر 3 قطع <span class="text-xs font-normal text-brand-400">(اختياري)</span></label>' +
+        '<input type="number" id="productQty3Price" class="input-field" placeholder="سعر 3 قطع" inputmode="numeric" min="0">' +
+      '</div>';
+    var _origPriceEl = document.getElementById('productOriginalPrice');
+    if (_origPriceEl && _origPriceEl.parentNode) {
+      _origPriceEl.parentNode.insertAdjacentElement('afterend', _qnd);
+    }
+  }
 });
 
 // products.js \u2014 Migrated to Supabase + Supabase Storage for images
@@ -190,6 +210,10 @@ async function openProductModal(id) {
   document.getElementById('productStock').value = (_sk === 0) ? '0' : (_sk === 1) ? '1' : (_sk === 2) ? '2' : '99';
   var _opEl2 = document.getElementById('productOriginalPrice');
   if (_opEl2) _opEl2.value = product && product.original_price ? product.original_price : '';
+  var _qty2El = document.getElementById('productQty2Price');
+  if (_qty2El) _qty2El.value = product && product.qty_2_price ? product.qty_2_price : '';
+  var _qty3El = document.getElementById('productQty3Price');
+  if (_qty3El) _qty3El.value = product && product.qty_3_price ? product.qty_3_price : '';
   document.getElementById('productDesc').value     = product ? (product.description||'') : '';
   var imgUrl = product ? (product.image_url||product.image||'') : '';
   if (imgUrl) {
@@ -278,6 +302,8 @@ async function saveProduct() {
     category: document.getElementById('productCategory').value,
     price: price,
     original_price: originalPrice,
+    qty_2_price: (function(){ var el=document.getElementById('productQty2Price'); return el&&el.value ? (parseInt(el.value)||null) : null; })(),
+    qty_3_price: (function(){ var el=document.getElementById('productQty3Price'); return el&&el.value ? (parseInt(el.value)||null) : null; })(),
     description: document.getElementById('productDesc').value.trim() || null,
     image_url: document.getElementById('productImage').value || null,
     updated_at: new Date().toISOString()
