@@ -150,22 +150,33 @@
   const DiscountCodes = {
     list:   ()     => all('discount_codes'),
     create: async (code) => {
-      // v3 — Pure fetch() fix for iPad Safari
-      // Supabase JS client insert() and even getSession() can hang on iOS Safari
-      // Direct fetch() to REST API bypasses all client-side issues
-      var resp = await fetch(SUPABASE_URL + '/rest/v1/discount_codes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY
-        },
-        body: JSON.stringify(code)
-      });
-      if (!resp.ok) {
-        var errBody = {};
-        try { errBody = await resp.json(); } catch(e) {}
-        throw new Error(errBody.message || errBody.error || ('HTTP ' + resp.status));
+      // v4 — Direct fetch() with 10s timeout + AbortController
+      // Bypasses ALL Supabase JS client issues on iOS Safari
+      var controller = new AbortController();
+      var tId = setTimeout(function(){ controller.abort(); }, 10000);
+      try {
+        var resp = await fetch(SUPABASE_URL + '/rest/v1/discount_codes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY
+          },
+          body: JSON.stringify(code),
+          signal: controller.signal
+        });
+        if (!resp.ok) {
+          var errBody = {};
+          try { errBody = await resp.json(); } catch(e2) {}
+          throw new Error(errBody.message || errBody.error || ('HTTP ' + resp.status));
+        }
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') {
+          throw new Error('انتهت مهلة الاتصال — تحقق من الإنترنت أو أعد المحاولة');
+        }
+        throw fetchErr;
+      } finally {
+        clearTimeout(tId);
       }
     },
     delete: async (id)   => del('discount_codes', id),
