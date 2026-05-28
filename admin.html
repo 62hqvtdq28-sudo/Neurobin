@@ -1964,5 +1964,40 @@ async function saveCatImg(key, url) {
   });
 })();
 </script>
+
+<!-- iPad Safari Direct-Fetch Fix — inline override for DiscountCodes.create -->
+<script>
+(function(){
+  var _U = 'https://hczsskviliuqyayylutv.supabase.co';
+  var _K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  function applyFix(n) {
+    if (window.SupaDB && window.SupaDB.DiscountCodes) {
+      window.SupaDB.DiscountCodes.create = async function(code) {
+        var ctrl = new AbortController();
+        var t = setTimeout(function(){ ctrl.abort(); }, 12000);
+        try {
+          var r = await fetch(_U + '/rest/v1/discount_codes', {
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K},
+            body:JSON.stringify(code),
+            signal:ctrl.signal
+          });
+          if (!r.ok) {
+            var b={};
+            try{b=await r.json();}catch(e){}
+            throw new Error(b.message||b.error||'HTTP '+r.status);
+          }
+        } catch(e) {
+          if (e.name==='AbortError') throw new Error('انتهت مهلة الاتصال — تحقق من الإنترنت');
+          throw e;
+        } finally { clearTimeout(t); }
+      };
+      console.log('[Fix v3] DiscountCodes.create override applied');
+    } else if (n>0) { setTimeout(function(){applyFix(n-1);},200); }
+  }
+  document.addEventListener('DOMContentLoaded',function(){applyFix(30);});
+  setTimeout(function(){applyFix(30);},500);
+})();
+</script>
 </body>
 </html>
