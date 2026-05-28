@@ -203,6 +203,11 @@ async function openProductModal(id) {
     document.getElementById('productImage').value = '';
   }
   document.getElementById('productModal').classList.add('active'); lucide.createIcons();
+  // Sync chip groups visual state
+  if (typeof window._syncChips === 'function') {
+    window._syncChips('productCategory', document.getElementById('productCategory').value || 'medicines');
+    window._syncChips('productStock', String(document.getElementById('productStock').value || '99'));
+  }
 }
 function closeProductModal() { document.getElementById('productModal').classList.remove('active'); }
 function editProduct(id) { openProductModal(id); }
