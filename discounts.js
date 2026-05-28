@@ -270,15 +270,15 @@ async function saveDiscountCode() {
   var durDays  = parseInt(document.getElementById('discountDays').value)  || 0;
   var durHours = parseInt(document.getElementById('discountHours').value) || 0;
   var maxU  = document.getElementById('discountMaxUses').value;
-  if (!code || code.length < 2 || !/^[A-Z0-9]+$/.test(code)) { showToast('كود غير صالح (2 أحرف على الأقل من A-Z, 0-9)','error'); return; }
-  if (!dVal || dVal <= 0) { showToast('قيمة الخصم غير صحيحة','error'); return; }
-  if (dType === 'percent' && dVal > 100) { showToast('نسبة الخصم لا تتجاوز 100%','error'); return; }
+  if (!code || code.length < 2 || !/^[A-Z0-9]+$/.test(code)) { _showModalMsg('❌ كود غير صالح (2 أحرف على الأقل من A-Z, 0-9)', true); return; }
+  if (!dVal || dVal <= 0) { _showModalMsg('❌ قيمة الخصم غير صحيحة — أدخل رقماً أكبر من صفر', true); return; }
+  if (dType === 'percent' && dVal > 100) { _showModalMsg('❌ نسبة الخصم لا يمكن أن تتجاوز 100%', true); return; }
   if (dType === 'fixed' && dVal % 250 !== 0) {
     dVal = Math.max(250, Math.round(dVal / 250) * 250);
     document.getElementById('discountValue').value = dVal;
     showToast('تم تعديل قيمة الخصم إلى ' + dVal.toLocaleString() + ' د.ع', 'info');
   }
-  if (durDays <= 0 && durHours <= 0) { showToast('يرجى إدخال مدة صالحة (أيام أو ساعات)','error'); return; }
+  if (durDays <= 0 && durHours <= 0) { _showModalMsg('❌ يرجى إدخال مدة صالحة (أيام أو ساعات)', true); return; }
   var ms = (durDays * 86400000) + (durHours * 3600000);
   var expiresAt = new Date(Date.now() + ms).toISOString();
   var btn = document.querySelector('#createDiscountModal .save-btn');
