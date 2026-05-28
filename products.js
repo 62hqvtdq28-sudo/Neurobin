@@ -87,8 +87,8 @@ function renderProductsList(products, filter) {
   if (!products.length) {
     el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0646\u062A\u062C\u0627\u062A</div>'; return;
   }
-  var catLabels = { medicines:'\u0623\u062F\u0648\u064A\u0629', skincare:'\u0639\u0646\u0627\u064A\u0629 \u0628\u0627\u0644\u0628\u0634\u0631\u0629', makeup:'\u0645\u0643\u064A\u0627\u062C', devices:'\u0623\u062C\u0647\u0632\u0629' , perfumes:'عطور' , haircare:'عناية بالشعر', dental:'عناية بالأسنان' };
-  var catColors = { medicines:'bg-blue-100 text-blue-700', skincare:'bg-pink-100 text-pink-700', makeup:'bg-purple-100 text-purple-700', devices:'bg-gray-100 text-gray-700', perfumes:'bg-amber-100 text-amber-700', haircare:'bg-violet-100 text-violet-700', dental:'bg-cyan-100 text-cyan-700' };
+  var catLabels = { medicines:'\u0623\u062F\u0648\u064A\u0629', skincare:'\u0639\u0646\u0627\u064A\u0629 \u0628\u0627\u0644\u0628\u0634\u0631\u0629', makeup:'\u0645\u0643\u064A\u0627\u062C', devices:'\u0623\u062C\u0647\u0632\u0629' , perfumes:'عطور' , haircare:'عناية بالشعر', dental:'عناية بالأسنان', packages:'بكجات' };
+  var catColors = { medicines:'bg-blue-100 text-blue-700', skincare:'bg-pink-100 text-pink-700', makeup:'bg-purple-100 text-purple-700', devices:'bg-gray-100 text-gray-700', perfumes:'bg-amber-100 text-amber-700', haircare:'bg-violet-100 text-violet-700', dental:'bg-cyan-100 text-cyan-700', packages:'bg-yellow-100 text-yellow-700' };
   el.innerHTML = products.map(function(p,i) {
     var pid = escapeHTML(String(p.id));
     var imgSrc = p.image_url || p.image || '';
@@ -127,7 +127,8 @@ function renderCategoryStats(products) {
     { key:'devices',  label:'الأجهزة',           icon:'cpu',      c1:'#64748b',c2:'#334155' },
     { key:'perfumes', label:'العطور',            icon:'wind',     c1:'#f59e0b',c2:'#b45309' },
     { key:'haircare', label:'العناية بالشعر',    icon:'scissors', c1:'#14b8a6',c2:'#0f766e' },
-    { key:'dental',   label:'عناية بالأسنان',    icon:'smile',    c1:'#06b6d4',c2:'#0369a1' }
+    { key:'dental',   label:'عناية بالأسنان',    icon:'smile',    c1:'#06b6d4',c2:'#0369a1' },
+    { key:'packages', label:'بكجات',              icon:'gift',     c1:'#f59e0b',c2:'#d97706' }
   ];
   var counts = {};
   products.forEach(function(p){ var c=p.category||'other'; counts[c]=(counts[c]||0)+1; });
