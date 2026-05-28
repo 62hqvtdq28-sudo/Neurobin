@@ -248,13 +248,40 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
   .whatsapp-float{bottom:16px;left:16px;width:56px;height:56px}
   .whatsapp-float svg{width:28px;height:28px}
 }
-@media(min-width:768px) and (max-width:1024px){
-  .products-grid{grid-template-columns:repeat(3,1fr);gap:0.85rem}
-  .product-image-wrapper{height:165px}
-  .product-card-main>div:last-child{padding:0.6rem}
-  .product-card-main h3{font-size:0.85rem!important}
-  .product-card-main .text-xl{font-size:0.9rem!important}
-  .product-card-main .inline-block.bg-brand-50{font-size:0.65rem;padding:2px 6px}
+@media(min-width:768px) and (max-width:1023px){
+  /* ═══ iPad Layout Fixes ═══ */
+
+  /* Product Grid */
+  .products-grid{grid-template-columns:repeat(3,1fr);gap:1rem}
+  .product-image-wrapper{height:175px}
+  .product-card-main>div:last-child{padding:0.75rem}
+  .product-card-main h3{font-size:0.88rem!important}
+  .product-card-main .text-xl{font-size:0.95rem!important}
+  .product-card-main .inline-block.bg-brand-50{font-size:0.68rem;padding:2px 7px}
+
+  /* Hero Section */
+  .hero-title{font-size:2.75rem!important;line-height:1.15!important}
+  .stat-number{font-size:2rem}
+
+  /* Cart Sidebar — comfortable width on iPad */
+  .cart-sidebar{max-width:420px}
+
+  /* Brand emblem slightly smaller */
+  .brand-emblem{width:64px;height:64px}
+
+  /* Add-to-cart button text */
+  .product-card-main .add-to-cart-btn span,
+  .product-card-main button span.btn-text{font-size:0.7rem}
+
+  /* Stock badge sizing */
+  .stock-badge{font-size:0.62rem!important;padding:2px 6px!important}
+
+  /* Favorite btn */
+  .favorite-btn{width:32px!important;height:32px!important}
+
+  /* WhatsApp float button */
+  .whatsapp-float{bottom:20px;left:20px;width:58px;height:58px}
+  .whatsapp-float svg{width:30px;height:30px}
 }
 /* â”€â”€ Checkout Modal Mobile Fix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-height: 800px) {
