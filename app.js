@@ -167,6 +167,7 @@ async function loadProductsFromSupabase() {
         image: p.image_url || '',
         inStock: Boolean(p.in_stock),
         stockLevel: p.stock_level || 'in',
+        stock: (p.stock !== undefined && p.stock !== null) ? Number(p.stock) : null,
         description: p.description || ''
       }));
       displayedProducts = [...products];
@@ -530,12 +531,15 @@ function renderProducts(productsToRender) {
     const safeDesc   = SecurityValidator.escapeHtml(product.description || '');
     const isFavorite = favorites.includes(product.id);
     let stockBadge = '';
-    if (!product.inStock) {
+    var _sn = (typeof product.stock === 'number') ? product.stock : null;
+    if (!product.inStock || _sn === 0) {
       stockBadge = '<span class="stock-badge out-of-stock z-10">\u0646\u0641\u0630\u062a \u0627\u0644\u0643\u0645\u064a\u0629</span>';
-    } else if (product.stockLevel === 'low') {
-      stockBadge = '<span class="stock-badge low-stock z-10">\u0643\u0645\u064a\u0629 \u0645\u062d\u062f\u0648\u062f\u0629</span>';
-    } else if (product.stockLevel === 'in') {
-      stockBadge = '<span class="stock-badge in-stock z-10">\u0645\u062a\u0648\u0641\u0631</span>';
+    } else if (_sn === 1) {
+      stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u0629</span>';
+    } else if (_sn === 2) {
+      stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u062a\u064a\u0646</span>';
+    } else {
+      stockBadge = '<span class="stock-badge in-stock z-10">\u0645\u062a\u0648\u0641\u0631 \u0644\u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0641\u0648\u0631\u064a</span>';
     }
     return `
       <div class="product-card-main scroll-animate-scale" role="listitem" data-category="${safeCategory}" data-id="${safeId}">
@@ -1036,9 +1040,12 @@ function performSearch() {
       const safeName = SecurityValidator.escapeHtml(p.nameAr);
       const safePrice = SecurityValidator.escapeHtml(formatPrice(p.price));
       const safeImg = p.image ? SecurityValidator.escapeHtml(p.image) : '';
-      const stockBadge = p.inStock
-        ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">متوفر</span>'
-        : '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذت الكمية</span>';
+      var _sn2 = (typeof p.stock === 'number') ? p.stock : null;
+      var stockBadge = (!p.inStock || _sn2 === 0)
+        ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذت الكمية</span>'
+        : (_sn2 === 1 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعة</span>'
+        : (_sn2 === 2 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعتين</span>'
+        : '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">متوفر للتسليم الفوري</span>'));
       const imgHtml = safeImg
         ? `<img src="${safeImg}" alt="" class="w-full h-full object-contain" loading="lazy">`
         : `<svg class="w-7 h-7 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg>`;
