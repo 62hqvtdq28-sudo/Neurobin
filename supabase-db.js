@@ -92,17 +92,14 @@
     if (error) throw error; return data || [];
   }
   async function ins(table, row) {
-    await _requireSession();
     const { data, error } = await _db.from(table).insert(row).select().single();
     if (error) throw error; return data;
   }
   async function upd(table, id, row) {
-    await _requireSession();
     const { error } = await _db.from(table).update(row).eq('id', id);
     if (error) throw error;
   }
   async function del(table, id) {
-    await _requireSession();
     const { error } = await _db.from(table).delete().eq('id', id);
     if (error) throw error;
   }
