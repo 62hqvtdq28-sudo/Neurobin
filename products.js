@@ -74,7 +74,6 @@ async function loadProducts(filter) {
     _allProducts = await SupaDB.Products.list();
     renderProductsList(_allProducts, filter);
     renderCategoryStats(_allProducts);
-    _loadPackagesBadge();
   } catch(e) {
     el.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">\u062E\u0637\u0623: ' + escapeHTML(e.message) + '</div>';
   }
@@ -174,7 +173,7 @@ async function _loadPackagesBadge() {
     _tryBadge();
   } catch(e) { /* silent */ }
 }
-
+  _loadPackagesBadge();
 }
 
 async function openProductModal(id) {
