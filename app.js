@@ -393,6 +393,16 @@ function updateDiscountDisplay() {
   } else {
     row.classList.add('hidden');
   }
+  // تحديث الإجمالي فورًا عند تطبيق/إلغاء الخصم
+  const totalEl = document.getElementById('checkoutTotal');
+  if (totalEl) {
+    let sub = 0;
+    cart.forEach(function(item) {
+      const product = products.find(function(p) { return p.id === item.productId; });
+      if (product) sub += product.price * item.quantity;
+    });
+    totalEl.textContent = SecurityValidator.escapeHtml(formatPrice(calcTotal(sub) + DELIVERY_FEE));
+  }
 }
 
 function calcTotal(rawTotal) {
@@ -887,7 +897,7 @@ function openCheckout() {
     <span>\u1f69a \u0631\u0633\u0648\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 (\u062c\u0645\u064a\u0639 \u0623\u0646\u062d\u0627\u0621 \u0627\u0644\u0639\u0631\u0627\u0642)</span>
     <span>${formatPrice(DELIVERY_FEE)}</span>
   </div>`;
-  document.getElementById('checkoutTotal').textContent = SecurityValidator.escapeHtml(formatPrice(total + DELIVERY_FEE));
+  document.getElementById('checkoutTotal').textContent = SecurityValidator.escapeHtml(formatPrice(calcTotal(total) + DELIVERY_FEE));
 }
 
 function closeCheckout() {
