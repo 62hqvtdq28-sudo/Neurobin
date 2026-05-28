@@ -188,7 +188,7 @@
         <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">التحليلات</span>
       </button>
-      <button onclick="showSection('discounts')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="discounts">
+      <button onclick="showSection('discounts'); setTimeout(loadDiscountCodes, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="discounts">
         <i data-lucide="tag" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">كودات الخصم</span>
       </button>
