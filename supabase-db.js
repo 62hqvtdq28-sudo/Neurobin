@@ -1,4 +1,4 @@
-// supabase-db.js — Supabase adapter v3 (iPad Safari direct-fetch fix)
+// supabase-db.js — Supabase adapter v2
 // DiscountCodes + ImageStorage added
 // v2.1 — iPad Safari Fix: explicit auth + Uint8Array upload
 // v2.2 — Mobile RLS Fix: session check before write operations
@@ -150,16 +150,15 @@
   const DiscountCodes = {
     list:   ()     => all('discount_codes'),
     create: async (code) => {
-      // iPad Safari Fix: bypass Supabase JS client insert (hangs on iOS)
-      // Use direct fetch() to REST API — confirmed working on all devices
-      var session = await _db.auth.getSession().then(function(r){ return r.data && r.data.session; }).catch(function(){ return null; });
-      var token = (session && session.access_token) ? session.access_token : SUPABASE_KEY;
+      // v3 — Pure fetch() fix for iPad Safari
+      // Supabase JS client insert() and even getSession() can hang on iOS Safari
+      // Direct fetch() to REST API bypasses all client-side issues
       var resp = await fetch(SUPABASE_URL + '/rest/v1/discount_codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + token
+          'Authorization': 'Bearer ' + SUPABASE_KEY
         },
         body: JSON.stringify(code)
       });
