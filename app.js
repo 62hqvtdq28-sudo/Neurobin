@@ -562,12 +562,12 @@ function renderProducts(productsToRender) {
             ${SecurityValidator.escapeHtml(getCategoryLabel(product.category))}
           </span>
           <h3 class="font-heading font-bold text-sm text-brand-900 leading-snug">${safeName}</h3>
-          ${safeNameEn && safeNameEn !== safeName ? `<p class="text-xs text-brand-500 leading-snug mb-1">${safeNameEn}</p>` : '<div class="mb-1"></div>'}
-          ${safeDesc ? `<p class="text-xs text-brand-400 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
+          ${safeNameEn && safeNameEn !== safeName ? `<p class="font-heading font-bold text-sm text-brand-900 leading-snug mb-1">${safeNameEn}</p>` : '<div class="mb-1"></div>'}
+          ${safeDesc ? `<p class="text-xs text-gray-900 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
           <div class="flex items-center justify-between">
             <div class="flex flex-col leading-none">
-              ${product.originalPrice ? `<span class="text-xs text-brand-400 line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
-              <span class="text-sm font-bold text-brand-700 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
+              ${product.originalPrice ? `<span class="text-xs text-black line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
+              <span class="text-sm font-bold text-red-600 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
             </div>
             <button onclick="addToCart('${safeId}')" class="btn-primary ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'} text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all" >
               <i data-lucide="plus" class="w-3 h-3"></i>
@@ -928,8 +928,8 @@ function openQuickView(productId) {
       <h3 class="font-heading font-bold text-2xl text-brand-900 leading-snug mb-1">${safeName}</h3>
       ${safeNameEn && safeNameEn !== safeName ? `<p class="text-base text-brand-500 mb-3">${safeNameEn}</p>` : '<div class="mb-2"></div>'}
       ${safeDesc ? `<p class="text-sm text-brand-600 leading-relaxed mb-3">${safeDesc}</p>` : ''}
-      ${safeOriginalPrice ? `<p class="text-base text-brand-400 line-through leading-none mb-1">${safeOriginalPrice}</p>` : ''}
-      <p class="text-3xl font-bold text-brand-700 mb-4">${safePrice}</p>
+      ${safeOriginalPrice ? `<p class="text-base text-black line-through leading-none mb-1">${safeOriginalPrice}</p>` : ''}
+      <p class="text-3xl font-bold text-red-600 mb-4">${safePrice}</p>
       <p class="text-brand-600/80 mb-6">${SecurityValidator.escapeHtml(stockText)}</p>
       <div class="flex gap-3">
         <button onclick="addToCart('${safeId}')" class="flex-grow btn-primary bg-brand-700 hover:bg-brand-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'}" >
