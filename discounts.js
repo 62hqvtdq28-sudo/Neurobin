@@ -243,7 +243,26 @@ function closeCreateDiscountModal() { document.getElementById('createDiscountMod
 function regenerateCode() { document.getElementById('discountCode').value = generateSecureCode(12); }
 
 async function saveDiscountCode() {
-  if (!isAuthenticated()) { showToast('\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
+  // ── Immediate modal feedback ──────────────────────────────────
+  var _errDiv = document.getElementById('discountModalError');
+  function _showModalMsg(msg, isErr) {
+    if (_errDiv) {
+      _errDiv.textContent = msg;
+      _errDiv.className = 'mb-3 p-3 rounded-xl text-sm font-medium ' +
+        (isErr ? 'bg-red-50 border border-red-300 text-red-700'
+                : 'bg-blue-50 border border-blue-300 text-blue-700');
+      _errDiv.classList.remove('hidden');
+      _errDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    if (isErr) showToast(msg, 'error');
+  }
+  _showModalMsg('⏳ جاري المعالجة...', false);
+
+  // ── Auth check ────────────────────────────────────────────────
+  if (!isAuthenticated()) {
+    _showModalMsg('❌ يرجى تسجيل الدخول أولاً', true);
+    return;
+  }'\u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B','error'); return; }
   var code = document.getElementById('discountCode').value.trim().toUpperCase();
   var dType = document.getElementById('discountType').value;
   var dVal  = parseInt(document.getElementById('discountValue').value);
@@ -270,10 +289,8 @@ async function saveDiscountCode() {
     loadDiscountCodes();
     showSuccessAnimation('\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0643\u0648\u062F \u0627\u0644\u062E\u0635\u0645 \u0628\u0646\u062C\u0627\u062D!');
   } catch(e) {
-    var errMsg = e.message.includes('duplicate') ? 'هذا الكود موجود مسبقاً' : 'خطأ: ' + e.message;
-    showToast(errMsg, 'error');
-    var errDiv = document.getElementById('discountModalError');
-    if (errDiv) { errDiv.textContent = errMsg; errDiv.classList.remove('hidden'); }
+    var errMsg = e.message.includes('duplicate') ? 'هذا الكود موجود مسبقاً — جرّب كوداً مختلفاً' : 'خطأ: ' + e.message;
+    _showModalMsg('❌ ' + errMsg, true);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0643\u0648\u062F'; }
   }
