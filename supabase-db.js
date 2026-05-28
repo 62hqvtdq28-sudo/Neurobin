@@ -105,6 +105,7 @@
   }
 
   const Products     = { list: () => all('products'), create: p => ins('products', p), update: (id,p) => upd('products', id, p), delete: id => del('products', id) };
+  const Bundles      = { list: () => all('bundles'),  create: b => ins('bundles', b),  update: (id,b) => upd('bundles', id, b),  delete: id => del('bundles', id)  };
   const Packages     = { list: () => all('packages'),  create: p => ins('packages', p),  update: (id,p) => upd('packages', id, p), delete: id => del('packages', id) };
   const Orders = {
     async list() {
@@ -223,6 +224,6 @@
     set: (key,val) => localStorage.setItem(key, JSON.stringify(val))
   };
 
-  window.SupaDB = { Auth, Products, Packages, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
+  window.SupaDB = { Auth, Products, Bundles, Packages, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
   console.log('[SupaDB] v2.3 \u2713 (iPad Fix + Mobile RLS Fix + Auto Session Refresh)');
 })();
