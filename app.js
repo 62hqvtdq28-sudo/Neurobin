@@ -169,7 +169,9 @@ async function loadProductsFromSupabase() {
         stockLevel: p.stock_level || 'in',
         stock: (p.stock !== undefined && p.stock !== null) ? Number(p.stock) : null,
         description: p.description || '',
-        originalPrice: p.original_price ? Number(p.original_price) : null
+        originalPrice: p.original_price ? Number(p.original_price) : null,
+        qty2Price: p.qty_2_price ? Number(p.qty_2_price) : null,
+        qty3Price: p.qty_3_price ? Number(p.qty_3_price) : null
       }));
       displayedProducts = [...products];
       renderProducts(products);
@@ -179,6 +181,86 @@ async function loadProductsFromSupabase() {
   } catch (e) {
     console.warn('\u26a0\ufe0f Using fallback products. Supabase error:', e.message);
   }
+}
+
+var bundles = [];
+
+async function loadBundlesFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient.from('bundles').select('*').eq('active', true).order('created_at', { ascending: true });
+    if (error) throw error;
+    if (data) {
+      bundles = data.map(b => ({
+        id: String(b.id),
+        titleAr: b.title_ar || '',
+        productIds: Array.isArray(b.product_ids) ? b.product_ids : (b.product_ids ? JSON.parse(b.product_ids) : []),
+        bundlePrice: Number(b.bundle_price) || 0,
+        originalPrice: b.original_price ? Number(b.original_price) : null
+      }));
+      console.log('✅ Bundles loaded:', bundles.length);
+    }
+  } catch(e) { console.warn('⚠️ Bundles load error:', e.message); }
+}
+
+function renderBundles() {
+  const grid = document.getElementById('productsGrid');
+  if (!grid) return;
+  if (!bundles.length) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">لا توجد عروض حالياً</div>';
+    return;
+  }
+  grid.innerHTML = bundles.map(function(b, i) {
+    var bid = SecurityValidator.escapeHtml(b.id);
+    var bundleProducts = b.productIds.map(function(pid) {
+      var p = products.find(function(x){ return String(x.id) === String(pid); });
+      return p ? SecurityValidator.escapeHtml(p.nameAr || p.name || '') : '';
+    }).filter(Boolean);
+    var saving = b.originalPrice && b.originalPrice > b.bundlePrice ? b.originalPrice - b.bundlePrice : 0;
+    var prodList = bundleProducts.map(function(n){ return '<span class="text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full">' + n + '</span>'; }).join('');
+    return '<div class="product-card-main scroll-animate-scale" role="listitem" style="animation-delay:' + (i*0.05) + 's">' +
+      (saving > 0 ? '<span class="stock-badge in-stock z-10" style="background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;">توفير ' + saving.toLocaleString() + ' د.ع</span>' : '') +
+      '<div class="product-image-wrapper" style="background:linear-gradient(135deg,#fef2f2,#fff7ed);display:flex;align-items:center;justify-content:center;">' +
+        '<svg class="w-16 h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>' +
+      '</div>' +
+      '<div class="p-2.5 product-card-body">' +
+        '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-1" style="background:#fef2f2;color:#ef4444;">عرض خاص</span>' +
+        '<h3 class="font-heading font-bold text-sm text-brand-900 leading-snug">' + SecurityValidator.escapeHtml(b.titleAr) + '</h3>' +
+        '<div class="flex flex-wrap gap-1 my-1">' + prodList + '</div>' +
+        '<div class="flex items-center justify-between">' +
+          '<div class="flex flex-col leading-none">' +
+            (b.originalPrice ? '<span class="text-xs text-black line-through leading-none mb-0.5">' + SecurityValidator.escapeHtml(formatPrice(b.originalPrice)) + '</span>' : '') +
+            '<span class="text-sm font-bold text-red-600 leading-none">' + SecurityValidator.escapeHtml(formatPrice(b.bundlePrice)) + '</span>' +
+          '</div>' +
+          '<button onclick="addBundleToCart('' + bid + '')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all">' +
+            '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>' +
+            '<span>أضف الباقة</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  lucide.createIcons();
+  if (typeof initScrollAnimations === 'function') initScrollAnimations();
+}
+
+function addBundleToCart(bundleId) {
+  var bundle = bundles.find(function(b){ return b.id === bundleId; });
+  if (!bundle) return;
+  var bundleCartId = 'bundle_' + bundleId;
+  var existing = cart.find(function(item){ return item.productId === bundleCartId; });
+  if (existing) { showToast('الباقة موجودة بالفعل في السلة', 'info'); return; }
+  cart.push({ productId: bundleCartId, quantity: 1, isBundle: true, bundleData: { id: bundleId, titleAr: bundle.titleAr, price: bundle.bundlePrice, originalPrice: bundle.originalPrice } });
+  saveCart();
+  updateCartUI();
+  showToast('تمت إضافة الباقة للسلة ✓', 'success');
+}
+
+function getEffectivePrice(product, quantity) {
+  if (!product) return 0;
+  if (quantity >= 3 && product.qty3Price) return product.qty3Price;
+  if (quantity >= 2 && product.qty2Price) return product.qty2Price;
+  return product.price;
 }
 
 function generateTrackingCode(){return 'NB-'+Math.floor(1000+Math.random()*9000);}
@@ -399,6 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initNavbarScroll();
   initEventListeners();
   loadProductsFromSupabase();
+  loadBundlesFromSupabase();
 });
 
 function initEventListeners() {
@@ -604,6 +687,10 @@ function filterProducts(e, category) {
     activeBtn.classList.add('active');
     activeBtn.setAttribute('aria-selected', 'true');
   }
+  if (category === 'bundles') {
+    renderBundles();
+    return;
+  }
   displayedProducts = category === 'all' ? [...products] : products.filter(p => p.category === category);
   renderProducts(displayedProducts);
 }
@@ -677,11 +764,31 @@ function updateCartUI() {
     } else {
       let total = 0;
       cartItems.innerHTML = cart.map(item => {
+        if (item.isBundle && item.bundleData) {
+          var bd = item.bundleData;
+          total += bd.price;
+          var safeBundleId = SecurityValidator.escapeHtml(item.productId);
+          return `<div class="flex items-center gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
+            <div class="w-16 h-16 bg-gradient-to-br from-red-100 to-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg class="w-8 h-8 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>
+            </div>
+            <div class="flex-grow">
+              <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">عرض خاص</span>
+              <h4 class="font-semibold text-brand-900 text-sm mt-0.5">${SecurityValidator.escapeHtml(bd.titleAr || 'باقة')}</h4>
+              <p class="font-bold text-red-600 text-sm">${SecurityValidator.escapeHtml(formatPrice(bd.price))}</p>
+            </div>
+            <button onclick="removeFromCart('${safeBundleId}')" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>`;
+        }
         const product = products.find(p => p.id === item.productId);
         if (!product) return '';
-        total += product.price * item.quantity;
+        const effectivePrice = getEffectivePrice(product, item.quantity);
+        total += effectivePrice * item.quantity;
         const safeProductId = SecurityValidator.escapeHtml(item.productId);
         const safeName = SecurityValidator.escapeHtml(product.nameAr);
+        const hasDiscount = effectivePrice < product.price;
         return `
           <div class="flex items-center gap-4 p-4 bg-brand-50 rounded-xl">
             <div class="w-16 h-16 bg-gradient-to-br from-brand-100 to-brand-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -691,7 +798,11 @@ function updateCartUI() {
             </div>
             <div class="flex-grow">
               <h4 class="font-semibold text-brand-900 text-sm">${safeName}</h4>
-              <p class="text-brand-500 text-sm">${SecurityValidator.escapeHtml(formatPrice(product.price))}</p>
+              <div class="flex items-center gap-2">
+                ${hasDiscount ? '<span class="text-xs text-gray-400 line-through">' + SecurityValidator.escapeHtml(formatPrice(product.price)) + '</span>' : ''}
+                <p class="text-red-600 font-bold text-sm">${SecurityValidator.escapeHtml(formatPrice(effectivePrice))}</p>
+                ${hasDiscount ? '<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">خصم كمية</span>' : ''}
+              </div>
               <div class="flex items-center gap-2 mt-2">
                 <button onclick="updateCartQuantity('${safeProductId}', -1)" class="w-7 h-7 bg-white rounded-full flex items-center justify-center text-brand-600 hover:bg-brand-100 transition-colors">
                   <i data-lucide="minus" class="w-3 h-3"></i>
