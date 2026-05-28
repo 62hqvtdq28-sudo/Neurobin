@@ -227,6 +227,8 @@ function updateExpiryPreview() {
 
 // \u2500\u2500 \u0625\u0646\u0634\u0627\u0621 \u0643\u0648\u062F \u062C\u062F\u064A\u062F \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function openCreateDiscountModal() {
+  var errDiv = document.getElementById('discountModalError');
+  if (errDiv) { errDiv.textContent = ''; errDiv.classList.add('hidden'); }
   document.getElementById('discountCode').value = generateSecureCode(12);
   document.getElementById('discountType').value = 'percent';
   document.getElementById('discountValue').value = '10';
@@ -268,7 +270,10 @@ async function saveDiscountCode() {
     loadDiscountCodes();
     showSuccessAnimation('\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0643\u0648\u062F \u0627\u0644\u062E\u0635\u0645 \u0628\u0646\u062C\u0627\u062D!');
   } catch(e) {
-    showToast(e.message.includes('duplicate') ? '\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0648\u062C\u0648\u062F \u0645\u0633\u0628\u0642\u0627\u064B' : '\u062E\u0637\u0623: ' + e.message, 'error');
+    var errMsg = e.message.includes('duplicate') ? 'هذا الكود موجود مسبقاً' : 'خطأ: ' + e.message;
+    showToast(errMsg, 'error');
+    var errDiv = document.getElementById('discountModalError');
+    if (errDiv) { errDiv.textContent = errMsg; errDiv.classList.remove('hidden'); }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0643\u0648\u062F'; }
   }
