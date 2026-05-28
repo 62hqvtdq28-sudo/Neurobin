@@ -7,12 +7,24 @@ var _allProductsForBundles = [];
 async function loadBundles() {
   var el = document.getElementById('bundlesList');
   if (!el) return;
+  // Immediately show loading spinner (confirms function was called)
+  el.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-brand-400"><div class="animate-spin w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full mb-3"></div><p class="text-sm">\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u0627\u0642\u0627\u062a...</p></div>';
+  // Wait for SupaDB if not ready yet
+  var retries = 0;
+  while (typeof SupaDB === 'undefined' && retries < 20) {
+    await new Promise(function(r){ setTimeout(r, 200); });
+    retries++;
+  }
+  if (typeof SupaDB === 'undefined') {
+    el.innerHTML = '<div class="text-center py-8 text-red-400">\u062a\u0639\u0630\u0631 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u062c\u0631\u0628 \u062a\u062d\u062f\u064a\u062b \u0627\u0644\u0635\u0641\u062d\u0629.</div>';
+    return;
+  }
   try {
     _allBundles = await SupaDB.Bundles.list();
     _allProductsForBundles = await SupaDB.Products.list();
     renderBundlesList(_allBundles);
   } catch(e) {
-    if (el) el.innerHTML = '<div class="text-center py-8 text-red-500">\u062e\u0637\u0623: ' + e.message + '</div>';
+    if (el) el.innerHTML = '<div class="text-center py-8 text-red-400">\u062e\u0637\u0623: ' + e.message + '</div>';
   }
 }
 
@@ -227,3 +239,19 @@ document.addEventListener('click', function(e) {
   if (a === 'edit-bundle')   editBundle(id);
   else if (a === 'delete-bundle') deleteBundle(id);
 });
+
+// Auto-call loadBundles if section is visible on load or when section tab clicked
+(function() {
+  function _tryLoad() {
+    var sec = document.getElementById('section-bundles');
+    if (sec && !sec.classList.contains('hidden')) {
+      if (typeof loadBundles === 'function') loadBundles();
+    }
+  }
+  // On page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(_tryLoad, 500); });
+  } else {
+    setTimeout(_tryLoad, 500);
+  }
+})();
