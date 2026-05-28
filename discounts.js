@@ -97,8 +97,8 @@ function renderDiscountCodes(codes) {
       '<span class="px-2.5 py-1 ' + statusColor + ' rounded-full text-xs font-bold">' + statusText + '</span>' +
       '</div>' +
       '<div class="flex items-center gap-1 flex-shrink-0">' +
-      '<button onclick="copyDiscountCode(\'' + codeStr + '\')" class="p-2 bg-brand-100 text-brand-700 hover:bg-brand-200 rounded-lg transition-colors" title="نسخ الكود"><i data-lucide="copy" class="w-4 h-4"></i></button>' +
-      '<button onclick="toggleCodeActive(\'' + cid + '\',' + (!active) + ')" class="p-2 ' + (active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200') + ' rounded-lg transition-colors" title="' + (active ? 'تعطيل' : 'تفعيل') + '">' +
+      '<button data-action="copy-discount" data-code="' + codeStr + '" class="p-2 bg-brand-100 text-brand-700 hover:bg-brand-200 rounded-lg transition-colors" title="نسخ الكود"><i data-lucide="copy" class="w-4 h-4"></i></button>' +
+      '<button data-action="toggle-discount" data-id="' + cid + '" data-newstate="' + (!active) + '" class="p-2 ' + (active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200') + ' rounded-lg transition-colors" title="' + (active ? 'تعطيل' : 'تفعيل') + '">' +
       '<i data-lucide="' + (active ? 'pause-circle' : 'play-circle') + '" class="w-4 h-4"></i></button>' +
       '<button data-action="delete-discount" data-id="' + cid + '" class="p-2 bg-red-100 text-red-500 hover:bg-red-200 rounded-lg transition-colors" title="حذف"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
       '</div></div>' +
@@ -122,11 +122,11 @@ function renderDiscountCodes(codes) {
       '<div class="bg-brand-50 rounded-xl p-3 col-span-2 sm:col-span-1">' +
       '<div class="flex items-center justify-between mb-1">' +
       '<p class="text-xs text-brand-400">عدد المستخدمين</p>' +
-      '<button onclick="openUsageEditor(\'' + cid + '\', ' + (maxU !== null && maxU !== undefined ? maxU : 'null') + ')" ' +
+      '<button data-action="open-usage-editor" data-id="' + cid + '" data-maxu="' + (maxU !== null && maxU !== undefined ? maxU : '') + '" ' +
       'class="text-xs text-brand-600 hover:text-brand-900 underline">تعديل الحد</button>' +
       '</div>' +
       progressBar +
-      '<button onclick="resetUsageCount(\'' + cid + '\')" ' +
+      '<button data-action="reset-usage" data-id="' + cid + '" ' +
       'class="mt-2 w-full text-xs text-brand-500 hover:text-red-600 border border-brand-200 hover:border-red-300 rounded-lg py-1 px-2 transition-colors flex items-center justify-center gap-1">' +
       '<i data-lucide="rotate-ccw" class="w-3 h-3"></i> إعادة تعيين العداد' +
       '</button>' +
@@ -142,7 +142,7 @@ function renderDiscountCodes(codes) {
       '<input type="number" id="new-max-uses-' + cid + '" ' +
       'class="flex-1 px-3 py-2 border-2 border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white" ' +
       'placeholder="أدخل العدد الأقصى (أو 0 = بلا حد)" min="0" value="' + (maxU !== null && maxU !== undefined ? maxU : '') + '">' +
-      '<button onclick="saveMaxUses(\'' + cid + '\')" class="px-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">حفظ</button>' +
+      '<button data-action="save-max-uses" data-id="' + cid + '" class="px-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">حفظ</button>' +
       '<button onclick="closeUsageEditor(\'' + cid + '\')" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors">إلغاء</button>' +
       '</div>' +
       '<p class="text-xs text-amber-700 mt-1">اكتب 0 أو اتركه فارغا = بلا حد للاستخدام</p>' +
@@ -323,7 +323,42 @@ function copyDiscountCode(code) {
 }
 
 // ── Event delegation ─────────────────────────────────────────
+// ── Event Delegation — ALL button actions ─────────────────────────────────
 document.addEventListener('click', function(e) {
-  var btn = e.target.closest('[data-action="delete-discount"]');
-  if (btn) deleteDiscountCode(btn.dataset.id);
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+
+  var action = btn.dataset.action;
+  var id = btn.dataset.id;
+
+  if (action === 'delete-discount') {
+    deleteDiscountCode(id);
+  } else if (action === 'copy-discount') {
+    copyDiscountCode(btn.dataset.code);
+  } else if (action === 'toggle-discount') {
+    var newState = btn.dataset.newstate === 'true';
+    toggleCodeActive(id, newState);
+  } else if (action === 'open-usage-editor') {
+    var maxU = (btn.dataset.maxu !== '' && btn.dataset.maxu !== undefined) ? parseInt(btn.dataset.maxu) : null;
+    openUsageEditor(id, maxU);
+  } else if (action === 'reset-usage') {
+    resetUsageCount(id);
+  } else if (action === 'save-max-uses') {
+    saveMaxUses(id);
+  }
 });
+
+// ── Expose to window (iOS Safari & strict mode safety) ────────────────────
+window.loadDiscountCodes       = typeof loadDiscountCodes       === 'function' ? loadDiscountCodes       : window.loadDiscountCodes;
+window.renderDiscountCodes     = typeof renderDiscountCodes     === 'function' ? renderDiscountCodes     : window.renderDiscountCodes;
+window.openUsageEditor         = typeof openUsageEditor         === 'function' ? openUsageEditor         : window.openUsageEditor;
+window.closeUsageEditor        = typeof closeUsageEditor        === 'function' ? closeUsageEditor        : window.closeUsageEditor;
+window.openCreateDiscountModal = typeof openCreateDiscountModal === 'function' ? openCreateDiscountModal : window.openCreateDiscountModal;
+window.closeCreateDiscountModal= typeof closeCreateDiscountModal=== 'function' ? closeCreateDiscountModal: window.closeCreateDiscountModal;
+window.copyDiscountCode        = typeof copyDiscountCode        === 'function' ? copyDiscountCode        : window.copyDiscountCode;
+window.deleteDiscountCode      = typeof deleteDiscountCode      === 'function' ? deleteDiscountCode      : window.deleteDiscountCode;
+window.toggleCodeActive        = typeof toggleCodeActive        === 'function' ? toggleCodeActive        : window.toggleCodeActive;
+window.resetUsageCount         = typeof resetUsageCount         === 'function' ? resetUsageCount         : window.resetUsageCount;
+window.saveMaxUses             = typeof saveMaxUses             === 'function' ? saveMaxUses             : window.saveMaxUses;
+window.updateExpiryPreview     = typeof updateExpiryPreview     === 'function' ? updateExpiryPreview     : window.updateExpiryPreview;
+window.regenerateCode          = typeof regenerateCode          === 'function' ? regenerateCode          : window.regenerateCode;
