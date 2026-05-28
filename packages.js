@@ -87,8 +87,9 @@
       var g = document.getElementById('productsGrid');
       if (!g) return;
       if (cat === 'all') {
-        g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.style.display = ''; });
-      } else {
+        g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.remove(); });
+        if (_allPackages && _allPackages.length) { _injectPkgs(_allPackages); }
+      } else if (cat !== 'bundles') {
         g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.style.display = 'none'; });
       }
     };
