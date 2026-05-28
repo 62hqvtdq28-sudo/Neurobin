@@ -313,6 +313,8 @@ async function deleteDiscountCode(id) {
 
 // ── نسخ الكود ────────────────────────────────────────────────
 function copyDiscountCode(code) {
+  // DIAGNOSTIC: test if function is called at all
+  alert('\u062a\u0645 \u0627\u0633\u062a\u062f\u0639\u0627\u0621 copyDiscountCode: ' + code);
   navigator.clipboard.writeText(code)
     .then(() => showToast('تم نسخ الكود: ' + code, 'success'))
     .catch(() => {
