@@ -736,6 +736,7 @@ function showSection(section) {
   if (section === 'features') loadFeatures();
   if (section === 'testimonials') loadTestimonials();
   if (section === 'categories') loadCategoryImages();
+  if (section === 'bundles') loadBundles();
 
   closeMobileMenu();
   // Close all open modals when switching sections
