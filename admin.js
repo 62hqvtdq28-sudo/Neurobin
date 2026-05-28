@@ -117,202 +117,21 @@ function loadSettings() {
   document.getElementById('whatsappNumber').value = escapeHTML(settings.whatsappNumber || '');
 }
 
-function loadFeatures() {
-  var features = safeJSONParse(localStorage.getItem('phFeatures'), []) || [];
-  renderFeaturesList(features);
-}
 
-function renderFeaturesList(features) {
-  var container = document.getElementById('featuresList');
-  if (features.length === 0) {
-    container.innerHTML = DOMPurify.sanitize('<div class="text-center py-12 text-brand-400">لا توجد مميزات. أضف مميزة جديدة.</div>');
-    return;
-  }
 
-  var html = '';
-  features.forEach(function(f, i) {
-    var safeIcon = escapeHTML(f.icon || 'shield-check');
-    var safeTitle = escapeHTML(f.title || '');
-    var safeDesc = escapeHTML(f.desc || '');
-    html += '<div class="bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay: ' + (i * 0.1) + 's">' +
-      '<div class="flex items-start justify-between">' +
-      '<div class="flex items-center gap-3">' +
-      '<div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center"><i data-lucide="' + safeIcon + '" class="w-6 h-6 text-white"></i></div>' +
-      '<div><h3 class="font-bold text-lg text-brand-900">' + safeTitle + '</h3><p class="text-brand-600 text-sm">' + safeDesc + '</p></div>' +
-      '</div>' +
-      '<div class="flex gap-2">' +
-      '<button onclick="editFeature(' + f.id + ')" class="p-2 hover:bg-brand-100 rounded-lg transition-colors"><i data-lucide="edit" class="w-5 h-5 text-brand-600"></i></button>' +
-      '<button onclick="deleteFeature(' + f.id + ')" class="p-2 hover:bg-red-50 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i></button>' +
-      '</div></div>';
-  });
-  container.innerHTML = DOMPurify.sanitize(html);
-  lucide.createIcons();
-}
 
-function openFeatureModal(id) {
-  if (id) {
-    var features = safeJSONParse(localStorage.getItem('phFeatures'), []) || [];
-    var feature = features.find(function(f) { return f.id === id; });
-    if (feature) {
-      document.getElementById('featureModalTitle').textContent = 'تعديل ميزة';
-      document.getElementById('featureId').value = id;
-      document.getElementById('featureIcon').value = feature.icon;
-      document.getElementById('featureTitle').value = feature.title;
-      document.getElementById('featureDesc').value = feature.desc;
-    }
-  } else {
-    document.getElementById('featureModalTitle').textContent = 'إضافة ميزة جديدة';
-    document.getElementById('featureId').value = '';
-    document.getElementById('featureIcon').value = 'shield-check';
-    document.getElementById('featureTitle').value = '';
-    document.getElementById('featureDesc').value = '';
-  }
-  document.getElementById('featureModal').classList.add('active');
-  lucide.createIcons();
-}
 
-function closeFeatureModal() {
-  document.getElementById('featureModal').classList.remove('active');
-}
 
-function editFeature(id) {
-  openFeatureModal(id);
-}
 
-function saveFeature() {
-  // CSRF Protection: Verify authentication and session
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  var title = document.getElementById('featureTitle').value.trim();
-  var desc = document.getElementById('featureDesc').value.trim();
 
-  if (!title) {
-    showToast('يرجى إدخال عنوان الميزة', 'error');
-    return;
-  }
 
-  var features = safeJSONParse(localStorage.getItem('phFeatures'), []) || [];
-  var id = document.getElementById('featureId').value;
 
-  if (id) {
-    var index = features.findIndex(function(f) { return f.id === parseInt(id); });
-    if (index > -1) {
-      features[index].icon = document.getElementById('featureIcon').value;
-      features[index].title = escapeHTML(title);
-      features[index].desc = escapeHTML(desc);
-    }
-  } else {
-    features.push({
-      id: Date.now(),
-      icon: document.getElementById('featureIcon').value,
-      title: escapeHTML(title),
-      desc: escapeHTML(desc)
-    });
-  }
 
-  StorageManager.setItem('phFeatures', features);
-  AuditLog.record(id ? 'feature_updated' : 'feature_created', { title: escapeHTML(title) });
-  closeFeatureModal();
-  loadFeatures();
-  showSuccessAnimation('تم حفظ الميزة بنجاح!');
-}
 
-function deleteFeature(id) {
-  // CSRF Protection: Verify authentication and session
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  if (!confirm('هل أنت متأكد من حذف هذه الميزة؟')) return;
-  var features = StorageManager.get('phFeatures', []) || [];
-  features = features.filter(function(f) { return f.id !== id; });
-  StorageManager.setItem('phFeatures', features);
-  AuditLog.record('feature_deleted', { id: id });
-  loadFeatures();
-  showToast('تم حذف الميزة', 'warning');
-}
 
-function loadProducts(filter) {
-  const products = StorageManager.getItem('phProducts', []);
-  var container = document.getElementById('productsList');
 
-  var searchQuery = document.getElementById('productSearch') ? document.getElementById('productSearch').value.toLowerCase() : '';
-
-  if (filter && filter !== 'all') {
-    products = products.filter(function(p) { return p.category === filter; });
-  }
-
-  if (searchQuery) {
-    products = products.filter(function(p) {
-      return p.name.toLowerCase().includes(searchQuery) ||
-             (p.description && p.description.toLowerCase().includes(searchQuery));
-    });
-  }
-
-  if (products.length === 0) {
-    container.innerHTML = DOMPurify.sanitize('<div class="col-span-full text-center py-12 text-brand-400">لا توجد منتجات</div>');
-    return;
-  }
-
-  var html = '';
-  var categoryLabels = { medicines: 'أدوية', skincare: 'عناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة' };
-  var categoryColors = { medicines: 'bg-blue-100 text-blue-700', skincare: 'bg-pink-100 text-pink-700', makeup: 'bg-purple-100 text-purple-700', devices: 'bg-gray-100 text-gray-700' };
-
-  products.forEach(function(p, i) {
-    var stockClass = p.stock > 5 ? 'text-green-600' : p.stock > 0 ? 'text-yellow-600' : 'text-red-600';
-    var stockText = p.stock > 0 ? 'المخزون: ' + p.stock : 'غير متوفر';
-    var stockDisplay = p.stock !== undefined ? '<p class="text-xs ' + stockClass + '">' + stockText + '</p>' : '';
-
-    html += '<div class="product-card-admin animate-fade-in" style="animation-delay: ' + (i * 0.05) + 's" data-product-id="' + p.id + '">' +
-      '<div class="p-4">' +
-      '<div class="flex items-start justify-between mb-3">' +
-      '<span class="category-badge ' + (categoryColors[p.category] || 'bg-brand-100 text-brand-700') + '">' + (categoryLabels[p.category] || escapeHTML(p.category)) + '</span>' +
-      '<div class="flex gap-1">' +
-      '<button onclick="toggleQuickEdit(' + p.id + ')" class="quick-action bg-brand-100 text-brand-600 hover:bg-brand-200 quick-edit-btn" title="تعديل سريع"><i data-lucide="edit-2" class="w-4 h-4"></i></button>' +
-      '<button onclick="editProduct(' + p.id + ')" class="quick-action bg-blue-100 text-blue-600 hover:bg-blue-200" title="تعديل كامل"><i data-lucide="edit" class="w-4 h-4"></i></button>' +
-      '<button onclick="deleteProduct(' + p.id + ')" class="quick-action bg-red-100 text-red-500 hover:bg-red-200"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
-      '</div></div>' +
-
-      // Normal View
-      '<div id="product-view-' + p.id + '">' +
-      '<h3 class="font-bold text-brand-900 mb-2">' + escapeHTML(p.name) + '</h3>' +
-      '<p class="text-brand-600 text-sm mb-3">' + p.price.toLocaleString() + ' د.ع</p>' +
-      stockDisplay +
-      '</div>' +
-
-      // Quick Edit View (Hidden by default)
-      '<div id="product-edit-' + p.id + '" class="hidden mt-3 pt-3 border-t border-brand-200">' +
-      '<div class="space-y-2">' +
-      '<div>' +
-      '<label class="text-xs text-brand-500 block mb-1">الاسم</label>' +
-      '<input type="text" id="qe-name-' + p.id + '" class="quick-edit-input text-sm" value="' + escapeHTML(p.name) + '">' +
-      '</div>' +
-      '<div class="grid grid-cols-2 gap-2">' +
-      '<div>' +
-      '<label class="text-xs text-brand-500 block mb-1">السعر</label>' +
-      '<input type="number" id="qe-price-' + p.id + '" class="quick-edit-input text-sm" value="' + p.price + '">' +
-      '</div>' +
-      '<div>' +
-      '<label class="text-xs text-brand-500 block mb-1">المخزون</label>' +
-      '<input type="number" id="qe-stock-' + p.id + '" class="quick-edit-input text-sm" value="' + (p.stock !== undefined ? p.stock : '') + '">' +
-      '</div>' +
-      '</div>' +
-      '<div class="flex gap-2 mt-3">' +
-      '<button onclick="saveQuickEdit(' + p.id + ')" class="flex-1 bg-brand-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-brand-700 transition-colors">حفظ</button>' +
-      '<button onclick="toggleQuickEdit(' + p.id + ')" class="px-3 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors">إلغاء</button>' +
-      '</div>' +
-      '</div>' +
-      '</div>' +
-      '</div></div>';
-  });
-
-  container.innerHTML = DOMPurify.sanitize(html);
-  lucide.createIcons();
-}
 
 // Toggle Quick Edit Mode
 function toggleQuickEdit(id) {
@@ -384,20 +203,7 @@ function saveQuickEdit(id) {
   }
 }
 
-function filterProductsAdmin(filter) {
-  document.querySelectorAll('#section-products .tab-btn').forEach(function(btn) {
-    btn.classList.remove('active', 'bg-brand-700', 'text-white');
-    btn.classList.add('bg-brand-100', 'text-brand-700');
-  });
 
-  var activeBtn = document.querySelector('#section-products [data-filter="' + filter + '"]');
-  if (activeBtn) {
-    activeBtn.classList.add('active', 'bg-brand-700', 'text-white');
-    activeBtn.classList.remove('bg-brand-100', 'text-brand-700');
-  }
-
-  loadProducts(filter);
-}
 
 // Debounced search — fires 300ms after user stops typing
 const debouncedSearch = debounce(() => {
@@ -406,635 +212,61 @@ const debouncedSearch = debounce(() => {
   loadProducts(filter);
 }, 300);
 
-function searchProducts() {
-  debouncedSearch();
-}
 
-function openProductModal(id) {
-  if (id) {
-    // Load from Supabase first (supports products with Supabase IDs)
-    if (typeof SupaDB !== 'undefined' && SupaDB.Products) {
-      SupaDB.Products.list().then(function(supProds) {
-        var product = supProds.find(function(p) { return String(p.id) === String(id); });
-        if (!product) {
-          var ls = safeJSONParse(localStorage.getItem('phProducts'), []) || [];
-          product = ls.find(function(p) { return String(p.id) === String(id); });
-        }
-        if (product) {
-          document.getElementById('productModalTitle').textContent = 'تعديل منتج';
-          document.getElementById('productId').value = id;
-          document.getElementById('productName').value = product.name || '';
-          var _pna = document.getElementById('productNameAr');
-          if (_pna) _pna.value = product.name_ar || product.nameAr || '';
-          document.getElementById('productCategory').value = product.category || 'medicines';
-          document.getElementById('productPrice').value = product.price || '';
-          document.getElementById('productStock').value = product.stock !== undefined ? product.stock : '';
-          document.getElementById('productDesc').value = product.description || '';
-          var imgSrc = product.image_url || product.image || '';
-          if (imgSrc) {
-            document.getElementById('imagePreview').classList.add('hidden');
-            document.getElementById('imagePreviewContainer').classList.remove('hidden');
-            document.getElementById('imagePreviewImg').src = imgSrc;
-            document.getElementById('productImage').value = imgSrc;
-          }
-          document.getElementById('productModal').classList.add('active');
-          lucide.createIcons();
-        }
-      });
-      return;
-    }
-    var products = safeJSONParse(localStorage.getItem('phProducts'), []) || [];
-    var product = products.find(function(p) { return p.id === id; });
-    if (product) {
-      document.getElementById('productModalTitle').textContent = 'تعديل منتج';
-      document.getElementById('productId').value = id;
-      document.getElementById('productName').value = product.name;
-      var _pna = document.getElementById('productNameAr'); if (_pna) _pna.value = product.nameAr || product.name_ar || '';
-      document.getElementById('productCategory').value = product.category;
-      document.getElementById('productPrice').value = product.price;
-      document.getElementById('productStock').value = product.stock !== undefined ? product.stock : '';
-      document.getElementById('productDesc').value = product.description || '';
-      if (product.image) {
-        document.getElementById('imagePreview').classList.add('hidden');
-        document.getElementById('imagePreviewContainer').classList.remove('hidden');
-        document.getElementById('imagePreviewImg').src = product.image;
-        document.getElementById('productImage').value = product.image;
-      }
-    }
-  } else {
-    document.getElementById('productModalTitle').textContent = 'إضافة منتج جديد';
-    document.getElementById('productId').value = '';
-    document.getElementById('productName').value = '';
-    var _pnar = document.getElementById('productNameAr'); if (_pnar) _pnar.value = '';
-    document.getElementById('productCategory').value = 'medicines';
-    document.getElementById('productPrice').value = '';
-    document.getElementById('productStock').value = '';
-    document.getElementById('productDesc').value = '';
-    document.getElementById('imagePreview').classList.remove('hidden');
-    document.getElementById('imagePreviewContainer').classList.add('hidden');
-    document.getElementById('productImage').value = '';
-  }
-  document.getElementById('productModal').classList.add('active');
-  lucide.createIcons();
-}
 
-function closeProductModal() {
-  document.getElementById('productModal').classList.remove('active');
-}
 
-function editProduct(id) {
-  openProductModal(id);
-}
 
-function handleImageUpload(input) {
-  if (input.files && input.files[0]) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('imagePreview').classList.add('hidden');
-      document.getElementById('imagePreviewContainer').classList.remove('hidden');
-      document.getElementById('imagePreviewImg').src = e.target.result;
-      document.getElementById('productImage').value = e.target.result;
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
 
-function removeImage() {
-  document.getElementById('imagePreview').classList.remove('hidden');
-  document.getElementById('imagePreviewContainer').classList.add('hidden');
-  document.getElementById('productImage').value = '';
-  document.getElementById('productImageFile').value = '';
-}
 
-async function saveProduct() {
-  try {
-    // Security: auth check — throws immediately if not authenticated
-    if (!isAuthenticated()) throw new Error('غير مصرح');
 
-    var name = InputValidator.validateProductName(document.getElementById('productName').value.trim());
-    var price = InputValidator.validatePrice(document.getElementById('productPrice').value);
-    var stock = InputValidator.validateStock(document.getElementById('productStock').value);
 
-    var products = StorageManager.get('phProducts', []) || [];
-    var id = document.getElementById('productId').value;
 
-    var safeName = escapeHTML(name);
-    var _nameArEl = document.getElementById('productNameAr');
-    var safeNameAr = escapeHTML((_nameArEl && _nameArEl.value.trim()) || name);
-    var safeDesc = escapeHTML(document.getElementById('productDesc').value.trim());
 
-    var productData = {
-      id: id ? parseInt(id) : Date.now(),
-      name: safeName,
-      nameAr: safeNameAr,
-      name_ar: safeNameAr,
-      category: escapeHTML(document.getElementById('productCategory').value),
-      price: price,
-      stock: stock, // Already validated by InputValidator.stock
-      description: safeDesc,
-      image: document.getElementById('productImage').value
-    };
 
-    if (id) {
-      var index = products.findIndex(function(p) { return p.id === parseInt(id); });
-      if (index > -1) {
-        // Security: Explicit property assignment to prevent mass assignment
-        products[index].id = productData.id;
-        products[index].name = productData.name;
-        products[index].nameAr = productData.nameAr;
-        products[index].name_ar = productData.nameAr;
-        products[index].category = productData.category;
-        products[index].price = productData.price;
-        if (productData.stock !== undefined) products[index].stock = productData.stock;
-        products[index].description = productData.description;
-        products[index].image = productData.image;
-        products[index].updatedAt = new Date().toISOString();
-      }
-    } else {
-      // Security: Create new object with only allowed properties
-      var newProduct = {
-        id: productData.id,
-        name: productData.name,
-        nameAr: productData.nameAr,
-        name_ar: productData.nameAr,
-        category: productData.category,
-        price: productData.price,
-        description: productData.description,
-        image: productData.image,
-        createdAt: new Date().toISOString()
-      };
-      if (productData.stock !== undefined) newProduct.stock = productData.stock;
-      products.push(newProduct);
-    }
 
-    StorageManager.setItem('phProducts', products);
-    // ── Also save to Supabase ──
-    try {
-      if (typeof SupaDB !== 'undefined' && SupaDB.Products) {
-        var _spData = {
-          name: safeName,
-          name_ar: safeNameAr,
-          category: escapeHTML(document.getElementById('productCategory').value),
-          price: price,
-          description: safeDesc,
-          in_stock: true
-        };
-        if (id) {
-          // Try updating existing Supabase product by id
-          await SupaDB.Products.update(parseInt(id), _spData);
-        } else {
-          await SupaDB.Products.create(_spData);
-        }
-        console.log('✅ Product saved to Supabase');
-      }
-    } catch(e) { console.warn('[saveProduct] Supabase save failed (localStorage only):', e.message); }
-    logAction(id ? 'product_updated' : 'product_created', { name: safeName, price: price }, 'success');
-    closeProductModal();
-    loadProducts();
-    showSuccessAnimation('تم حفظ المنتج بنجاح!', true);
 
-  } catch(error) {
-    console.error('خطأ في saveProduct:', error);
-    showToast(error.message, 'error');
-    logAction('saveProduct', { error: error.message }, 'failed');
-  }
-}
 
-function deleteProduct(id) {
-  // CSRF Protection: Verify authentication and session
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
-  var products = StorageManager.get('phProducts', []) || [];
-  products = products.filter(function(p) { return p.id !== id; });
-  StorageManager.setItem('phProducts', products);
-  AuditLog.record('product_deleted', { id: id });
-  loadProducts();
-  showToast('تم حذف المنتج', 'warning');
-}
 
 // Testimonials cache for edit/delete by index
 var _testimonialsCache = [];
 
-function loadTestimonials() {
-  var container = document.getElementById('testimonialsList');
-  container.innerHTML = '<div class="col-span-full text-center py-8 text-brand-400">جاري التحميل...</div>';
 
-  SupaDB.Testimonials.list().then(function(testimonials) {
-    _testimonialsCache = testimonials;
 
-    if (testimonials.length === 0) {
-      container.innerHTML = DOMPurify.sanitize('<div class="col-span-full text-center py-12 text-brand-400">لا توجد آراء — اضغط "+ إضافة رأي" للبدء</div>');
-      return;
-    }
 
-    var html = '';
-    testimonials.forEach(function(t, i) {
-      var safeName = escapeHTML(t.name || '');
-      var safeText = escapeHTML(t.text || '');
-      var stars = '';
-      for (var j = 0; j < 5; j++) {
-        stars += '<i data-lucide="star" class="w-4 h-4 ' + (j < t.rating ? 'text-gold fill-gold' : 'text-gray-300') + '"></i>';
-      }
-      html += '<div class="bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay: ' + (i * 0.1) + 's">' +
-        '<div class="flex items-center gap-1 mb-3">' + stars + '</div>' +
-        '<p class="text-brand-700 mb-4 leading-relaxed">"' + safeText + '"</p>' +
-        '<div class="flex items-center justify-between">' +
-        '<div class="flex items-center gap-3">' +
-        '<div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center"><span class="text-white font-bold">' + (safeName.charAt(0) || '?') + '</span></div>' +
-        '<div><h4 class="font-semibold text-brand-900">' + safeName + '</h4><p class="text-brand-500 text-sm">عميل</p></div>' +
-        '</div>' +
-        '<div class="flex gap-1">' +
-        '<button onclick="editTestimonial(' + i + ')" class="quick-action bg-brand-100 text-brand-600 hover:bg-brand-200"><i data-lucide="edit" class="w-4 h-4"></i></button>' +
-        '<button onclick="deleteTestimonial(' + i + ')" class="quick-action bg-red-100 text-red-500 hover:bg-red-200"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
-        '</div></div></div>';
-    });
 
-    container.innerHTML = DOMPurify.sanitize(html);
-    lucide.createIcons();
-  }).catch(function(err) {
-    console.error('[Testimonials] Load error:', err);
-    container.innerHTML = '<div class="col-span-full text-center py-8 text-red-400">خطأ في تحميل الآراء</div>';
-    showToast('خطأ في تحميل الآراء: ' + err.message, 'error');
-  });
-}
 
-function openTestimonialModal(idx) {
-  if (typeof idx !== 'undefined' && idx !== null && idx !== '') {
-    var testimonial = _testimonialsCache[idx];
-    if (testimonial) {
-      document.getElementById('testimonialModalTitle').textContent = 'تعديل رأي';
-      document.getElementById('testimonialId').value = testimonial.id;
-      document.getElementById('testimonialName').value = testimonial.name || '';
-      document.getElementById('testimonialText').value = testimonial.text || '';
-      document.getElementById('testimonialRating').value = testimonial.rating || 5;
-    }
-  } else {
-    document.getElementById('testimonialModalTitle').textContent = 'إضافة رأي جديد';
-    document.getElementById('testimonialId').value = '';
-    document.getElementById('testimonialName').value = '';
-    document.getElementById('testimonialText').value = '';
-    document.getElementById('testimonialRating').value = '5';
-  }
-  document.getElementById('testimonialModal').classList.add('active');
-  lucide.createIcons();
-}
 
-function closeTestimonialModal() {
-  document.getElementById('testimonialModal').classList.remove('active');
-}
 
-function editTestimonial(idx) {
-  openTestimonialModal(idx);
-}
 
-function saveTestimonial() {
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  var name = validateInput(document.getElementById('testimonialName').value.trim(), 100);
-  var text = validateInput(document.getElementById('testimonialText').value.trim(), 1000);
-  var rating = parseInt(document.getElementById('testimonialRating').value);
 
-  if (!name || !text) {
-    showToast('يرجى إدخال الاسم والتعليق', 'error');
-    return;
-  }
 
-  var id = document.getElementById('testimonialId').value;
-  var safeName = escapeHTML(name);
-  var safeText = escapeHTML(text);
 
-  var btn = document.querySelector('#testimonialModal button[onclick="saveTestimonial()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
 
-  SupaDB.Testimonials.save(
-    { name: safeName, text: safeText, rating: rating },
-    id || null
-  ).then(function() {
-    closeTestimonialModal();
-    loadTestimonials();
-    showSuccessAnimation('تم حفظ الرأي بنجاح!');
-  }).catch(function(err) {
-    showToast('خطأ في حفظ الرأي: ' + err.message, 'error');
-  }).finally(function() {
-    if (btn) { btn.disabled = false; btn.textContent = 'حفظ'; }
-  });
-}
 
-function deleteTestimonial(idx) {
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  if (!confirm('هل أنت متأكد من حذف هذا الرأي؟')) return;
-
-  var t = _testimonialsCache[idx];
-  if (!t) { showToast('الرأي غير موجود', 'error'); return; }
-
-  SupaDB.Testimonials.delete(t.id).then(function() {
-    loadTestimonials();
-    showToast('تم حذف الرأي', 'warning');
-  }).catch(function(err) {
-    showToast('خطأ في حذف الرأي: ' + err.message, 'error');
-  });
-}
-
-async function loadOrders() {
-  var container = document.getElementById('ordersList');
-  var noOrders = document.getElementById('noOrders');
-  if (container) container.innerHTML = '<div class="text-center py-8 text-brand-400">جاري التحميل...</div>';
-
-  var rawOrders = [];
-  // ── Load from Supabase ──
-  try {
-    if (typeof SupaDB !== 'undefined' && SupaDB.Orders) {
-      rawOrders = await SupaDB.Orders.list();
-    }
-  } catch(e) {
-    console.warn('[loadOrders] Supabase failed, using localStorage fallback:', e.message);
-    rawOrders = safeJSONParse(localStorage.getItem('phOrders'), []) || [];
-  }
-
-  // ── Normalize field names (Supabase ↔ localStorage) ──
-  var orders = rawOrders.map(function(o) {
-    return {
-      id:      o.id,
-      name:    o.customer_name  || o.name    || '',
-      phone:   o.customer_phone || o.phone   || '',
-      address: o.customer_address || o.address || '',
-      notes:   o.notes || '',
-      total:   o.total_amount   || o.total   || 0,
-      status:  o.status || 'new',
-      date:    o.created_at     || o.date    || new Date().toISOString(),
-      items:   o.items          || [],
-      tracking_code: o.tracking_code || ''
-    };
-  });
-
-  var searchQuery = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
-
-  if (currentOrderFilter !== 'all') {
-    orders = orders.filter(function(o) { return o.status === currentOrderFilter; });
-  }
-
-  if (searchQuery) {
-    orders = orders.filter(function(o) {
-      return escapeHTML(o.name).toLowerCase().includes(searchQuery) ||
-             escapeHTML(o.phone).includes(searchQuery);
-    });
-  }
-
-  if (orders.length === 0) {
-    container.classList.add('hidden');
-    noOrders.classList.remove('hidden');
-    return;
-  }
-
-  container.classList.remove('hidden');
-  noOrders.classList.add('hidden');
-
-  var statusLabels = { new: 'جديد', progress: 'قيد التوصيل', delivered: 'تم التوصيل', cancelled: 'ملغى' };
-  var statusClasses = { new: 'order-new', progress: 'order-progress', delivered: 'order-delivered', cancelled: 'order-cancelled' };
-
-  var html = '';
-  orders.forEach(function(order) {
-    var orderId = order.id || 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    html += '<div class="bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay: 0.05s">' +
-      '<div class="flex items-start justify-between mb-3">' +
-      '<div>' +
-      '<h3 class="font-bold text-brand-900">' + escapeHTML(order.name) + '</h3>' +
-      '<p class="text-brand-600 text-sm">' + escapeHTML(order.phone) + '</p>' +
-      '</div>' +
-      '<span class="order-status ' + (statusClasses[order.status] || 'order-new') + '">' + (statusLabels[order.status] || 'جديد') + '</span>' +
-      '</div>';
-
-    if (order.address) {
-      html += '<p class="text-brand-500 text-sm mb-2"><i data-lucide="map-pin" class="w-4 h-4 inline-block ml-1"></i>' + escapeHTML(order.address) + '</p>';
-    }
-
-    if (order.tracking_code) {
-      html += '<p class="text-xs text-brand-400 mb-1">📱 كود التتبع: <strong>' + escapeHTML(order.tracking_code) + '</strong></p>';
-    }
-    if (order.notes) {
-      html += '<p class="text-xs text-brand-400 mb-1">📝 ' + escapeHTML(order.notes) + '</p>';
-    }
-    html += '<div class="text-sm text-brand-600 mb-3">';
-    (order.items || []).forEach(function(item) {
-      html += '<span class="inline-block bg-brand-50 px-2 py-1 rounded mr-2 mb-1">' + escapeHTML(item.name || item.productName || '') + ' × ' + (item.quantity || 1) + '</span>';
-    });
-    html += '</div>' +
-      '<div class="flex items-center justify-between">' +
-      '<span class="font-bold text-brand-900">' + (order.total || 0).toLocaleString() + ' د.ع</span>' +
-      '<span class="text-brand-400 text-xs">' + new Date(order.date || Date.now()).toLocaleDateString('ar-EG') + '</span>' +
-      '</div>' +
-      '<div class="flex gap-2 mt-3">' +
-      '<button onclick="updateOrderStatus(\'' + escapeHTML(orderId.toString()) + '\', \'progress\')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">قيد التوصيل</button>' +
-      '<button onclick="updateOrderStatus(\'' + escapeHTML(orderId.toString()) + '\', \'delivered\')" class="flex-1 bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التوصيل</button>' +
-      '<button onclick="updateOrderStatus(\'' + escapeHTML(orderId.toString()) + '\', \'cancelled\')" class="flex-1 bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء</button>' +
-      '</div></div>';
-  });
-
-  container.innerHTML = DOMPurify.sanitize(html);
-  lucide.createIcons();
-}
-
-function filterOrders(filter) {
-  currentOrderFilter = filter;
-  document.querySelectorAll('#section-orders .tab-btn').forEach(function(btn) {
-    btn.classList.remove('active', 'bg-brand-700', 'text-white');
-    btn.classList.add('bg-brand-100', 'text-brand-700');
-  });
-
-  var activeBtn = document.querySelector('#section-orders [data-filter="' + filter + '"]');
-  if (activeBtn) {
-    activeBtn.classList.add('active', 'bg-brand-700', 'text-white');
-    activeBtn.classList.remove('bg-brand-100', 'text-brand-700');
-  }
-
-  loadOrders();
-}
 
 // Debounced order search
 const debouncedOrderSearch = debounce(() => loadOrders(), 300);
 
-function searchOrders() {
-  debouncedOrderSearch();
-}
 
-function updateOrderStatus(orderId, status) {
-  // Security: Verify admin is authenticated (IDOR prevention)
-  if (sessionStorage.getItem('adminLoggedIn') !== 'true') {
-    showToast('يجب تسجيل الدخول أولاً', 'error');
-    return;
-  }
 
-  // Security: Check session expiration
-  var loginTime = parseInt(sessionStorage.getItem('adminLoginTime') || '0');
-  var now = Date.now();
-  var maxSessionTime = SESSION_CONFIG.TIMEOUT_MS; // Use central config
-  if (now - loginTime > maxSessionTime) {
-    logout();
-    showToast('انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى', 'error');
-    return;
-  }
 
-  // Security: Validate status before processing
-  if (!isValidOrderStatus(status)) {
-    showToast('حالة غير صالحة', 'error');
-    return;
-  }
 
-  // Security: Validate order ID
-  if (!orderId || typeof orderId !== 'string') {
-    showToast('معرف الطلب غير صالح', 'error');
-    return;
-  }
 
-  var orders = safeJSONParse(localStorage.getItem('phOrders'), []) || [];
-  var orderIndex = orders.findIndex(function(o) { return o.id === orderId || o.id === parseInt(orderId); });
 
-  if (orderIndex > -1 && orders[orderIndex]) {
-    // Sanitize status value
-    var sanitizedStatus = escapeHTML(status);
-    orders[orderIndex].status = sanitizedStatus;
-    orders[orderIndex].updatedAt = new Date().toISOString();
-    localStorage.setItem('phOrders', JSON.stringify(orders));
-    // ── Also update in Supabase ──
-    try {
-      if (typeof SupaDB !== 'undefined' && SupaDB.Orders && SupaDB.Orders.updateStatus) {
-        await SupaDB.Orders.updateStatus(orderId, status);
-      }
-    } catch(e) { console.warn('[updateOrderStatus] Supabase update failed:', e.message); }
-    loadOrders();
-    updateOrdersBadge();
-    showToast('تم تحديث حالة الطلب', 'success');
-  } else {
-    showToast('الطلب غير موجود', 'error');
-  }
-}
 
-function loadComments() {
-  var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
-  var container = document.getElementById('commentsList');
-  var noComments = document.getElementById('noComments');
 
-  if (currentCommentFilter !== 'all') {
-    comments = comments.filter(function(c) { return c.status === currentCommentFilter; });
-  }
 
-  if (comments.length === 0) {
-    container.classList.add('hidden');
-    noComments.classList.remove('hidden');
-    return;
-  }
 
-  container.classList.remove('hidden');
-  noComments.classList.add('hidden');
 
-  var statusLabels = { new: 'جديد', read: 'تم القراءة', replied: 'تم الرد' };
-  var statusClasses = { new: 'badge-new', read: 'badge-read', replied: 'badge-replied' };
 
-  var html = '';
-  comments.forEach(function(comment, i) {
-    html += '<div class="comment-card bg-white rounded-xl p-4 sm:p-6 border border-brand-100 animate-fade-in" style="animation-delay: ' + (i * 0.05) + 's">' +
-      '<div class="flex items-start justify-between mb-3">' +
-      '<div>' +
-      '<h3 class="font-bold text-brand-900">' + escapeHTML(comment.name) + '</h3>' +
-      '<p class="text-brand-500 text-sm">' + escapeHTML(comment.phone || 'بدون هاتف') + '</p>' +
-      '</div>' +
-      '<span class="badge ' + (statusClasses[comment.status] || 'badge-new') + ' px-2 py-1 rounded text-xs">' + (statusLabels[comment.status] || 'جديد') + '</span>' +
-      '</div>' +
-      '<p class="text-brand-700 mb-4 leading-relaxed">' + escapeHTML(comment.message) + '</p>' +
-      '<div class="flex items-center justify-between">' +
-      '<span class="text-brand-400 text-xs">' + new Date(comment.date).toLocaleDateString('ar-EG') + '</span>' +
-      '<button onclick="openViewComment(' + comment.id + ')" class="bg-brand-100 text-brand-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-200 transition-colors">عرض التفاصيل</button>' +
-      '</div></div>';
-  });
 
-  container.innerHTML = DOMPurify.sanitize(html);
-  lucide.createIcons();
-}
 
-function filterComments(filter) {
-  currentCommentFilter = filter;
-  document.querySelectorAll('#section-comments .tab-btn').forEach(function(btn) {
-    btn.classList.remove('active', 'bg-brand-700', 'text-white');
-    btn.classList.add('bg-brand-100', 'text-brand-700');
-  });
 
-  var activeBtn = document.querySelector('#section-comments [data-filter="' + filter + '"]');
-  if (activeBtn) {
-    activeBtn.classList.add('active', 'bg-brand-700', 'text-white');
-    activeBtn.classList.remove('bg-brand-100', 'text-brand-700');
-  }
 
-  loadComments();
-}
 
-function openViewComment(id) {
-  var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
-  var comment = comments.find(function(c) { return c.id === id; });
-  if (!comment) return;
-
-  selectedCommentId = id;
-  var details = document.getElementById('commentDetails');
-  details.innerHTML = DOMPurify.sanitize('<div class="bg-brand-50 rounded-lg p-4"><p class="text-sm text-brand-600 mb-2">الاسم: <span class="font-semibold text-brand-900">' + escapeHTML(comment.name) + '</span></p><p class="text-sm text-brand-600 mb-2">الهاتف: <span class="font-semibold text-brand-900">' + escapeHTML(comment.phone || 'غير محدد') + '</span></p><p class="text-sm text-brand-600">التاريخ: <span class="font-semibold text-brand-900">' + new Date(comment.date).toLocaleDateString('ar-EG') + '</span></p></div><div class="mt-4"><p class="font-semibold text-brand-700 mb-2">الرسالة:</p><p class="text-brand-600 leading-relaxed">' + escapeHTML(comment.message) + '</p></div>');
-  document.getElementById('replyMessage').value = '';
-
-  document.getElementById('viewCommentModal').classList.add('active');
-}
-
-function closeViewCommentModal() {
-  document.getElementById('viewCommentModal').classList.remove('active');
-}
-
-function markAsRead() {
-  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
-  var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
-  var index = comments.findIndex(function(c) { return c.id === selectedCommentId; });
-  if (index > -1) {
-    comments[index].status = 'read';
-    localStorage.setItem('phComments', JSON.stringify(comments));
-    closeViewCommentModal();
-    loadComments();
-    updateCommentsBadge();
-    showToast('تم تحديث الحالة', 'success');
-  }
-}
-
-function markAsReplied() {
-  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
-  var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
-  var index = comments.findIndex(function(c) { return c.id === selectedCommentId; });
-  if (index > -1) {
-    comments[index].status = 'replied';
-    comments[index].reply = document.getElementById('replyMessage').value;
-    localStorage.setItem('phComments', JSON.stringify(comments));
-    closeViewCommentModal();
-    loadComments();
-    updateCommentsBadge();
-    showToast('تم تسجيل الرد', 'success');
-  }
-}
-
-function deleteComment() {
-  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
-  if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
-  var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
-  comments = comments.filter(function(c) { return c.id !== selectedCommentId; });
-  localStorage.setItem('phComments', JSON.stringify(comments));
-  closeViewCommentModal();
-  loadComments();
-  updateCommentsBadge();
-  showToast('تم حذف الرسالة', 'warning');
-}
 
 function updateCommentsBadge() {
   var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
