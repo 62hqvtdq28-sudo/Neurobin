@@ -1965,38 +1965,62 @@ async function saveCatImg(key, url) {
 })();
 </script>
 
-<!-- iPad Safari Direct-Fetch Fix — inline override for DiscountCodes.create -->
+
+<!-- Full saveDiscountCode override — works regardless of cached JS files -->
 <script>
 (function(){
-  var _U = 'https://hczsskviliuqyayylutv.supabase.co';
-  var _K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  function applyFix(n) {
-    if (window.SupaDB && window.SupaDB.DiscountCodes) {
-      window.SupaDB.DiscountCodes.create = async function(code) {
-        var ctrl = new AbortController();
-        var t = setTimeout(function(){ ctrl.abort(); }, 12000);
-        try {
-          var r = await fetch(_U + '/rest/v1/discount_codes', {
-            method:'POST',
-            headers:{'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K},
-            body:JSON.stringify(code),
-            signal:ctrl.signal
-          });
-          if (!r.ok) {
-            var b={};
-            try{b=await r.json();}catch(e){}
-            throw new Error(b.message||b.error||'HTTP '+r.status);
-          }
-        } catch(e) {
-          if (e.name==='AbortError') throw new Error('انتهت مهلة الاتصال — تحقق من الإنترنت');
-          throw e;
-        } finally { clearTimeout(t); }
-      };
-      console.log('[Fix v3] DiscountCodes.create override applied');
-    } else if (n>0) { setTimeout(function(){applyFix(n-1);},200); }
+ var _U='https://hczsskviliuqyayylutv.supabase.co';
+ var _K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+ window.saveDiscountCode = async function(){
+  var errDiv=document.getElementById('discountModalError');
+  function showMsg(msg,isErr){
+   if(errDiv){errDiv.textContent=msg;errDiv.className='mb-3 p-3 rounded-xl text-sm font-medium '+(isErr?'bg-red-50 border border-red-300 text-red-700':'bg-blue-50 border border-blue-300 text-blue-700');errDiv.classList.remove('hidden');}
+   if(isErr&&window.showToast)window.showToast(msg,'error');
   }
-  document.addEventListener('DOMContentLoaded',function(){applyFix(30);});
-  setTimeout(function(){applyFix(30);},500);
+  showMsg('⏳ جاري المعالجة...',false);
+  if(window.isAuthenticated&&!window.isAuthenticated()){showMsg('❌ يرجى تسجيل الدخول أولاً',true);return;}
+  var code=document.getElementById('discountCode').value.trim().toUpperCase();
+  var dType=document.getElementById('discountType').value;
+  var dVal=parseInt(document.getElementById('discountValue').value);
+  var durDays=parseInt(document.getElementById('discountDays').value)||0;
+  var durHours=parseInt(document.getElementById('discountHours').value)||0;
+  var maxU=document.getElementById('discountMaxUses').value;
+  if(!code||code.length<2||!/^[A-Z0-9]+$/.test(code)){showMsg('❌ كود غير صالح (حرفان على الأقل)',true);return;}
+  if(!dVal||dVal<=0){showMsg('❌ قيمة الخصم غير صحيحة',true);return;}
+  if(dType==='percent'&&dVal>100){showMsg('❌ نسبة الخصم لا تتجاوز 100%',true);return;}
+  if(dType==='fixed'&&dVal%250!==0){dVal=Math.max(250,Math.round(dVal/250)*250);document.getElementById('discountValue').value=dVal;}
+  if(durDays<=0&&durHours<=0){showMsg('❌ يرجى إدخال مدة صالحة',true);return;}
+  var ms=(durDays*86400000)+(durHours*3600000);
+  var expiresAt=new Date(Date.now()+ms).toISOString();
+  var maxUVal=(maxU&&parseInt(maxU)>0)?parseInt(maxU):null;
+  var btn=document.querySelector('#createDiscountModal .save-btn');
+  if(btn){btn.disabled=true;btn.textContent='جاري الحفظ...';}
+  try{
+   var ctrl=new AbortController();
+   var tId=setTimeout(function(){ctrl.abort();},12000);
+   try{
+    var resp=await fetch(_U+'/rest/v1/discount_codes',{
+     method:'POST',
+     headers:{'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K},
+     body:JSON.stringify({code:code,discount_type:dType,discount_value:dVal,expires_at:expiresAt,max_uses:maxUVal,used_count:0,is_active:true}),
+     signal:ctrl.signal
+    });
+    if(!resp.ok){var b={};try{b=await resp.json();}catch(e2){}throw new Error(b.message||b.error||'HTTP '+resp.status);}
+   }catch(fe){
+    if(fe.name==='AbortError')throw new Error('انتهت مهلة الاتصال (12 ث) — تحقق من الإنترنت');
+    throw fe;
+   }finally{clearTimeout(tId);}
+   if(window.closeCreateDiscountModal)window.closeCreateDiscountModal();
+   if(window.loadDiscountCodes)window.loadDiscountCodes();
+   if(window.showSuccessAnimation)window.showSuccessAnimation('تم إنشاء كود الخصم بنجاح!');
+  }catch(e){
+   showMsg('❌ '+(e.message||'خطأ غير معروف'),true);
+  }finally{
+   if(btn){btn.disabled=false;btn.textContent='إنشاء الكود';}
+  }
+ };
+ console.log('[Fix v4] saveDiscountCode fully replaced with direct fetch()');
 })();
 </script>
 </body>
