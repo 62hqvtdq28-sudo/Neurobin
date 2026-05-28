@@ -148,8 +148,11 @@
   // ── كودات الخصم
   const DiscountCodes = {
     list:   ()     => all('discount_codes'),
-    create: async (code) => { await _requireSession(); return ins('discount_codes', code); },
-    delete: async (id)   => { await _requireSession(); return del('discount_codes', id); },
+    create: async (code) => {
+      const { error } = await _db.from('discount_codes').insert(code);
+      if (error) throw error;
+    },
+    delete: async (id)   => del('discount_codes', id),
     async validate(codeStr) {
       const { data, error } = await _db.from('discount_codes').select('*')
         .eq('code', codeStr.trim().toUpperCase()).eq('is_active', true)
@@ -163,21 +166,18 @@
       if (data) await _db.from('discount_codes').update({ used_count: (data.used_count||0)+1 }).eq('id', id);
     },
     async updateMaxUses(id, maxUses) {
-      await _requireSession();
       const { error } = await _db.from('discount_codes')
         .update({ max_uses: maxUses === null ? null : parseInt(maxUses) })
         .eq('id', id);
       if (error) throw error;
     },
     async resetUsage(id) {
-      await _requireSession();
       const { error } = await _db.from('discount_codes')
         .update({ used_count: 0 })
         .eq('id', id);
       if (error) throw error;
     },
     async toggleActive(id, isActive) {
-      await _requireSession();
       const { error } = await _db.from('discount_codes')
         .update({ is_active: isActive })
         .eq('id', id);
