@@ -738,6 +738,8 @@ function showSection(section) {
   if (section === 'categories') loadCategoryImages();
 
   closeMobileMenu();
+  // Close all open modals when switching sections
+  document.querySelectorAll('.modal.active').forEach(function(m) { m.classList.remove('active'); });
   lucide.createIcons();
 }
 
