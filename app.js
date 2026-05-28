@@ -140,6 +140,7 @@ let products = []; // loaded from Supabase
 let cart = [];
 let favorites = [];
 let displayedProducts = [...products];
+let activeCategory   = 'all';  // tracks current filter tab
 
 // ===================================================
 // \u062f\u0648\u0627\u0644 Supabase
@@ -174,7 +175,7 @@ async function loadProductsFromSupabase() {
         qty3Price: p.qty_3_price ? Number(p.qty_3_price) : null
       }));
       displayedProducts = [...products];
-      renderProducts(products);
+      if (activeCategory !== 'bundles') { renderProducts(products); }
       updateCartUI();
       console.log('\u2705 Products loaded from Supabase:', products.length);
     }
@@ -232,7 +233,7 @@ function renderBundles() {
             (b.originalPrice ? '<span class="text-xs text-black line-through leading-none mb-0.5">' + SecurityValidator.escapeHtml(formatPrice(b.originalPrice)) + '</span>' : '') +
             '<span class="text-sm font-bold text-red-600 leading-none">' + SecurityValidator.escapeHtml(formatPrice(b.bundlePrice)) + '</span>' +
           '</div>' +
-          '<button onclick="addBundleToCart('' + bid + '')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all">' +
+          '<button data-bid="' + bid + '" onclick="addBundleToCart(this.dataset.bid)" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all">' +
             '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>' +
             '<span>أضف الباقة</span>' +
           '</button>' +
@@ -687,6 +688,7 @@ function filterProducts(e, category) {
     activeBtn.classList.add('active');
     activeBtn.setAttribute('aria-selected', 'true');
   }
+  activeCategory = category;
   if (category === 'bundles') {
     renderBundles();
     return;
@@ -937,12 +939,20 @@ async function sendToWhatsApp() {
   let total = 0;
   const orderItems = [];
   cart.forEach(item => {
+    if (item.isBundle && item.bundleData) {
+      var bd = item.bundleData;
+      total += bd.price;
+      message += '\u2022 \u{1F381} ' + (bd.titleAr || '\u0628\u0627\u0642\u0629') + ' = ' + formatPrice(bd.price) + '\n';
+      orderItems.push({ productId: item.productId, productName: bd.titleAr || '\u0628\u0627\u0642\u0629', quantity: 1, price: bd.price, subtotal: bd.price });
+      return;
+    }
     const product = products.find(p => p.id === item.productId);
     if (product) {
-      const subtotal = product.price * item.quantity;
+      const effectiveP = getEffectivePrice(product, item.quantity);
+      const subtotal = effectiveP * item.quantity;
       total += subtotal;
       message += '\u2022 ' + product.nameAr + ' \u00D7 ' + item.quantity + ' = ' + formatPrice(subtotal) + '\n';
-      orderItems.push({ productId: item.productId, productName: product.nameAr, quantity: item.quantity, price: product.price, subtotal });
+      orderItems.push({ productId: item.productId, productName: product.nameAr, quantity: item.quantity, price: effectiveP, subtotal });
     }
   });
   const discountedTotal = calcTotal(total);
