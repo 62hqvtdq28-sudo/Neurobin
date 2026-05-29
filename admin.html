@@ -1855,6 +1855,88 @@ async function saveCatImg(key, url) {
 
 <script src="packages.js?v=11"></script>
 <script src="bundles.js?v=3"></script>
+<script>
+/* ── Inline bundles auto-loader (bypasses external file cache) ── */
+(function() {
+  var _loaded = false;
+
+  function _doLoad() {
+    if (_loaded) return;
+    var el = document.getElementById('bundlesList');
+    if (!el) return;
+    el.innerHTML = '<div class="col-span-full flex items-center justify-center gap-2 py-12 text-brand-400"><div style="width:24px;height:24px;border:3px solid #d1fae5;border-top-color:#059669;border-radius:50%;animation:spin 0.8s linear infinite"></div><span>جاري تحميل الباقات...</span></div>';
+    var tries = 0;
+    var iv = setInterval(function() {
+      tries++;
+      if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Bundles) {
+        clearInterval(iv);
+        _loaded = true;
+        window.SupaDB.Bundles.list()
+          .then(function(data) {
+            window.SupaDB.Products.list()
+              .then(function(prods) {
+                if (typeof window._allBundles !== 'undefined') window._allBundles = data || [];
+                if (typeof window._allProductsForBundles !== 'undefined') window._allProductsForBundles = prods || [];
+                if (typeof window.renderBundlesList === 'function') {
+                  window.renderBundlesList(data || []);
+                } else {
+                  var el2 = document.getElementById('bundlesList');
+                  if (!el2) return;
+                  if (!data || !data.length) {
+                    el2.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">لا توجد باقات حتى الآن. أضف أول باقة!</div>';
+                  } else {
+                    el2.innerHTML = data.map(function(b) {
+                      var s = b.original_price && b.original_price > b.bundle_price ? b.original_price - b.bundle_price : 0;
+                      return '<div class="bg-white rounded-xl border border-brand-100 p-4">' +
+                        '<div class="font-bold text-brand-900 mb-2">' + (b.title_ar || '') + '</div>' +
+                        '<div class="flex items-center gap-3">' +
+                          (b.original_price ? '<span class="text-gray-400 line-through text-sm">' + Number(b.original_price).toLocaleString() + ' د.ع</span>' : '') +
+                          '<span class="font-bold text-red-600">' + Number(b.bundle_price).toLocaleString() + ' د.ع</span>' +
+                          (s > 0 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">توفير ' + s.toLocaleString() + '</span>' : '') +
+                        '</div></div>';
+                    }).join('');
+                  }
+                }
+              })
+              .catch(function() {
+                if (typeof window.renderBundlesList === 'function') window.renderBundlesList(data || []);
+              });
+          })
+          .catch(function(e) {
+            var el2 = document.getElementById('bundlesList');
+            if (el2) el2.innerHTML = '<div class="col-span-full text-center py-8 text-red-400">خطأ: ' + e.message + '</div>';
+          });
+      } else if (tries > 40) {
+        clearInterval(iv);
+        var el2 = document.getElementById('bundlesList');
+        if (el2) el2.innerHTML = '<div class="col-span-full text-center py-8 text-red-400">تعذر الاتصال بقاعدة البيانات - جرب تحديث الصفحة</div>';
+      }
+    }, 200);
+  }
+
+  /* Watch section-bundles for visibility change */
+  function _observe() {
+    var sec = document.getElementById('section-bundles');
+    if (!sec) return;
+    if (!sec.classList.contains('hidden')) { _doLoad(); return; }
+    var obs = new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        if (m.type === 'attributes' && m.attributeName === 'class') {
+          var t = m.target;
+          if (!t.classList.contains('hidden')) { _loaded = false; _doLoad(); }
+        }
+      });
+    });
+    obs.observe(sec, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _observe);
+  } else {
+    _observe();
+  }
+})();
+</script>
   <script src="admin-analytics.js?v=11"></script>
 <script>
 (function() {
