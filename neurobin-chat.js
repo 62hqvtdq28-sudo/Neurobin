@@ -124,7 +124,7 @@
     var info = el('div', {});
     var cls  = el('button', {id:'nb-cls', text:'✕'});
     info.appendChild(el('div', {id:'nb-htit', text:'مساعد صيدلية Neurobin'}));
-    info.appendChild(el('div', {id:'nb-hsub', text:'مدعوم بـ Gemini AI ✨'}));
+    info.appendChild(el('div', {id:'nb-hsub', text:'مدعوم بـ Grok AI ✨'}));
     head.appendChild(ico); head.appendChild(info); head.appendChild(cls);
     var msgs = el('div', {id:'nb-msgs'});
     var foot = el('div', {id:'nb-foot'});
