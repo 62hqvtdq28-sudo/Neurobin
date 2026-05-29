@@ -1025,11 +1025,14 @@
 
       if (!sessionArr.length) { list.innerHTML = '<div class="text-center text-brand-400 text-sm py-8">لا توجد محادثات بعد</div>'; return; }
 
+      // Store sessions globally so onclick can reference by index (avoids JSON-in-HTML quoting issues)
+      window._clSessions = sessionArr;
+
       list.innerHTML = sessionArr.map(function(s, i) {
         var lastMsg = s.messages[0];
         var userMsgs = s.messages.filter(function(m) { return m.role === 'user'; }).length;
-        var preview = lastMsg ? lastMsg.message.substring(0, 50) : '';
-        return '<div class="px-4 py-3 cursor-pointer hover:bg-brand-50 transition-colors" onclick="viewSession(' + JSON.stringify(s.id) + ',' + JSON.stringify(s.messages.map(function(m){return{role:m.role,message:m.message,created_at:m.created_at};})) + ')">' +
+        var preview = (lastMsg ? lastMsg.message.substring(0, 50) : '').replace(/</g,'&lt;');
+        return '<div id="cl-session-' + i + '" class="px-4 py-3 cursor-pointer hover:bg-brand-50 transition-colors" onclick="viewSession(' + i + ')">' +
           '<div class="flex items-center justify-between mb-1">' +
           '<span class="text-xs font-mono text-brand-400">#' + (i+1) + '</span>' +
           '<span class="text-xs text-brand-400">' + fmt(s.lastAt) + '</span>' +
@@ -1042,21 +1045,23 @@
     .catch(function(e) { list.innerHTML = '<div class="text-center text-red-400 text-sm py-8">خطأ: ' + e.message + '</div>'; });
   };
 
-  window.viewSession = function(sessionId, messages) {
+  window.viewSession = function(idx) {
+    var s = window._clSessions && window._clSessions[idx];
+    if (!s) return;
     var viewer = document.getElementById('cl-viewer');
     var title = document.getElementById('cl-viewer-title');
     if (!viewer || !title) return;
 
-    var sorted = messages.slice().sort(function(a, b) { return a.created_at.localeCompare(b.created_at); });
-    title.textContent = 'محادثة · ' + sorted.length + ' رسالة · ' + fmt(sorted[0].created_at);
+    var sorted = s.messages.slice().sort(function(a, b) { return a.created_at.localeCompare(b.created_at); });
+    title.textContent = 'محادثة #' + (idx+1) + ' · ' + sorted.length + ' رسالة · ' + fmt(sorted[0].created_at);
 
     viewer.innerHTML = sorted.map(function(m) {
       var isUser = m.role === 'user';
       return '<div class="flex ' + (isUser ? 'justify-start' : 'justify-end') + '">' +
         '<div style="max-width:80%">' +
-        '<div class="text-xs text-brand-400 mb-1 ' + (isUser ? 'text-right' : 'text-left') + '">' +
+        '<div class="text-xs text-brand-400 mb-1 ' + (isUser ? '' : 'text-left') + '">' +
         (isUser ? '👤 عميل' : '🤖 مساعد') + ' · ' + fmt(m.created_at) + '</div>' +
-        '<div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed ' +
+        '<div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ' +
         (isUser ? 'bg-brand-100 text-brand-800 rounded-tr-sm' : 'bg-green-700 text-white rounded-tl-sm') +
         '">' + m.message.replace(/</g,'&lt;') + '</div>' +
         '</div></div>';
@@ -1064,8 +1069,12 @@
 
     viewer.scrollTop = viewer.scrollHeight;
 
-    // Highlight selected
-    document.querySelectorAll('#cl-sessions-list > div').forEach(function(el) { el.classList.remove('bg-green-50','border-r-4','border-green-600'); });
+    // Highlight selected session
+    document.querySelectorAll('#cl-sessions-list > div').forEach(function(el) {
+      el.classList.remove('bg-green-50', 'border-r-4', 'border-green-600');
+    });
+    var sel = document.getElementById('cl-session-' + idx);
+    if (sel) sel.classList.add('bg-green-50', 'border-r-4', 'border-green-600');
   };
 })();
 </script>
