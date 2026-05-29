@@ -84,12 +84,19 @@ Deno.serve(async (req) => {
 
     const config = await getConfig();
 
-    // ALWAYS use DB system_prompt as the personality base.
-    // Append catalog_context (sent by frontend) so the AI knows available products.
-    // Never let the frontend override the personality set by the admin.
-    let systemPrompt = config.system_prompt;
-    if (reqBody.catalog_context && typeof reqBody.catalog_context === 'string') {
-      systemPrompt = systemPrompt + '\n\n' + reqBody.catalog_context;
+    // Two modes:
+    // 1. Admin training panel → sends system_instruction directly (special AI, bypass DB)
+    // 2. Customer chat widget → sends catalog_context only (use DB personality + catalog)
+    let systemPrompt: string;
+    if (reqBody.system_instruction?.parts?.[0]?.text) {
+      // Admin training mode: use as-is so training AI works correctly
+      systemPrompt = reqBody.system_instruction.parts[0].text;
+    } else {
+      // Customer chat mode: DB personality + catalog + training examples
+      systemPrompt = config.system_prompt;
+      if (reqBody.catalog_context && typeof reqBody.catalog_context === 'string') {
+        systemPrompt = systemPrompt + '\n\n' + reqBody.catalog_context;
+      }
     }
 
     const messages = convertContents(reqBody.contents, systemPrompt);
