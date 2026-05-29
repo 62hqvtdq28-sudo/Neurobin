@@ -635,6 +635,10 @@ section, div { max-width: 100%; }
 
       </div>
     </div>
+
+    <!-- نوع البشرة sub-filter — يظهر عند اختيار "عناية بالبشرة" -->
+    <div id="skinTypeSubFilterContainer_main" class="text-center px-4"></div>
+
     <div id="productsGrid" class="products-grid" role="list" aria-label="قائمة المنتجات">
       <!-- Products will be dynamically inserted -->
     </div>
@@ -1162,6 +1166,37 @@ window.addEventListener('resize', function() {
     }
   }
 });
+</script>
+<script src="skin-type.js?v=1"></script>
+<script>
+// ── نوع البشرة — ربط مع filterProducts ─────────────────────────────────
+(function() {
+  // انتظر حتى يُعرَّف filterProducts في app.js
+  var _retries = 0;
+  function _hookFilter() {
+    if (typeof window.filterProducts !== 'function') {
+      if (_retries++ < 30) setTimeout(_hookFilter, 200);
+      return;
+    }
+    var _origFilter = window.filterProducts;
+    window.filterProducts = function(e, category) {
+      _origFilter(e, category);
+      if (typeof SkinType !== 'undefined') SkinType.hookMainFilter(category);
+    };
+
+    // ربط دالة إعادة الرسم بعد تغيير نوع البشرة
+    window._triggerSkinFilter = function() {
+      // استدع filterProducts بالتصنيف النشط حالياً
+      var activeBtn = document.querySelector('.cat-icon-btn.active');
+      var cat = activeBtn ? activeBtn.dataset.filter : 'all';
+      // نحتاج فقط إعادة رسم المنتجات بالتصفية الجديدة
+      if (typeof window._renderFilteredProducts === 'function') {
+        window._renderFilteredProducts(cat);
+      }
+    };
+  }
+  _hookFilter();
+})();
 </script>
 </body>
 </html>
