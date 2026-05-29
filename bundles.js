@@ -48,7 +48,7 @@ function renderBundlesList(bundles) {
     var saving = b.original_price && b.original_price > b.bundle_price ? b.original_price - b.bundle_price : 0;
     var statusColor = b.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500';
     var statusLabel = b.active ? '\u0645\u0641\u0639\u0651\u0644' : '\u0645\u0648\u0642\u0648\u0641';
-    var imgHtml = b.image ? '<img src="' + escapeHTML(b.image) + '" class="w-12 h-12 rounded-lg object-cover border border-brand-100 mr-3 flex-shrink-0" onerror="this.style.display='none'">' : '';
+    var imgHtml = b.image ? '<img src="' + escapeHTML(b.image) + '" class="w-12 h-12 rounded-lg object-cover border border-brand-100 mr-3 flex-shrink-0" onerror="this.remove()">' : '';
     return '<div class="bg-white rounded-xl border border-brand-100 p-4 sm:p-5 animate-fade-in" style="animation-delay:' + (i*0.05) + 's">' +
       '<div class="flex items-start justify-between mb-3">' +
         '<div class="flex items-center flex-1 min-w-0">' +
@@ -111,7 +111,7 @@ function openBundleModal(id) {
       var pid = String(p.id);
       var isSelected = productIds.includes(pid) || productIds.map(String).includes(pid);
       var imgHtml = p.image
-        ? '<img src="' + escapeHTML(p.image) + '" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display='none'">'
+        ? '<img src="' + escapeHTML(p.image) + '" class="w-full h-full object-cover" loading="lazy" onerror="this.remove()">'
         : '<div class="w-full h-full flex items-center justify-center bg-brand-50"><i class="fa-solid fa-box" style="font-size:1.2rem;color:#9CA3AF;"></i></div>';
       var checkIcon = isSelected
         ? '<div class="bundle-check-icon absolute top-1 right-1 w-5 h-5 bg-brand-700 rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="white" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
