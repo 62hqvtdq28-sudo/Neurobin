@@ -1186,13 +1186,13 @@ window.addEventListener('resize', function() {
 
     // ربط دالة إعادة الرسم بعد تغيير نوع البشرة
     window._triggerSkinFilter = function() {
-      // استدع filterProducts بالتصنيف النشط حالياً
       var activeBtn = document.querySelector('.cat-icon-btn.active');
       var cat = activeBtn ? activeBtn.dataset.filter : 'all';
-      // نحتاج فقط إعادة رسم المنتجات بالتصفية الجديدة
-      if (typeof window._renderFilteredProducts === 'function') {
-        window._renderFilteredProducts(cat);
+      var filtered = cat === 'all' ? [...products] : products.filter(function(p){ return p.category === cat; });
+      if (typeof SkinType !== 'undefined' && SkinType.getCurrent()) {
+        filtered = SkinType.filterBy(filtered);
       }
+      if (typeof renderProducts === 'function') renderProducts(filtered);
     };
   }
   _hookFilter();
