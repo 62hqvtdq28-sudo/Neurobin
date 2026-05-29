@@ -323,8 +323,8 @@ function buildCatalogText() {
     history.push({role:'user', parts:[{text:msg}]});
     showTyping();
 
-    // Catalog only — personality/instructions come from DB (set via admin panel)
-    var catalogText = buildCatalogText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
+    // Catalog + training examples — personality comes from DB (set via admin panel)
+    var catalogText = buildCatalogText() + buildTrainingText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
 
     // ── Call Edge Function (NOT Gemini directly) ─────────────
     fetch(GEMINI_PROXY, {
