@@ -12,17 +12,23 @@
 
   var SYSTEM_BASE = [
     'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
-    'مهمتك الإجابة على استفسارات العملاء بالعربية.',
-    'عند اقتراح منتج اذكر رقمه بصيغة [ID] مثل [46].',
-    'لا تقترح سوى منتجات موجودة في الكتالوج.',
-    'اجب بشكل مختصر 3 الى 4 جمل فقط.',
-    'لا تقدم استشارات طبية تشخيصية.',
-    'الاسعار بالدينار العراقي.'
+    'مهمتك الإجابة على استفسارات العملاء بالعربية العراقية بأسلوب ودود واحترافي.',
+    'عند اقتراح منتج من المنتجات اذكر رقمه بين قوسين مربعين مثل [46].',
+    'عند اقتراح باقة اذكرها بصيغة [PKG-رقم].',
+    'عند اقتراح عرض مجمع اذكره بصيغة [BND-رقم].',
+    'لا تقترح سوى منتجات وباقات وعروض موجودة في الكتالوج.',
+    'اجب بشكل مختصر 3 الى 4 جمل فقط ما لم يطلب تفصيلاً.',
+    'لا تقدم استشارات طبية تشخيصية واحل الزبون لطبيب عند الحاجة.',
+    'الاسعار بالدينار العراقي.',
+    'اذكر اسعار الكميات (2 حبة، 3 حبات) عند الاقتضاء للتوفير.',
+    'اذكر العروض والتوفير بإيجابية لتشجيع الشراء.'
   ].join(' ');
 
   var catalog = [];
   var quickReplies = [];
   var trainingExamples = [];
+  var pkgs = [];
+  var bundles = [];
   var history = [], isOpen = false, loading = false;
 
   function injectCSS() {
@@ -205,11 +211,51 @@
       }).join('\n');
   }
 
+
+  function loadPackages() {
+    fetch(SUPABASE_URL + '/rest/v1/packages?select=id,name,description,price&in_stock=eq.true', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { pkgs = Array.isArray(data) ? data : []; console.log('[NB Chat] Packages:', pkgs.length); })
+    .catch(function(e) { console.warn('[NB Chat] Packages failed:', e); });
+  }
+
+  function loadBundles() {
+    fetch(SUPABASE_URL + '/rest/v1/bundles?select=id,title_ar,bundle_price,original_price&active=eq.true', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { bundles = Array.isArray(data) ? data : []; console.log('[NB Chat] Bundles:', bundles.length); })
+    .catch(function(e) { console.warn('[NB Chat] Bundles failed:', e); });
+  }
+
 function buildCatalogText() {
-    if (!catalog.length) return 'لا توجد منتجات.';
-    return '=== المنتجات المتاحة ===\n' + catalog.map(function(p) {
-      var desc = p.description ? ' | ' + p.description.substring(0, 50) : ''; return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع' + desc;
-    }).join('\n');
+    var parts = [];
+    if (!catalog.length) {
+      parts.push('لا توجد منتجات في المخزون حالياً.');
+    } else {
+      parts.push('=== المنتجات المتاحة ===\n' + catalog.map(function(p) {
+        var desc = p.description ? ' | ' + p.description.substring(0, 60) : '';
+        var extra = '';
+        if (p.original_price && p.original_price > p.price) extra += ' | سعر أصلي: ' + p.original_price + ' د.ع';
+        if (p.qty_2_price) extra += ' | 2 حبة: ' + p.qty_2_price + ' د.ع';
+        if (p.qty_3_price) extra += ' | 3 حبات: ' + p.qty_3_price + ' د.ع';
+        return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع' + extra + desc;
+      }).join('\n'));
+    }
+    if (pkgs.length) {
+      parts.push('\n=== الباقات ===\n' + pkgs.map(function(p) {
+        return '[PKG-' + p.id + '] ' + (p.name || '') + ' | ' + (p.price || 0) + ' د.ع' + (p.description ? ' | ' + p.description.substring(0, 60) : '');
+      }).join('\n'));
+    }
+    if (bundles.length) {
+      parts.push('\n=== العروض المجمعة ===\n' + bundles.map(function(b) {
+        var save = (b.original_price && b.original_price > b.bundle_price) ? ' (توفير ' + (b.original_price - b.bundle_price) + ' د.ع)' : '';
+        return '[BND-' + b.id + '] ' + (b.title_ar || '') + ' | ' + (b.bundle_price || 0) + ' د.ع' + save;
+      }).join('\n'));
+    }
+    return parts.join('\n');
   }
 
   function extractSuggestions(text) {
@@ -318,6 +364,8 @@ function buildCatalogText() {
     loadCatalog();
     loadQuickReplies();
     loadTrainingExamples();
+    loadPackages();
+    loadBundles();
   }
 
   if (document.readyState === 'loading') {
