@@ -323,14 +323,15 @@ function buildCatalogText() {
     history.push({role:'user', parts:[{text:msg}]});
     showTyping();
 
-    var systemText = SYSTEM_BASE + '\n\n' + buildCatalogText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
+    // Catalog only — personality/instructions come from DB (set via admin panel)
+    var catalogText = buildCatalogText() + '\n\nعند اقتراح منتج اذكر رقمه بين قوسين مربعين مثل [46].';
 
     // ── Call Edge Function (NOT Gemini directly) ─────────────
     fetch(GEMINI_PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY},
       body: JSON.stringify({
-        system_instruction: {parts: [{text: systemText}]},
+        catalog_context: catalogText,
         contents: history.slice(-10),
         generationConfig: {temperature: 0.4, maxOutputTokens: 600}
       })
