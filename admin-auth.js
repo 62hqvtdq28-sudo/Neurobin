@@ -710,6 +710,7 @@ async function showDashboard() {
       if (typeof initCategoryChart === 'function') await initCategoryChart();
       if (typeof initOrdersChart === 'function') await initOrdersChart();
       chartInitialized = true;
+      if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
     } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
   }, 150);
 }
@@ -739,7 +740,12 @@ function showSection(section) {
     }, 100);
   }
 
-  if (section === 'stats') updateStatsForDateRange();
+  if (section === 'stats') {
+    updateStatsForDateRange();
+    if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
+  } else {
+    if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
+  }
   if (section === 'comments') loadComments();
   if (section === 'orders') loadOrders();
   if (section === 'products') loadProducts();
