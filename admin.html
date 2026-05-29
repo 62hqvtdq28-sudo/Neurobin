@@ -309,25 +309,14 @@
         </div>
       </div>
 
-      <!-- Doughnut Chart for Category Distribution -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-          <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <i data-lucide="pie-chart" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
-            توزيع المنتجات
-          </h2>
-          <div class="chart-container" style="height: 250px;">
-            <canvas id="categoryChart"></canvas>
-          </div>
-        </div>
-        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-          <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <i data-lucide="shopping-cart" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
-            حالة الطلبات
-          </h2>
-          <div class="chart-container" style="height: 250px;">
-            <canvas id="ordersChart"></canvas>
-          </div>
+      <!-- توزيع المنتجات — عرض كامل -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-3 sm:mb-4 flex items-center gap-2">
+          <i data-lucide="pie-chart" class="w-4 h-4 sm:w-5 sm:h-6 text-brand-600"></i>
+          توزيع المنتجات
+        </h2>
+        <div class="chart-container" style="height: 280px;">
+          <canvas id="categoryChart"></canvas>
         </div>
       </div>
 
@@ -359,8 +348,16 @@
             <i data-lucide="download" class="w-3 h-3 sm:w-4 sm:h-5"></i>
             <span>تصدير Excel</span>
           </button>
+          <button onclick="deleteCurrentStats()" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+            <i data-lucide="trash" class="w-3 h-3 sm:w-4 sm:h-5"></i>
+            <span>حذف السجل الحالي</span>
+          </button>
+          <button id="statsUndoBtn" onclick="undoDeleteStats()" class="hidden bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+            <i data-lucide="rotate-ccw" class="w-3 h-3 sm:w-4 sm:h-5"></i>
+            <span>تراجع</span>
+          </button>
         </div>
-        <p class="text-brand-500 text-xs sm:text-sm mt-3 sm:mt-4">ملاحظة: إعادة تعيين اليوم يوقف العداد لهذا اليوم فقط</p>
+        <p class="text-brand-500 text-xs sm:text-sm mt-3 sm:mt-4">ملاحظة: حذف السجل يمسح العرض فقط — البيانات محفوظة في Supabase</p>
       </div>
     </section>
 
@@ -571,7 +568,7 @@
         <button onclick="filterProductsAdmin('perfumes')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="perfumes">عطور</button>
         <button onclick="filterProductsAdmin('haircare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="haircare">✂️ شعر</button>
         <button onclick="filterProductsAdmin('dental')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="dental">😊 أسنان</button>
-        <button onclick="filterProductsAdmin('packages')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="packages">🎁 بكجات</button>
+
       </div>
 
       <div class="mb-4">
@@ -748,9 +745,6 @@
         <h2 class="font-heading font-bold text-2xl sm:text-3xl text-brand-900">التحليلات</h2>
         <p class="text-brand-600 mt-1 text-sm">إحصائيات ومبيعات Neurobin</p>
       </div>
-      <button onclick="loadAnalytics()" class="flex items-center gap-2 bg-brand-100 hover:bg-brand-200 text-brand-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
-        <i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث
-      </button>
     </div>
 
     <!-- كروت الإحصاء -->
@@ -776,27 +770,51 @@
         </div>
       </div>
 
-      <!-- حالات الطلبات -->
+      <!-- حالات الطلبات — أرقام ونسب -->
       <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
         <div class="flex items-center gap-2 mb-4">
           <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-700"></i>
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-700"></i>
           </div>
           <h3 class="font-bold text-brand-900 text-base">حالات الطلبات</h3>
         </div>
-        <canvas id="analyticsStatusChart" height="220"></canvas>
+        <div id="analyticsStatusSummary">
+          <p class="text-brand-400 text-sm text-center py-6">جاري التحميل...</p>
+        </div>
       </div>
     </div>
 
-    <!-- المبيعات الشهرية -->
-    <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
-      <div class="flex items-center gap-2 mb-4">
-        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-          <i data-lucide="trending-up" class="w-4 h-4 text-green-700"></i>
+    <!-- المبيعات الشهرية / الأسبوعية -->
+    <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <i data-lucide="trending-up" class="w-4 h-4 text-green-700"></i>
+          </div>
+          <h3 class="font-bold text-brand-900 text-base">المبيعات</h3>
         </div>
-        <h3 class="font-bold text-brand-900 text-base">المبيعات الشهرية — آخر 6 أشهر</h3>
+        <div class="flex gap-2">
+          <button onclick="switchAnalyticsPeriod('weekly')" class="analytics-period-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-brand-100 text-brand-700" data-period="weekly">آخر 4 أسابيع</button>
+          <button onclick="switchAnalyticsPeriod('monthly')" class="analytics-period-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-brand-700 text-white" data-period="monthly">آخر 6 أشهر</button>
+        </div>
       </div>
       <canvas id="analyticsMonthlyChart" height="130"></canvas>
+      <div id="analyticsSalesSummary"></div>
+    </div>
+
+    <!-- أزرار إدارة التحليلات -->
+    <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm mb-5">
+      <div class="flex flex-wrap gap-3 items-center">
+        <button onclick="loadAnalytics()" class="flex items-center gap-2 bg-brand-100 hover:bg-brand-200 text-brand-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث
+        </button>
+        <button onclick="deleteAnalyticsView()" class="flex items-center gap-2 bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+          <i data-lucide="trash" class="w-4 h-4"></i> حذف الإحصائيات الحالية
+        </button>
+        <button id="analyticsUndoBtn" onclick="undoDeleteAnalytics()" class="hidden flex items-center gap-2 bg-teal-100 hover:bg-teal-200 text-teal-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> تراجع عن الحذف
+        </button>
+      </div>
     </div>
   </section>
 
