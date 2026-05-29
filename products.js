@@ -103,6 +103,14 @@ function renderProductsList(products, filter) {
   var el = document.getElementById('productsList');
   var q  = document.getElementById('productSearch') ? document.getElementById('productSearch').value.toLowerCase() : '';
   if (filter && filter !== 'all') products = products.filter(function(p){ return p.category === filter; });
+  // نوع البشرة sub-filter
+  if (filter === 'skincare' && typeof SkinType !== 'undefined' && SkinType.getCurrent()) {
+    var _skinT = SkinType.getCurrent();
+    products = products.filter(function(p) {
+      var st = SkinType.get(p.id);
+      return !st || st === _skinT;
+    });
+  }
   if (q) products = products.filter(function(p){ return (p.name||'').toLowerCase().includes(q) || (p.name_ar||'').toLowerCase().includes(q); });
   if (!products.length) {
     el.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0646\u062A\u062C\u0627\u062A</div>'; return;
@@ -132,6 +140,7 @@ function filterProductsAdmin(filter) {
   var ab = document.querySelector('#section-products [data-filter="' + filter + '"]');
   if (ab) { ab.classList.add('active','bg-brand-700','text-white'); ab.classList.remove('bg-brand-100','text-brand-700'); }
   renderProductsList(_allProducts, filter);
+  // skin type sub-filter visibility handled by skin-type.js patch
 }
 function searchProducts() { var af = document.querySelector('#section-products .tab-btn.active'); renderProductsList(_allProducts, af ? af.dataset.filter : 'all'); }
 
