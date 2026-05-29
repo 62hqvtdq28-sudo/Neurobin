@@ -31,6 +31,54 @@
   var bundles = [];
   var history = [], isOpen = false, loading = false;
 
+  // ── Persistent session ID (survives page reload) ──────────
+  function getSessionId() {
+    var key = 'nb_session_id';
+    var id = localStorage.getItem(key);
+    if (!id) {
+      id = 'nb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+      localStorage.setItem(key, id);
+    }
+    return id;
+  }
+  var SESSION_ID = getSessionId();
+
+  // ── Save a message to Supabase ────────────────────────────
+  function saveMessage(role, message) {
+    fetch(SUPABASE_URL + '/rest/v1/chat_messages', {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        session_id: SESSION_ID,
+        role: role,
+        message: message,
+        page_url: window.location.href
+      })
+    }).catch(function(e) { console.warn('[NB Chat] Save msg failed:', e); });
+  }
+
+  // ── Load previous messages from Supabase ──────────────────
+  function loadHistory() {
+    fetch(SUPABASE_URL + '/rest/v1/chat_messages?session_id=eq.' + SESSION_ID + '&order=created_at.asc&limit=40', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      if (!Array.isArray(rows) || !rows.length) return;
+      rows.forEach(function(row) {
+        addMsg(row.role === 'user' ? 'u' : 'b', row.message);
+        history.push({ role: row.role === 'user' ? 'user' : 'model', parts: [{ text: row.message }] });
+      });
+      console.log('[NB Chat] Loaded', rows.length, 'previous messages');
+    })
+    .catch(function(e) { console.warn('[NB Chat] Load history failed:', e); });
+  }
+
   function injectCSS() {
     var s = document.createElement('style');
     s.textContent = [
@@ -265,11 +313,16 @@ function buildCatalogText() {
     return catalog.filter(function(p) { return ids[p.id]; }).slice(0, 4);
   }
 
+  var historyLoaded = false;
   function toggle() {
     isOpen = !isOpen;
     var box = document.getElementById('nb-box');
     if (isOpen) {
       box.classList.remove('nb-h');
+      if (!historyLoaded) {
+        historyLoaded = true;
+        loadHistory();
+      }
       if (!history.length) addMsg('b', 'مرحباً! أنا مساعدك الصيدلاني في Neurobin. كيف يمكنني مساعدتك اليوم؟ 🌿');
     } else {
       box.classList.add('nb-h');
@@ -320,6 +373,7 @@ function buildCatalogText() {
     loading = true;
     document.getElementById('nb-snd').disabled = true;
     addMsg('u', msg);
+    saveMessage('user', msg);
     history.push({role:'user', parts:[{text:msg}]});
     showTyping();
 
@@ -352,6 +406,7 @@ function buildCatalogText() {
       if (!data.candidates || !data.candidates[0]) throw new Error('no_response');
       var text = data.candidates[0].content.parts[0].text;
       addMsg('b', text, extractSuggestions(text));
+      saveMessage('assistant', text);
       history.push({role:'model', parts:[{text:text}]});
       if (history.length > 20) history = history.slice(-20);
     })
