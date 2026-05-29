@@ -1,4 +1,4 @@
-// admin-analytics.js — لوحة تحليلات Neurobin
+// admin-analytics.js — لوحة تحليلات Neurobin (v2 — fixed)
 var _analyticsChartStatus  = null;
 var _analyticsChartMonthly = null;
 
@@ -13,7 +13,7 @@ async function loadAnalytics() {
     var allOrders = await SupaDB.Orders.list();
     var delivered = allOrders.filter(function(o){ return o.status === 'delivered'; });
 
-    // إجمالي المبيعات
+    // إجمالي المبيعات — يدعم العمودين total_amount و total
     var totalRevenue = delivered.reduce(function(s,o){
       return s + (Number(o.total_amount || o.total) || 0);
     }, 0);
@@ -21,20 +21,30 @@ async function loadAnalytics() {
     // متوسط الطلب
     var avgOrder = delivered.length ? Math.round(totalRevenue / delivered.length) : 0;
 
-    // العملاء النشطين (آخر 30 يوم)
+    // العملاء النشطين (آخر 30 يوم) — يدعم phone و customer_phone
     var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
     var activePhones = new Set(
       allOrders
         .filter(function(o){ return new Date(o.created_at) >= cutoff; })
-        .map(function(o){ return o.customer_phone || o.phone || ''; })
+        .map(function(o){ return o.phone || o.customer_phone || ''; })
         .filter(Boolean)
     );
 
     // أكثر المنتجات مبيعاً
+    // يدعم: o.items (JSON column)، o.order_items (relation)، و o.cart_items
     var productQty = {};
     allOrders.forEach(function(o){
-      (o.order_items || o.items || []).forEach(function(item){
-        var name = item.product_name || item.name || 'منتج';
+      // اختار المصدر الصحيح للعناصر
+      var items = [];
+      if (Array.isArray(o.items) && o.items.length > 0) {
+        items = o.items;
+      } else if (Array.isArray(o.order_items) && o.order_items.length > 0) {
+        items = o.order_items;
+      } else if (Array.isArray(o.cart_items) && o.cart_items.length > 0) {
+        items = o.cart_items;
+      }
+      items.forEach(function(item){
+        var name = item.name || item.product_name || 'منتج';
         productQty[name] = (productQty[name]||0) + (Number(item.quantity)||1);
       });
     });
@@ -152,12 +162,10 @@ async function loadAnalytics() {
     console.error('[Analytics]', e);
   }
 }
-// visitors-analytics-section.js
-// ════════════════════════════════════════════════════════════
-// أضف هذه الدالة في admin-analytics.js أو admin.js
-// واستدعها من loadAnalytics() بعد تحميل باقي الإحصائيات
-// ════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════
+// قسم إحصائيات الزوار — يُستدعى من loadAnalytics()
+// ════════════════════════════════════════════════════════════
 async function loadVisitorStats() {
   const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
@@ -169,151 +177,114 @@ async function loadVisitorStats() {
   };
 
   try {
-    // جلب آخر 30 يوم من الزيارات
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const since = thirtyDaysAgo.toISOString();
+    const todayStr = new Date().toISOString().slice(0, 10);
 
     const [allRes, monthRes, todayRes] = await Promise.all([
-      // إجمالي الزيارات
-      fetch(`${SUPABASE_URL}/rest/v1/page_views?select=count`, { headers })
-        .then(r => r.json()),
-      // زيارات آخر 30 يوم
-      fetch(`${SUPABASE_URL}/rest/v1/page_views?select=id,device,created_at&created_at=gte.${since}&order=created_at.desc&limit=1000`, { headers })
-        .then(r => r.json()),
-      // زيارات اليوم
-      fetch(`${SUPABASE_URL}/rest/v1/page_views?select=count&created_at=gte.${new Date().toISOString().slice(0,10)}`, { headers })
-        .then(r => r.json()),
+      fetch(SUPABASE_URL + '/rest/v1/page_views?select=id', {
+        headers: Object.assign({}, headers, { 'Prefer': 'count=exact' })
+      }),
+      fetch(SUPABASE_URL + '/rest/v1/page_views?select=id,device,created_at&created_at=gte.' + since + '&order=created_at.desc&limit=1000', { headers }),
+      fetch(SUPABASE_URL + '/rest/v1/page_views?select=id&created_at=gte.' + todayStr, {
+        headers: Object.assign({}, headers, { 'Prefer': 'count=exact' })
+      }),
     ]);
 
-    const totalVisitors = allRes[0]?.count || 0;
-    const todayVisitors = todayRes[0]?.count || 0;
-    const monthVisitors = Array.isArray(monthRes) ? monthRes.length : 0;
+    // استخراج العدد من Content-Range header
+    var allRange   = allRes.headers.get('content-range') || '';
+    var todayRange = todayRes.headers.get('content-range') || '';
+    var totalVisitors = allRange.includes('/') ? parseInt(allRange.split('/')[1]) || 0 : 0;
+    var todayVisitors = todayRange.includes('/') ? parseInt(todayRange.split('/')[1]) || 0 : 0;
+
+    var monthData = await monthRes.json();
+    var monthVisitors = Array.isArray(monthData) ? monthData.length : 0;
 
     // توزيع الأجهزة
-    const devices = { mobile: 0, desktop: 0, tablet: 0 };
-    if (Array.isArray(monthRes)) {
-      monthRes.forEach(v => {
-        const d = v.device || 'desktop';
+    var devices = { mobile: 0, desktop: 0, tablet: 0 };
+    if (Array.isArray(monthData)) {
+      monthData.forEach(function(v) {
+        var d = v.device || 'desktop';
         devices[d] = (devices[d] || 0) + 1;
       });
     }
 
     // زيارات آخر 7 أيام (يومياً)
-    const dailyCounts = {};
-    if (Array.isArray(monthRes)) {
-      monthRes.forEach(v => {
-        const day = v.created_at.slice(0, 10);
+    var dailyCounts = {};
+    if (Array.isArray(monthData)) {
+      monthData.forEach(function(v) {
+        var day = v.created_at.slice(0, 10);
         dailyCounts[day] = (dailyCounts[day] || 0) + 1;
       });
     }
-    const last7 = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
+    var last7 = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      var key = d.toISOString().slice(0, 10);
       last7.push({ day: key.slice(5), count: dailyCounts[key] || 0 });
     }
 
-    // ══ رسم في لوحة الإدمن ══════════════════════════════════
-
-    // ابحث عن عنصر الإحصائيات الموجود وأضف بعده
-    const analyticsSection = document.getElementById('analyticsCards');
+    var analyticsSection = document.getElementById('analyticsCards');
     if (!analyticsSection) return;
 
-    // إزالة قسم الزوار القديم إن وجد
-    const old = document.getElementById('visitorStatsSection');
+    var old = document.getElementById('visitorStatsSection');
     if (old) old.remove();
 
-    const mobilePercent = monthVisitors ? Math.round((devices.mobile / monthVisitors) * 100) : 0;
-    const desktopPercent = monthVisitors ? Math.round((devices.desktop / monthVisitors) * 100) : 0;
-    const tabletPercent  = monthVisitors ? Math.round((devices.tablet  / monthVisitors) * 100) : 0;
+    var mobilePercent  = monthVisitors ? Math.round((devices.mobile  / monthVisitors) * 100) : 0;
+    var desktopPercent = monthVisitors ? Math.round((devices.desktop / monthVisitors) * 100) : 0;
+    var tabletPercent  = monthVisitors ? Math.round((devices.tablet  / monthVisitors) * 100) : 0;
 
-    const maxDay = Math.max(...last7.map(d => d.count), 1);
+    var maxDay = Math.max.apply(Math, last7.map(function(d){ return d.count; }).concat([1]));
 
-    const html = `
-    <div id="visitorStatsSection" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    var barsHtml = last7.map(function(d) {
+      return '<div class="flex-1 flex flex-col items-center gap-1">' +
+        '<span class="text-[10px] text-brand-400 font-semibold">' + d.count + '</span>' +
+        '<div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400" style="height:' + Math.max(4, Math.round((d.count / maxDay) * 80)) + 'px"></div>' +
+        '<span class="text-[10px] text-brand-400">' + d.day + '</span>' +
+        '</div>';
+    }).join('');
 
-      <!-- كرت: إجمالي الزوار -->
-      <div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700">
-            <i data-lucide="eye" class="w-5 h-5"></i>
-          </div>
-          <span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span>
-        </div>
-        <p class="text-2xl font-bold text-brand-900">${Number(totalVisitors).toLocaleString('ar-IQ')}</p>
-      </div>
+    var html = '<div id="visitorStatsSection" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">' +
 
-      <!-- كرت: زيارات اليوم -->
-      <div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700">
-            <i data-lucide="calendar-check" class="w-5 h-5"></i>
-          </div>
-          <span class="text-sm font-semibold text-brand-600">زيارات اليوم</span>
-        </div>
-        <p class="text-2xl font-bold text-brand-900">${Number(todayVisitors).toLocaleString('ar-IQ')}</p>
-      </div>
+      '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm">' +
+        '<div class="flex items-center gap-3 mb-3">' +
+          '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700">' +
+            '<i data-lucide="eye" class="w-5 h-5"></i></div>' +
+          '<span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div>' +
+        '<p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('ar-IQ') + '</p></div>' +
 
-      <!-- كرت: زيارات 30 يوم -->
-      <div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700">
-            <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
-          </div>
-          <span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span>
-        </div>
-        <p class="text-2xl font-bold text-brand-900">${Number(monthVisitors).toLocaleString('ar-IQ')}</p>
-      </div>
+      '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm">' +
+        '<div class="flex items-center gap-3 mb-3">' +
+          '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700">' +
+            '<i data-lucide="calendar-check" class="w-5 h-5"></i></div>' +
+          '<span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div>' +
+        '<p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('ar-IQ') + '</p></div>' +
 
-      <!-- رسم بياني: آخر 7 أيام -->
-      <div class="sm:col-span-2 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
-        <h4 class="text-sm font-bold text-brand-700 mb-4">الزيارات — آخر 7 أيام</h4>
-        <div class="flex items-end gap-2 h-24">
-          ${last7.map(d => `
-            <div class="flex-1 flex flex-col items-center gap-1">
-              <span class="text-[10px] text-brand-400 font-semibold">${d.count}</span>
-              <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400"
-                   style="height:${Math.max(4, Math.round((d.count / maxDay) * 80))}px"></div>
-              <span class="text-[10px] text-brand-400">${d.day}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
+      '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm">' +
+        '<div class="flex items-center gap-3 mb-3">' +
+          '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700">' +
+            '<i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>' +
+          '<span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div>' +
+        '<p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('ar-IQ') + '</p></div>' +
 
-      <!-- توزيع الأجهزة -->
-      <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
-        <h4 class="text-sm font-bold text-brand-700 mb-4">نوع الجهاز</h4>
-        <div class="space-y-3">
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-brand-600 mb-1">
-              <span>📱 موبايل</span><span>${mobilePercent}%</span>
-            </div>
-            <div class="h-2 bg-brand-100 rounded-full overflow-hidden">
-              <div class="h-full bg-green-400 rounded-full" style="width:${mobilePercent}%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-brand-600 mb-1">
-              <span>🖥️ كمبيوتر</span><span>${desktopPercent}%</span>
-            </div>
-            <div class="h-2 bg-brand-100 rounded-full overflow-hidden">
-              <div class="h-full bg-blue-400 rounded-full" style="width:${desktopPercent}%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-brand-600 mb-1">
-              <span>📲 تابلت</span><span>${tabletPercent}%</span>
-            </div>
-            <div class="h-2 bg-brand-100 rounded-full overflow-hidden">
-              <div class="h-full bg-purple-400 rounded-full" style="width:${tabletPercent}%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      '<div class="sm:col-span-2 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">' +
+        '<h4 class="text-sm font-bold text-brand-700 mb-4">الزيارات — آخر 7 أيام</h4>' +
+        '<div class="flex items-end gap-2 h-24">' + barsHtml + '</div></div>' +
 
-    </div>`;
+      '<div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">' +
+        '<h4 class="text-sm font-bold text-brand-700 mb-4">نوع الجهاز</h4>' +
+        '<div class="space-y-3">' +
+          '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📱 موبايل</span><span>' + mobilePercent + '%</span></div>' +
+            '<div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-green-400 rounded-full" style="width:' + mobilePercent + '%"></div></div></div>' +
+          '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>🖥️ كمبيوتر</span><span>' + desktopPercent + '%</span></div>' +
+            '<div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-blue-400 rounded-full" style="width:' + desktopPercent + '%"></div></div></div>' +
+          '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📲 تابلت</span><span>' + tabletPercent + '%</span></div>' +
+            '<div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-purple-400 rounded-full" style="width:' + tabletPercent + '%"></div></div></div>' +
+        '</div></div>' +
+
+    '</div>';
 
     analyticsSection.insertAdjacentHTML('afterend', html);
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -322,4 +293,3 @@ async function loadVisitorStats() {
     console.warn('[Visitors] Error loading visitor stats:', e.message);
   }
 }
-await loadVisitorStats();
