@@ -80,6 +80,17 @@ function renderBundlesList(bundles) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+
+// Image fallback: called via onerror - no quote issues
+function bundleImgFallback(el) {
+  if (!el || !el.parentElement) return;
+  el.parentElement.innerHTML =
+    '<div class="w-full h-full flex items-center justify-center bg-brand-50">' +
+    '<svg class="w-8 h-8 text-brand-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>' +
+    '</svg></div>';
+}
+
 // ── Open bundle modal ───────────────────────────────────────
 function openBundleModal(id) {
   var b = id ? (_allBundles.find(function(x){ return String(x.id) === String(id); })) : null;
@@ -132,7 +143,7 @@ function openBundleModal(id) {
         var isSel = productIds.includes(pid);
         var pname = escapeHTML(p.name_ar || p.name || ('ID:' + pid));
         var pimg = (p.image && typeof p.image === 'string' && p.image.length > 5)
-          ? ('<img src="' + escapeHTML(p.image) + '" class="w-full h-full object-cover" loading="lazy" alt="">')
+          ? ('<img src="' + escapeHTML(p.image) + '" class="w-full h-full object-cover" loading="lazy" alt="" onerror="bundleImgFallback(this)">')
           : ('<div class="w-full h-full flex items-center justify-center bg-brand-50"><svg class="w-8 h-8 text-brand-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>');
         var chkDiv = '<div class="bundle-check-icon absolute top-1 right-1 w-5 h-5 bg-brand-700 rounded-full flex items-center justify-center" style="display:' + (isSel ? 'flex' : 'none') + '"><svg class="w-3 h-3" fill="none" stroke="white" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>';
         return '<div onclick="toggleBundleProduct(this)"' +
