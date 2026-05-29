@@ -84,10 +84,12 @@ Deno.serve(async (req) => {
 
     const config = await getConfig();
 
-    // Merge system_instruction from frontend if provided
+    // ALWAYS use DB system_prompt as the personality base.
+    // Append catalog_context (sent by frontend) so the AI knows available products.
+    // Never let the frontend override the personality set by the admin.
     let systemPrompt = config.system_prompt;
-    if (reqBody.system_instruction?.parts?.[0]?.text) {
-      systemPrompt = reqBody.system_instruction.parts[0].text;
+    if (reqBody.catalog_context && typeof reqBody.catalog_context === 'string') {
+      systemPrompt = systemPrompt + '\n\n' + reqBody.catalog_context;
     }
 
     const messages = convertContents(reqBody.contents, systemPrompt);
