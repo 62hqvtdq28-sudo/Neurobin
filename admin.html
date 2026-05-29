@@ -2381,8 +2381,33 @@ async function saveCatImg(key, url) {
       if (think) think.remove();
 
       if (!res.ok) {
-        addMsg('bot', 'خطأ في الاتصال: HTTP ' + res.status);
-        saving = false;
+        if (res.status === 429) {
+          // Rate limited — show countdown and auto-retry
+          var retrySeconds = 45;
+          var errDiv = document.createElement('div');
+          errDiv.style.cssText = 'align-self:flex-end;background:#fef9c3;border:1px solid #fde68a;color:#92400e;border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:13px;max-width:92%;word-wrap:break-word;white-space:pre-wrap;';
+          errDiv.textContent = '⏳ الذكاء الاصطناعي مشغول حالياً (تجاوزت حد الطلبات). سيُعاد إرسال رسالتك تلقائياً خلال ' + retrySeconds + ' ثانية...';
+          var msgBox = getEl('training-msgs');
+          if (msgBox) { msgBox.appendChild(errDiv); msgBox.scrollTop = 9999; }
+          var retryMsg = msg;
+          saving = false;
+          var countdown = setInterval(function() {
+            retrySeconds--;
+            errDiv.textContent = '⏳ إعادة المحاولة خلال ' + retrySeconds + ' ثانية...';
+            if (retrySeconds <= 0) {
+              clearInterval(countdown);
+              errDiv.remove();
+              // Remove the failed user message from history before retry
+              if (history.length > 0 && history[history.length-1].role === 'user') history.pop();
+              var inp2 = getEl('training-input');
+              if (inp2) inp2.value = retryMsg;
+              doSend();
+            }
+          }, 1000);
+        } else {
+          addMsg('bot', '⚠️ خطأ في الاتصال (HTTP ' + res.status + '). حاول مجدداً.');
+          saving = false;
+        }
         return;
       }
 
