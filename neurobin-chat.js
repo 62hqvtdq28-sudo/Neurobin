@@ -63,20 +63,25 @@
   }
 
   // ── Load previous messages from Supabase ──────────────────
-  function loadHistory() {
+  function loadHistory(onDone) {
     fetch(SUPABASE_URL + '/rest/v1/chat_messages?session_id=eq.' + SESSION_ID + '&order=created_at.asc&limit=40', {
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
     })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
-      if (!Array.isArray(rows) || !rows.length) return;
-      rows.forEach(function(row) {
-        addMsg(row.role === 'user' ? 'u' : 'b', row.message);
-        history.push({ role: row.role === 'user' ? 'user' : 'model', parts: [{ text: row.message }] });
-      });
-      console.log('[NB Chat] Loaded', rows.length, 'previous messages');
+      if (Array.isArray(rows) && rows.length) {
+        rows.forEach(function(row) {
+          addMsg(row.role === 'user' ? 'u' : 'b', row.message);
+          history.push({ role: row.role === 'user' ? 'user' : 'model', parts: [{ text: row.message }] });
+        });
+        console.log('[NB Chat] Loaded', rows.length, 'previous messages');
+      }
+      if (onDone) onDone();
     })
-    .catch(function(e) { console.warn('[NB Chat] Load history failed:', e); });
+    .catch(function(e) {
+      console.warn('[NB Chat] Load history failed:', e);
+      if (onDone) onDone();
+    });
   }
 
   function injectCSS() {
@@ -321,9 +326,10 @@ function buildCatalogText() {
       box.classList.remove('nb-h');
       if (!historyLoaded) {
         historyLoaded = true;
-        loadHistory();
+        loadHistory(function() {
+          if (!history.length) addMsg('b', 'مرحباً! أنا مساعدك الصيدلاني في Neurobin. كيف يمكنني مساعدتك اليوم؟ 🌿');
+        });
       }
-      if (!history.length) addMsg('b', 'مرحباً! أنا مساعدك الصيدلاني في Neurobin. كيف يمكنني مساعدتك اليوم؟ 🌿');
     } else {
       box.classList.add('nb-h');
     }
