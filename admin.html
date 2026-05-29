@@ -2122,5 +2122,144 @@ async function saveCatImg(key, url) {
  console.log('[Fix v4] saveDiscountCode fully replaced with direct fetch()');
 })();
 </script>
+
+<script>
+/* ══ Inline bundle modal override (bypasses all JS cache) ══ */
+(function() {
+
+  function _esc(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* ── openBundleModal ── */
+  window.openBundleModal = function(id) {
+    var b = id ? (window._allBundles || []).find(function(x){ return String(x.id)===String(id); }) : null;
+    var selIds = [];
+    if (b) {
+      try { selIds = Array.isArray(b.product_ids) ? b.product_ids.map(String) : JSON.parse(b.product_ids||'[]').map(String); } catch(e){}
+    }
+
+    var f = function(elId, val) { var el=document.getElementById(elId); if(el) el.value = (val===null||val===undefined?'':val); };
+    var t = function(elId, txt) { var el=document.getElementById(elId); if(el) el.textContent = txt; };
+
+    t('bundleModalTitle', b ? 'تعديل باقة' : 'إضافة باقة جديدة');
+    f('bundleId',            b ? String(b.id||'') : '');
+    f('bundleTitleAr',       b ? (b.title_ar||'') : '');
+    f('bundlePrice',         b ? (b.bundle_price||'') : '');
+    f('bundleOriginalPrice', b ? (b.original_price||'') : '');
+    var aEl = document.getElementById('bundleActive'); if(aEl) aEl.checked = b ? Boolean(b.active) : true;
+
+    /* Image */
+    var imgUrl = b ? (b.image||'') : '';
+    f('bundleImageUrl', imgUrl);
+    var inp = document.getElementById('bundleImageInput'); if(inp) inp.value='';
+    var prev = document.getElementById('bundleImagePreview');
+    if (prev) { if(imgUrl){prev.src=imgUrl;prev.style.display='block';} else {prev.src='';prev.style.display='none';} }
+    var cbtn = document.getElementById('bundleImageClearBtn'); if(cbtn) cbtn.style.display = imgUrl?'':'none';
+    var lbl = document.getElementById('bundleImageLabel'); if(lbl) lbl.textContent = imgUrl?'تم اختيار صورة':'اضغط لرفع صورة';
+
+    /* Products - simple list with checkboxes */
+    var cont = document.getElementById('bundleProductsContainer');
+    if (cont) {
+      var prods = (window._allProductsForBundles || []).filter(function(p){ return p && p.id; });
+      if (!prods.length) {
+        cont.innerHTML = '<p style="text-align:center;padding:16px;color:#9CA3AF">جاري تحميل المنتجات...</p>';
+      } else {
+        cont.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px">' +
+          prods.map(function(p) {
+            var pid = String(p.id);
+            var isSel = selIds.indexOf(pid) >= 0;
+            var nm = p.name_ar || p.name || ('منتج ' + pid);
+            var pr = isNaN(Number(p.price)) ? 0 : Number(p.price);
+            var border = isSel ? '2px solid #3D6B2D' : '2px solid #E5E7EB';
+            var bg     = isSel ? '#F0FDF4' : '#FFFFFF';
+            var check  = isSel ? '✓' : '';
+            return '<div onclick="window._toggleBundleProd(this)" data-pid="'+pid+'" data-selected="'+isSel+'"' +
+              ' style="position:relative;cursor:pointer;border-radius:12px;border:'+border+';background:'+bg+';padding:8px;text-align:center;transition:all 0.15s;user-select:none">' +
+              '<div style="position:absolute;top:4px;right:4px;width:20px;height:20px;background:#3D6B2D;border-radius:50%;display:'+(isSel?'flex':'none')+';align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">'+check+'</div>' +
+              (p.image && p.image.length > 5
+                ? '<img src="'+_esc(p.image)+'" alt="" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
+                  '<div style="display:none;width:100%;aspect-ratio:1/1;align-items:center;justify-content:center;background:#F9FAFB;border-radius:8px"><svg width=32 height=32 viewBox="0 0 24 24" fill=none stroke="#9CA3AF" stroke-width=1.5><rect x=3 y=3 width=18 height=18 rx=2/><path d="M3 9h18M9 21V9"/></svg></div>'
+                : '<div style="width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#F9FAFB;border-radius:8px"><svg width=32 height=32 viewBox="0 0 24 24" fill=none stroke="#9CA3AF" stroke-width=1.5><rect x=3 y=3 width=18 height=18 rx=2/><path d="M3 9h18M9 21V9"/></svg></div>') +
+              '<p style="font-size:11px;font-weight:600;color:#1F2937;margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_esc(nm)+'</p>' +
+              '<p style="font-size:10px;color:#9CA3AF">'+pr.toLocaleString()+' د.ع</p>' +
+            '</div>';
+          }).join('') +
+          '</div>';
+      }
+    }
+
+    var modal = document.getElementById('bundleModal'); if(modal) modal.classList.add('active');
+  };
+
+  /* ── toggleBundleProd ── */
+  window._toggleBundleProd = function(el) {
+    var isSel = el.dataset.selected === 'true';
+    el.dataset.selected = isSel ? 'false' : 'true';
+    el.style.border    = isSel ? '2px solid #E5E7EB' : '2px solid #3D6B2D';
+    el.style.background= isSel ? '#FFFFFF' : '#F0FDF4';
+    var chk = el.querySelector('div[style*="border-radius:50%"]');
+    if (chk) chk.style.display = isSel ? 'none' : 'flex';
+  };
+
+  /* ── saveBundle ── */
+  window.saveBundle = function() {
+    var btn = document.querySelector('#bundleModal [onclick="saveBundle()"]');
+    if (btn) { btn.textContent='جاري...'; btn.disabled=true; }
+
+    var restore = function() { if(btn){btn.textContent='حفظ';btn.disabled=false;} };
+
+    var titleAr  = (document.getElementById('bundleTitleAr')||{}).value||'';
+    titleAr = titleAr.trim();
+    var price    = parseInt(((document.getElementById('bundlePrice')||{}).value)||'0')||0;
+    var origPrice= parseInt(((document.getElementById('bundleOriginalPrice')||{}).value)||'0')||0;
+    var isActive = (document.getElementById('bundleActive')||{}).checked !== false;
+    var bundleId = ((document.getElementById('bundleId')||{}).value)||null;
+
+    if (!titleAr)  { if(typeof showToast==='function') showToast('يرجى إدخال اسم الباقة','error'); restore(); return; }
+    if (!price)    { if(typeof showToast==='function') showToast('يرجى إدخال سعر صحيح','error'); restore(); return; }
+
+    var cards = document.querySelectorAll('#bundleProductsContainer [data-selected="true"]');
+    var pids  = Array.from(cards).map(function(c){return c.dataset.pid;}).filter(Boolean);
+    if (pids.length < 2) { if(typeof showToast==='function') showToast('يرجى اختيار منتجين على الأقل','error'); restore(); return; }
+
+    var imgInp = document.getElementById('bundleImageInput');
+    var imgUrl = ((document.getElementById('bundleImageUrl')||{}).value)||null;
+    var imgFile= imgInp && imgInp.files && imgInp.files[0] ? imgInp.files[0] : null;
+
+    var doSave = function(finalImgUrl) {
+      var row = {
+        title_ar:       titleAr,
+        product_ids:    JSON.stringify(pids),
+        bundle_price:   price,
+        original_price: (origPrice > price) ? origPrice : null,
+        active:         isActive,
+        updated_at:     new Date().toISOString()
+      };
+      if (finalImgUrl) row.image = finalImgUrl;
+
+      var op = bundleId ? window.SupaDB.Bundles.update(bundleId, row) : (function(){row.created_at=new Date().toISOString(); return window.SupaDB.Bundles.create(row);})();
+      op.then(function() {
+        if(typeof closeBundleModal==='function') closeBundleModal();
+        if(typeof loadBundles==='function') loadBundles();
+        if(typeof showToast==='function') showToast('تم الحفظ بنجاح','success');
+        restore();
+      }).catch(function(e) {
+        if(typeof showToast==='function') showToast('خطأ: '+(e&&e.message?e.message:String(e)),'error');
+        restore();
+      });
+    };
+
+    if (imgFile && window.SupaDB && window.SupaDB.ImageStorage) {
+      window.SupaDB.ImageStorage.upload(imgFile,'bundle_'+Date.now()).then(doSave).catch(function(){doSave(imgUrl);});
+    } else {
+      doSave(imgUrl);
+    }
+  };
+
+})();
+</script>
 </body>
 </html>
