@@ -349,7 +349,11 @@ function buildCatalogText() {
       if (history.length > 20) history = history.slice(-20);
     })
     .catch(function(e) {
-      addMsg('err', 'خطأ: ' + e.message);
+            var friendlyMsg = '⚠️ عذراً، حدث خطأ مؤقت. حاول مجدداً بعد لحظة.';
+      if (e.message && (e.message.includes('429') || e.message.includes('quota') || e.message.includes('RESOURCE_EXHAUSTED'))) {
+        friendlyMsg = '⚠️ المساعد مشغول حالياً. حاول بعد دقيقة أو تواصل معنا عبر واتساب 📱';
+      }
+      addMsg('err', friendlyMsg);
       console.error('[NB Chat]', e);
     })
     .finally(function() {
