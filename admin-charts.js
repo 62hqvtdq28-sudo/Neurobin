@@ -2,6 +2,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 var _chartsData = null; // cache: { orders, pageViews, products }
+var _statsRefreshInterval = null; // auto-refresh timer
 
 var SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
 var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
@@ -312,4 +313,24 @@ async function exportStats() {
   XLSX.utils.book_append_sheet(wb, ws, 'الإحصائيات');
   XLSX.writeFile(wb, 'neurobin_stats_' + today + '.xlsx');
   showToast('تم تصدير الإحصائيات بنجاح');
+}
+
+// ── Auto-refresh ─────────────────────────────────────────────────────────────
+
+function stopStatsAutoRefresh() {
+  if (_statsRefreshInterval) {
+    clearInterval(_statsRefreshInterval);
+    _statsRefreshInterval = null;
+  }
+}
+
+async function startStatsAutoRefresh() {
+  stopStatsAutoRefresh(); // clear any existing timer
+  _statsRefreshInterval = setInterval(async function() {
+    try {
+      await _loadChartsData(true); // force fresh data from Supabase
+      await updateStatsForDateRange();
+      await initVisitorsChart();
+    } catch(e) { console.warn('[Charts] auto-refresh error:', e); }
+  }, 60000); // every 60 seconds
 }
