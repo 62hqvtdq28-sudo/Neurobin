@@ -2167,6 +2167,101 @@ async function saveCatImg(key, url) {
 })();
 </script>
 
+<!-- Fix v5: override discount action buttons with direct fetch() — bypasses Supabase JS client issues on mobile -->
+<script>
+(function(){
+  var _U='https://hczsskviliuqyayylutv.supabase.co';
+  var _K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+  function _authHeaders(){
+    return {'apikey':_K,'Authorization':'Bearer '+_K,'Content-Type':'application/json','Prefer':'return=minimal'};
+  }
+
+  async function _fetch(method, path, body){
+    var ctrl=new AbortController();
+    var tId=setTimeout(function(){ctrl.abort();},12000);
+    try{
+      var opts={method:method,headers:_authHeaders(),signal:ctrl.signal};
+      if(body!==undefined) opts.body=JSON.stringify(body);
+      var resp=await fetch(_U+path,opts);
+      if(!resp.ok){var b={};try{b=await resp.json();}catch(e2){}throw new Error(b.message||b.error||'HTTP '+resp.status);}
+    }finally{clearTimeout(tId);}
+  }
+
+  /* ── حذف كود الخصم ── */
+  window.deleteDiscountCode = async function(id){
+    if(window.isAuthenticated&&!window.isAuthenticated()){if(window.showToast)window.showToast('يرجى تسجيل الدخول أولاً','error');return;}
+    if(!confirm('هل أنت متأكد من حذف هذا الكود؟'))return;
+    try{
+      await _fetch('DELETE','/rest/v1/discount_codes?id=eq.'+encodeURIComponent(id));
+      if(window.loadDiscountCodes)window.loadDiscountCodes();
+      if(window.showToast)window.showToast('تم حذف الكود','warning');
+    }catch(e){if(window.showToast)window.showToast('خطأ: '+(e&&e.message||'حدث خطأ غير معروف'),'error');}
+  };
+
+  /* ── تفعيل / تعطيل كود الخصم ── */
+  window.toggleCodeActive = async function(id, newState){
+    if(window.isAuthenticated&&!window.isAuthenticated()){if(window.showToast)window.showToast('يرجى تسجيل الدخول أولاً','error');return;}
+    try{
+      await _fetch('PATCH','/rest/v1/discount_codes?id=eq.'+encodeURIComponent(id),{is_active:newState});
+      if(window.loadDiscountCodes)window.loadDiscountCodes();
+      if(window.showToast)window.showToast(newState?'تم تفعيل الكود ✓':'تم تعطيل الكود',newState?'success':'info');
+    }catch(e){if(window.showToast)window.showToast('خطأ: '+(e&&e.message||'حدث خطأ غير معروف'),'error');}
+  };
+
+  /* ── تحديث الحد الأقصى للاستخدام ── */
+  window.saveMaxUses = async function(id){
+    if(window.isAuthenticated&&!window.isAuthenticated()){if(window.showToast)window.showToast('يرجى تسجيل الدخول أولاً','error');return;}
+    var inp=document.getElementById('new-max-uses-'+id);
+    if(!inp)return;
+    var val=inp.value.trim();
+    var newMax=(val===''||val==='0')?null:parseInt(val);
+    if(newMax!==null&&(isNaN(newMax)||newMax<1)){if(window.showToast)window.showToast('يرجى إدخال عدد صحيح أكبر من 0','error');return;}
+    try{
+      await _fetch('PATCH','/rest/v1/discount_codes?id=eq.'+encodeURIComponent(id),{max_uses:newMax});
+      if(window.closeUsageEditor)window.closeUsageEditor(id);
+      if(window.loadDiscountCodes)window.loadDiscountCodes();
+      if(window.showToast)window.showToast(newMax?'تم تحديد الحد الأقصى: '+newMax+' مستخدم':'تم إزالة الحد الأقصى','success');
+    }catch(e){if(window.showToast)window.showToast('خطأ: '+(e&&e.message||'حدث خطأ غير معروف'),'error');}
+  };
+
+  /* ── إعادة تعيين عداد الاستخدام ── */
+  window.resetUsageCount = async function(id){
+    if(window.isAuthenticated&&!window.isAuthenticated()){if(window.showToast)window.showToast('يرجى تسجيل الدخول أولاً','error');return;}
+    if(!confirm('هل أنت متأكد من إعادة تعيين عداد الاستخدام؟'))return;
+    try{
+      await _fetch('PATCH','/rest/v1/discount_codes?id=eq.'+encodeURIComponent(id),{used_count:0});
+      if(window.loadDiscountCodes)window.loadDiscountCodes();
+      if(window.showToast)window.showToast('تم إعادة تعيين العداد ✓','success');
+    }catch(e){if(window.showToast)window.showToast('خطأ: '+(e&&e.message||'حدث خطأ غير معروف'),'error');}
+  };
+
+  /* ── نسخ كود الخصم (محسّن لجميع المتصفحات) ── */
+  window.copyDiscountCode = function(code){
+    if(!code)return;
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code)
+        .then(function(){if(window.showToast)window.showToast('تم نسخ الكود: '+code,'success');})
+        .catch(function(){_fallbackCopy(code);});
+    }else{_fallbackCopy(code);}
+  };
+  function _fallbackCopy(code){
+    try{
+      var el=document.createElement('textarea');
+      el.value=code;
+      el.style.cssText='position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(el);
+      el.focus();el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      if(window.showToast)window.showToast('تم نسخ الكود: '+code,'success');
+    }catch(e){if(window.showToast)window.showToast('تعذّر النسخ — انسخ يدوياً: '+code,'info');}
+  }
+
+  console.log('[Fix v5] Discount action buttons replaced with direct fetch()');
+})();
+</script>
+
 <script>
 /* ══ Inline bundle modal override (bypasses all JS cache) ══ */
 (function() {
