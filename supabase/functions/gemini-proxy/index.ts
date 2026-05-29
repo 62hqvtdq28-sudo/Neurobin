@@ -1,6 +1,7 @@
 // supabase/functions/gemini-proxy/index.ts
-// Neurobin Pharmacy — Secure Gemini Proxy v3
+// Neurobin Pharmacy — Secure Gemini Proxy v4
 // NOW: reads system_prompt from Supabase ai_config table (admin-configurable)
+// v4: Added exponential backoff retry on 429 rate limit errors
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -20,9 +21,32 @@ const FALLBACK_SYSTEM_PROMPT = [
   'عند اقتراح منتج اذكر رقمه بصيغة [ID] مثل [46].',
   'لا تقترح سوى منتجات موجودة في الكتالوج.',
   'اجب بشكل مختصر 3 الى 4 جمل فقط.',
-  'ل�� تقدم استشارات طبية تشخيصية.',
+  'لا تقدم استشارات طبية تشخيصية.',
   'الاسعار بالدينار العراقي.'
 ].join(' ');
+
+// Helper: call Gemini with exponential backoff on 429 rate limit
+async function callGeminiWithRetry(
+  url: string,
+  body: object,
+  maxRetries = 3
+): Promise<Response> {
+  let lastRes!: Response;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delayMs = 3000 * attempt; // 3s then 6s
+      console.log(`[gemini-proxy] Rate limited (429) — waiting ${delayMs}ms before retry ${attempt}/${maxRetries - 1}...`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    lastRes = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (lastRes.status !== 429) break;
+  }
+  return lastRes;
+}
 
 Deno.serve(async (req: Request) => {
 
@@ -92,20 +116,15 @@ Deno.serve(async (req: Request) => {
       }
     };
 
-    // ── Forward to Gemini API ────────────────────────────────
+    // ── Forward to Gemini API (with retry on 429) ─────────────
     const geminiUrl = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
     console.log(`[gemini-proxy] Calling Gemini ${GEMINI_MODEL}...`);
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody),
-    });
-
+    const geminiRes = await callGeminiWithRetry(geminiUrl, geminiBody, 3);
     const data = await geminiRes.json();
 
     if (!geminiRes.ok) {
-      console.error('[gemini-proxy] Gemini API error:', geminiRes.status, JSON.stringify(data));
+      console.error('[gemini-proxy] Gemini API error after retries:', geminiRes.status, JSON.stringify(data));
     } else {
       console.log('[gemini-proxy] Success ✓');
     }
