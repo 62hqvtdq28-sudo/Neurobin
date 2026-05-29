@@ -8,7 +8,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const GROQ_MODEL = Deno.env.get('GROQ_MODEL') || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = Deno.env.get('GROQ_MODEL') || 'meta-llama/llama-4-scout-17b-16e-instruct';
 const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
 
 const FALLBACK_PROMPT = [
