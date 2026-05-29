@@ -242,3 +242,202 @@ async function hardDeleteOrder(orderId) {
     showToast('تم الحذف النهائي 🗑️','success');
   } catch(e) { showToast('خطأ في الحذف: ' + (e.message||'غير معروف'),'error'); }
 }
+
+// ══════════════════════════════════════════════════════════════
+// 📦 MANUAL ORDER MODAL
+// ══════════════════════════════════════════════════════════════
+
+var _moItems = [];        // { id, name, price, qty }
+var _moAllProducts = [];  // cached product list
+
+function openManualOrderModal() {
+  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
+
+  _moItems = [];
+
+  ['moName','moPhone','moAddress','moNotes'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var moDelivery = document.getElementById('moDelivery');
+  if (moDelivery) moDelivery.value = '4000';
+  var moStatus = document.getElementById('moStatus');
+  if (moStatus) moStatus.value = 'new';
+  var moPickerSearch = document.getElementById('moPickerSearch');
+  if (moPickerSearch) moPickerSearch.value = '';
+
+  var picker = document.getElementById('moProductPicker');
+  if (picker) picker.classList.add('hidden');
+
+  _renderMoSelectedProducts();
+  updateManualTotal();
+
+  var modal = document.getElementById('manualOrderModal');
+  if (modal) modal.style.display = 'flex';
+
+  SupaDB.Products.list().then(function(products) {
+    _moAllProducts = products;
+    _renderMoProductGrid(products);
+  }).catch(function(e) {
+    console.warn('[ManualOrder] load products:', e);
+  });
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeManualOrderModal() {
+  var modal = document.getElementById('manualOrderModal');
+  if (modal) modal.style.display = 'none';
+  _moItems = [];
+  _moAllProducts = [];
+}
+
+function toggleMoProductPicker() {
+  var picker = document.getElementById('moProductPicker');
+  if (!picker) return;
+  picker.classList.toggle('hidden');
+  if (!picker.classList.contains('hidden')) {
+    _renderMoProductGrid(_moAllProducts);
+    var search = document.getElementById('moPickerSearch');
+    if (search) search.focus();
+  }
+}
+
+function filterMoProducts() {
+  var search = document.getElementById('moPickerSearch');
+  var q = search ? search.value.toLowerCase() : '';
+  var filtered = _moAllProducts.filter(function(p) {
+    return (p.name || '').toLowerCase().includes(q);
+  });
+  _renderMoProductGrid(filtered);
+}
+
+function _renderMoProductGrid(products) {
+  var grid = document.getElementById('moProductGrid');
+  if (!grid) return;
+  if (!products || !products.length) {
+    grid.innerHTML = '<p class="col-span-5 text-center text-brand-400 text-sm py-4">لا توجد منتجات</p>';
+    return;
+  }
+  grid.innerHTML = products.map(function(p) {
+    var name = escapeHTML(p.name || '');
+    var price = (p.price || 0).toLocaleString();
+    var imgHtml = p.image_url
+      ? '<img src="' + escapeHTML(p.image_url) + '" class="w-full h-14 object-cover rounded-lg mb-1" onerror="this.style.display=\'none\'">'
+      : '<div class="w-full h-14 bg-brand-100 rounded-lg mb-1 flex items-center justify-center"><i data-lucide="image" class="w-5 h-5 text-brand-300"></i></div>';
+    return '<button onclick="addMoProduct(\'' + escapeHTML(String(p.id)) + '\')" ' +
+      'class="flex flex-col items-center text-center p-1.5 bg-white rounded-xl border border-brand-100 hover:border-brand-500 hover:shadow transition-all">' +
+      imgHtml +
+      '<span class="text-xs text-brand-800 font-semibold leading-tight line-clamp-2 w-full">' + name + '</span>' +
+      '<span class="text-xs text-brand-500 mt-0.5">' + price + ' د.ع</span>' +
+      '</button>';
+  }).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function addMoProduct(productId) {
+  var p = _moAllProducts.find(function(x) { return String(x.id) === String(productId); });
+  if (!p) return;
+  var existing = _moItems.find(function(x) { return String(x.id) === String(productId); });
+  if (existing) {
+    existing.qty++;
+  } else {
+    _moItems.push({ id: p.id, name: p.name || '', price: p.price || 0, qty: 1 });
+  }
+  _renderMoSelectedProducts();
+  updateManualTotal();
+}
+
+function _changeMoQty(productId, delta) {
+  var item = _moItems.find(function(x) { return String(x.id) === String(productId); });
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) {
+    _moItems = _moItems.filter(function(x) { return String(x.id) !== String(productId); });
+  }
+  _renderMoSelectedProducts();
+  updateManualTotal();
+}
+
+function _renderMoSelectedProducts() {
+  var container = document.getElementById('moSelectedProducts');
+  if (!container) return;
+  if (!_moItems.length) {
+    container.innerHTML = '<p class="text-xs text-brand-400 text-center py-3">لم يتم اختيار منتجات بعد</p>';
+    return;
+  }
+  container.innerHTML = _moItems.map(function(item) {
+    var subtotal = ((item.price || 0) * item.qty).toLocaleString();
+    var pid = escapeHTML(String(item.id));
+    return '<div class="flex items-center gap-2 bg-white rounded-lg p-2 border border-brand-100">' +
+      '<div class="flex-1 min-w-0">' +
+      '<p class="text-sm font-semibold text-brand-800 truncate">' + escapeHTML(item.name) + '</p>' +
+      '<p class="text-xs text-brand-500">' + (item.price || 0).toLocaleString() + ' × ' + item.qty + ' = ' + subtotal + ' د.ع</p>' +
+      '</div>' +
+      '<div class="flex items-center gap-1 flex-shrink-0">' +
+      '<button onclick="_changeMoQty(\'' + pid + '\',-1)" class="w-7 h-7 rounded-full bg-brand-100 hover:bg-red-100 text-brand-700 font-bold text-lg leading-none flex items-center justify-center transition-colors">−</button>' +
+      '<span class="w-6 text-center text-sm font-bold text-brand-900">' + item.qty + '</span>' +
+      '<button onclick="_changeMoQty(\'' + pid + '\',1)" class="w-7 h-7 rounded-full bg-brand-100 hover:bg-brand-200 text-brand-700 font-bold text-lg leading-none flex items-center justify-center transition-colors">+</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function updateManualTotal() {
+  var delivery = parseInt((document.getElementById('moDelivery') || {}).value || '4000') || 0;
+  var itemsTotal = _moItems.reduce(function(sum, item) { return sum + (item.price || 0) * item.qty; }, 0);
+  var el = document.getElementById('moTotal');
+  if (el) el.textContent = (itemsTotal + delivery).toLocaleString() + ' د.ع';
+}
+
+async function saveManualOrder() {
+  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
+
+  var name     = ((document.getElementById('moName')    || {}).value || '').trim();
+  var phone    = ((document.getElementById('moPhone')   || {}).value || '').trim();
+  var address  = ((document.getElementById('moAddress') || {}).value || '').trim();
+  var notes    = ((document.getElementById('moNotes')   || {}).value || '').trim();
+  var delivery = parseInt((document.getElementById('moDelivery') || {}).value || '4000') || 0;
+  var status   = (document.getElementById('moStatus') || {}).value || 'new';
+
+  if (!name)  { showToast('يرجى إدخال اسم العميل', 'error');  return; }
+  if (!phone) { showToast('يرجى إدخال رقم الهاتف', 'error'); return; }
+
+  var itemsTotal  = _moItems.reduce(function(sum, i) { return sum + (i.price || 0) * i.qty; }, 0);
+  var totalAmount = itemsTotal + delivery;
+
+  var orderItems = _moItems.map(function(i) {
+    return { product_name: i.name, name: i.name, quantity: i.qty, price: i.price, subtotal: i.price * i.qty };
+  });
+
+  var btn = document.getElementById('moSaveBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline-block ml-1"></i> جاري الحفظ...'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+  try {
+    var result = await SupaDB._db.from('orders').insert({
+      customer_name:    name,
+      name:             name,
+      customer_phone:   phone,
+      phone:            phone,
+      customer_address: address  || null,
+      address:          address  || null,
+      notes:            notes    || null,
+      status:           status,
+      total_amount:     totalAmount,
+      total:            totalAmount,
+      delivery_fee:     delivery,
+      items:            orderItems,
+      created_at:       new Date().toISOString()
+    }).select().single();
+
+    if (result.error) throw result.error;
+
+    closeManualOrderModal();
+    await loadOrders();
+    if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+    showToast('تم إضافة الطلب بنجاح ✅', 'success');
+  } catch(e) {
+    console.error('[ManualOrder] save error:', e);
+    showToast('خطأ في حفظ الطلب: ' + (e.message || 'غير معروف'), 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب'; }
+  }
+}
