@@ -702,17 +702,19 @@ async function showDashboard() {
   document.getElementById('adminDashboard').classList.remove('hidden');
   try { if (typeof loadAllData === 'function') loadAllData(); } catch(e) { console.warn('[Dashboard] loadAllData:', e.message); }
   try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('[Dashboard] lucide:', e.message); }
-  // Stats section is visible by default — initialize charts on first load
+  // Stats section is visible by default — initialize via setDateRange for consistency
   setTimeout(async function() {
     try {
-      if (typeof updateStatsForDateRange === 'function') await updateStatsForDateRange();
-      if (typeof initVisitorsChart === 'function') await initVisitorsChart();
+      // setDateRange mirrors the 'Today' button click: updates stats cards, comparison,
+      // detailed table AND the visitors chart in one reliable async path
+      if (typeof setDateRange === 'function') await setDateRange('today');
+      // Initialize the two doughnut charts separately (not handled by setDateRange)
       if (typeof initCategoryChart === 'function') await initCategoryChart();
       if (typeof initOrdersChart === 'function') await initOrdersChart();
       chartInitialized = true;
       if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
     } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
-  }, 150);
+  }, 300); // 300ms gives the DOM time to paint after adminDashboard becomes visible
 }
 
 function showSection(section) {
@@ -733,17 +735,18 @@ function showSection(section) {
 
   if (section === 'stats' && !chartInitialized) {
     setTimeout(async function() {
-      await initVisitorsChart();
-      await initCategoryChart();
-      await initOrdersChart();
+      if (typeof setDateRange === 'function') await setDateRange(currentDateRange || 'today');
+      if (typeof initCategoryChart === 'function') await initCategoryChart();
+      if (typeof initOrdersChart === 'function') await initOrdersChart();
       chartInitialized = true;
     }, 100);
+  } else if (section === 'stats') {
+    // Already initialized — just refresh data for current range
+    if (typeof setDateRange === 'function') setDateRange(currentDateRange || 'today');
+    if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
   }
 
-  if (section === 'stats') {
-    updateStatsForDateRange();
-    if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
-  } else {
+  if (section !== 'stats') {
     if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
   }
   if (section === 'comments') loadComments();
