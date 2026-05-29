@@ -200,6 +200,11 @@
         <i data-lucide="bot" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">إعدادات AI</span>
       </button>
+      <button onclick="showSection('chatlogs'); loadChatSessions();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right relative" data-section="chatlogs">
+        <i data-lucide="messages-square" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">سجل المحادثات</span>
+        <span id="chatlogsBadge" class="hidden absolute left-3 top-3 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
+      </button>
     </nav>
 
     <div class="p-3 sm:p-4 border-t border-brand-700/50">
@@ -906,8 +911,164 @@
     </div>
   </section>
 
+  <!-- ── Chat Logs Section ─────────────────────────────── -->
+  <section id="section-chatlogs" class="section-content hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-12 h-12 bg-gradient-to-br from-green-600 to-green-800 rounded-xl flex items-center justify-center">
+          <i data-lucide="messages-square" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-brand-900">سجل المحادثات</h1>
+          <p class="text-brand-600 text-sm">جميع محادثات العملاء مع المساعد الذكي</p>
+        </div>
+        <button onclick="loadChatSessions()" class="mr-auto bg-brand-100 hover:bg-brand-200 text-brand-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors flex items-center gap-2">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4 text-center">
+        <div id="cl-total-sessions" class="text-2xl font-bold text-brand-800">—</div>
+        <div class="text-xs text-brand-500 mt-1">إجمالي المحادثات</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4 text-center">
+        <div id="cl-total-msgs" class="text-2xl font-bold text-green-700">—</div>
+        <div class="text-xs text-brand-500 mt-1">إجمالي الرسائل</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4 text-center">
+        <div id="cl-today-msgs" class="text-2xl font-bold text-blue-700">—</div>
+        <div class="text-xs text-brand-500 mt-1">رسائل اليوم</div>
+      </div>
+    </div>
+
+    <!-- Sessions List + Conversation Viewer -->
+    <div class="flex gap-4" style="min-height:500px;">
+      <!-- Sessions list -->
+      <div class="w-80 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b border-brand-100 bg-brand-50">
+          <span class="font-bold text-brand-800 text-sm">المحادثات (أحدثها أولاً)</span>
+        </div>
+        <div id="cl-sessions-list" class="flex-1 overflow-y-auto divide-y divide-brand-50">
+          <div class="text-center text-brand-400 text-sm py-8">جاري التحميل...</div>
+        </div>
+      </div>
+
+      <!-- Conversation viewer -->
+      <div class="flex-1 bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b border-brand-100 bg-brand-50 flex items-center gap-2">
+          <i data-lucide="message-circle" class="w-4 h-4 text-brand-600"></i>
+          <span id="cl-viewer-title" class="font-bold text-brand-800 text-sm">اختر محادثة من القائمة</span>
+        </div>
+        <div id="cl-viewer" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm" dir="rtl">
+          <div class="text-center text-brand-300 py-16">
+            <i data-lucide="mouse-pointer-click" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p>اضغط على أي محادثة لعرضها</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 </div>
+
+<script>
+(function() {
+  'use strict';
+  var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY };
+
+  function fmt(dt) {
+    var d = new Date(dt);
+    return d.toLocaleDateString('ar-IQ', { month: 'short', day: 'numeric' }) + ' ' +
+           d.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  window.loadChatSessions = function() {
+    var list = document.getElementById('cl-sessions-list');
+    if (!list) return;
+    list.innerHTML = '<div class="text-center text-brand-400 text-sm py-8">جاري التحميل...</div>';
+
+    // Fetch all messages grouped by session
+    fetch(SURL + '/rest/v1/chat_messages?order=created_at.desc&limit=500', { headers: H })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      if (!Array.isArray(rows)) { list.innerHTML = '<div class="text-center text-red-400 text-sm py-8">خطأ في التحميل</div>'; return; }
+
+      // Group by session_id
+      var sessions = {};
+      rows.forEach(function(row) {
+        if (!sessions[row.session_id]) {
+          sessions[row.session_id] = { id: row.session_id, messages: [], lastAt: row.created_at, firstAt: row.created_at };
+        }
+        sessions[row.session_id].messages.push(row);
+        if (row.created_at > sessions[row.session_id].lastAt) sessions[row.session_id].lastAt = row.created_at;
+        if (row.created_at < sessions[row.session_id].firstAt) sessions[row.session_id].firstAt = row.created_at;
+      });
+
+      var sessionArr = Object.values(sessions).sort(function(a, b) { return b.lastAt.localeCompare(a.lastAt); });
+
+      // Stats
+      var today = new Date().toISOString().slice(0, 10);
+      var todayMsgs = rows.filter(function(r) { return r.created_at.slice(0, 10) === today; }).length;
+      document.getElementById('cl-total-sessions').textContent = sessionArr.length;
+      document.getElementById('cl-total-msgs').textContent = rows.length;
+      document.getElementById('cl-today-msgs').textContent = todayMsgs;
+
+      // Badge
+      var badge = document.getElementById('chatlogsBadge');
+      if (badge && sessionArr.length) { badge.textContent = sessionArr.length; badge.classList.remove('hidden'); }
+
+      if (!sessionArr.length) { list.innerHTML = '<div class="text-center text-brand-400 text-sm py-8">لا توجد محادثات بعد</div>'; return; }
+
+      list.innerHTML = sessionArr.map(function(s, i) {
+        var lastMsg = s.messages[0];
+        var userMsgs = s.messages.filter(function(m) { return m.role === 'user'; }).length;
+        var preview = lastMsg ? lastMsg.message.substring(0, 50) : '';
+        return '<div class="px-4 py-3 cursor-pointer hover:bg-brand-50 transition-colors" onclick="viewSession(' + JSON.stringify(s.id) + ',' + JSON.stringify(s.messages.map(function(m){return{role:m.role,message:m.message,created_at:m.created_at};})) + ')">' +
+          '<div class="flex items-center justify-between mb-1">' +
+          '<span class="text-xs font-mono text-brand-400">#' + (i+1) + '</span>' +
+          '<span class="text-xs text-brand-400">' + fmt(s.lastAt) + '</span>' +
+          '</div>' +
+          '<div class="text-sm text-brand-700 font-medium truncate mb-1">' + (preview || '...') + '</div>' +
+          '<div class="text-xs text-brand-400">' + userMsgs + ' رسالة من العميل</div>' +
+          '</div>';
+      }).join('');
+    })
+    .catch(function(e) { list.innerHTML = '<div class="text-center text-red-400 text-sm py-8">خطأ: ' + e.message + '</div>'; });
+  };
+
+  window.viewSession = function(sessionId, messages) {
+    var viewer = document.getElementById('cl-viewer');
+    var title = document.getElementById('cl-viewer-title');
+    if (!viewer || !title) return;
+
+    var sorted = messages.slice().sort(function(a, b) { return a.created_at.localeCompare(b.created_at); });
+    title.textContent = 'محادثة · ' + sorted.length + ' رسالة · ' + fmt(sorted[0].created_at);
+
+    viewer.innerHTML = sorted.map(function(m) {
+      var isUser = m.role === 'user';
+      return '<div class="flex ' + (isUser ? 'justify-start' : 'justify-end') + '">' +
+        '<div style="max-width:80%">' +
+        '<div class="text-xs text-brand-400 mb-1 ' + (isUser ? 'text-right' : 'text-left') + '">' +
+        (isUser ? '👤 عميل' : '🤖 مساعد') + ' · ' + fmt(m.created_at) + '</div>' +
+        '<div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed ' +
+        (isUser ? 'bg-brand-100 text-brand-800 rounded-tr-sm' : 'bg-green-700 text-white rounded-tl-sm') +
+        '">' + m.message.replace(/</g,'&lt;') + '</div>' +
+        '</div></div>';
+    }).join('');
+
+    viewer.scrollTop = viewer.scrollHeight;
+
+    // Highlight selected
+    document.querySelectorAll('#cl-sessions-list > div').forEach(function(el) { el.classList.remove('bg-green-50','border-r-4','border-green-600'); });
+  };
+})();
+</script>
 
 <!-- Feature Modal -->
 <div id="featureModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
