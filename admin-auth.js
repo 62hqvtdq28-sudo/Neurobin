@@ -702,6 +702,16 @@ async function showDashboard() {
   document.getElementById('adminDashboard').classList.remove('hidden');
   try { if (typeof loadAllData === 'function') loadAllData(); } catch(e) { console.warn('[Dashboard] loadAllData:', e.message); }
   try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('[Dashboard] lucide:', e.message); }
+  // Stats section is visible by default — initialize charts on first load
+  setTimeout(async function() {
+    try {
+      if (typeof updateStatsForDateRange === 'function') await updateStatsForDateRange();
+      if (typeof initVisitorsChart === 'function') await initVisitorsChart();
+      if (typeof initCategoryChart === 'function') await initCategoryChart();
+      if (typeof initOrdersChart === 'function') await initOrdersChart();
+      chartInitialized = true;
+    } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
+  }, 150);
 }
 
 function showSection(section) {
@@ -721,10 +731,10 @@ function showSection(section) {
   if (sectionBtn) sectionBtn.classList.add('active');
 
   if (section === 'stats' && !chartInitialized) {
-    setTimeout(function() {
-      initVisitorsChart();
-      initCategoryChart();
-      initOrdersChart();
+    setTimeout(async function() {
+      await initVisitorsChart();
+      await initCategoryChart();
+      await initOrdersChart();
       chartInitialized = true;
     }, 100);
   }
