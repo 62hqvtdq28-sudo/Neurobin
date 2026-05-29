@@ -842,10 +842,10 @@
           placeholder="مثال: عندما يسأل عن التوصيل، كن مختصراً وودوداً ..."
           class="flex-1 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-medium"
           style="max-height:80px;overflow-y:auto;"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTraining();}"
+          
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px';"
         ></textarea>
-        <button onclick="sendTraining()" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-4 py-3 rounded-xl transition-colors text-sm flex-shrink-0">
+        <button id="training-send-btn" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-4 py-3 rounded-xl transition-colors text-sm flex-shrink-0" style="cursor:pointer;">
           <i data-lucide="send" class="w-4 h-4"></i>
         </button>
       </div>
@@ -2305,102 +2305,250 @@ async function saveCatImg(key, url) {
 })();
 </script>
 
+
+
+
 <script>
+/* ─── Neurobin AI Training Bot ───────────────────────────────────── */
 (function() {
+  'use strict';
+
   var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
   var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var GEMINI_PROXY = SURL + '/functions/v1/gemini-proxy';
+  var PROXY = SURL + '/functions/v1/gemini-proxy';
   var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json' };
-  var TRAINING_SYSTEM = 'انت مساعد تدريبي لصيدلية Neurobin. عندما يعلمك المدير كيف يرد البوت، استخرج المعلومة كـ JSON فقط. اذا كانت رسالة تدريب: {"type":"training","situation":"وصف الموقف","style_response":"مثال على الاسلوب","notes":""} اذا كانت محادثة عادية: {"type":"chat","message":"ردك"} دائماً JSON فقط بدون اي نص اخر.';
-  var trainingHistory = [];
 
-  window.sendTraining = async function() {
-    var inp = document.getElementById('training-input');
+  var SYS = 'انت مساعد تدريبي لصيدلية Neurobin. '
+    + 'عندما يعلمك المدير كيف يرد البوت على موقف معين، '
+    + 'استخرج المعلومة وأعدها كـ JSON فقط بدون أي نص آخر. '
+    + 'اذا كانت رسالة تدريب، أعد: '
+    + '{"type":"training","situation":"صف الموقف مثلاً: عندما يرحب الزبون","style_response":"مثال على الأسلوب المطلوب"} '
+    + 'اذا كانت محادثة عادية أو سؤال، أعد: '
+    + '{"type":"chat","message":"ردك الطبيعي"} '
+    + 'مهم: أعد JSON فقط بدون مقدمة أو خاتمة.';
+
+  var history = [];
+  var saving = false;
+
+  function getEl(id) { return document.getElementById(id); }
+
+  function addMsg(who, txt) {
+    var box = getEl('training-msgs');
+    if (!box) return;
+    var empty = getEl('training-empty');
+    if (empty) empty.remove();
+    var d = document.createElement('div');
+    if (who === 'user') {
+      d.style.cssText = 'align-self:flex-start;background:#1a5c25;color:#fff;border-radius:16px 16px 4px 16px;padding:10px 14px;font-size:14px;max-width:88%;word-wrap:break-word;';
+    } else if (who === 'thinking') {
+      d.id = 'nb-train-think';
+      d.style.cssText = 'align-self:flex-end;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:14px;';
+      d.textContent = 'جاري التحليل...';
+    } else {
+      d.style.cssText = 'align-self:flex-end;background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d;border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:14px;max-width:92%;word-wrap:break-word;white-space:pre-wrap;';
+      d.textContent = txt;
+    }
+    box.appendChild(d);
+    box.scrollTop = 9999;
+  }
+
+  async function doSend() {
+    if (saving) return;
+    var inp = getEl('training-input');
     if (!inp) return;
-    var msg = inp.value.trim();
+    var msg = (inp.value || '').trim();
     if (!msg) return;
-    inp.value = ''; inp.style.height = 'auto';
-    _addTMsg('user', msg);
-    trainingHistory.push({ role: 'user', parts: [{ text: msg }] });
-    _addTMsg('thinking', '');
+    inp.value = '';
+    inp.style.height = 'auto';
+
+    addMsg('user', msg);
+    history.push({ role: 'user', parts: [{ text: msg }] });
+    addMsg('thinking', '');
+    saving = true;
+
     try {
-      var resp = await fetch(GEMINI_PROXY, {
-        method: 'POST', headers: H,
+      var res = await fetch(PROXY, {
+        method: 'POST',
+        headers: H,
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: TRAINING_SYSTEM }] },
-          contents: trainingHistory.slice(-6),
-          generationConfig: { temperature: 0.1, maxOutputTokens: 400 }
+          system_instruction: { parts: [{ text: SYS }] },
+          contents: history.slice(-8),
+          generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
         })
       });
-      var data = await resp.json();
-      _removeTThinking();
-      var rawText = (data.candidates && data.candidates[0].content.parts[0].text || '').trim();
-      var parsed;
-      try { var m = rawText.match(/\{[\s\S]*\}/); parsed = JSON.parse(m ? m[0] : rawText); } catch(e) { _addTMsg('bot', rawText); trainingHistory.push({ role: 'model', parts: [{ text: rawText }] }); return; }
-      if (parsed.type === 'training') {
-        var saveR = await fetch(SURL + '/rest/v1/ai_training_examples', {
-          method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
-          body: JSON.stringify({ situation: parsed.situation, style_response: parsed.style_response, notes: parsed.notes || '', is_active: true })
-        });
-        var msg2 = (saveR.ok || saveR.status === 201) ? ('تم الحفظ!
 
-الموقف: ' + parsed.situation + '
-الاسلوب: ' + parsed.style_response) : ('خطأ في الحفظ: ' + saveR.status);
-        if (saveR.ok || saveR.status === 201) loadTrainingList();
-        _addTMsg('bot', msg2);
-        trainingHistory.push({ role: 'model', parts: [{ text: msg2 }] });
-      } else {
-        _addTMsg('bot', parsed.message || rawText);
-        trainingHistory.push({ role: 'model', parts: [{ text: parsed.message || rawText }] });
+      var think = getEl('nb-train-think');
+      if (think) think.remove();
+
+      if (!res.ok) {
+        addMsg('bot', 'خطأ في الاتصال: HTTP ' + res.status);
+        saving = false;
+        return;
       }
-    } catch(e) { _removeTThinking(); _addTMsg('bot', 'خطأ: ' + e.message); }
-  };
 
-  function _addTMsg(type, text) {
-    var msgs = document.getElementById('training-msgs'); if (!msgs) return;
-    var empty = document.getElementById('training-empty'); if (empty) empty.remove();
-    var d = document.createElement('div');
-    if (type === 'user') { d.className = 'self-start bg-brand-700 text-white rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm max-w-[88%] font-medium'; d.textContent = text; }
-    else if (type === 'thinking') { d.id = 'training-thinking'; d.className = 'self-end bg-white border border-brand-200 text-brand-400 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm'; d.innerHTML = '<span>جاري التحليل...</span>'; }
-    else { d.className = 'self-end bg-white border border-brand-200 text-brand-900 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-[88%] whitespace-pre-line'; d.textContent = text; }
-    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+      var data = await res.json();
+      var raw = '';
+      try { raw = data.candidates[0].content.parts[0].text.trim(); } catch(e) {}
+
+      if (!raw) { addMsg('bot', 'لم يرد البوت. حاول مرة أخرى.'); saving = false; return; }
+
+      var parsed = null;
+      try {
+        var m = raw.match(/\{[\s\S]*?\}/);
+        if (m) parsed = JSON.parse(m[0]);
+      } catch(e) {}
+
+      if (parsed && parsed.type === 'training') {
+        var saveRes = await fetch(SURL + '/rest/v1/ai_training_examples', {
+          method: 'POST',
+          headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+          body: JSON.stringify({
+            situation: parsed.situation || '',
+            style_response: parsed.style_response || '',
+            notes: '',
+            is_active: true
+          })
+        });
+
+        var reply;
+        if (saveRes.ok || saveRes.status === 201) {
+          reply = 'تم الحفظ! ✅\n\nالموقف: ' + (parsed.situation || '') + '\nالأسلوب: ' + (parsed.style_response || '');
+          doLoadList();
+        } else if (saveRes.status === 404) {
+          reply = 'تنبيه: يجب أولاً إنشاء جدول ai_training_examples في Supabase.\nفهمت التدريب: ' + (parsed.situation || '');
+        } else {
+          reply = 'خطأ في الحفظ (' + saveRes.status + '). التدريب: ' + (parsed.situation || '');
+        }
+        addMsg('bot', reply);
+        history.push({ role: 'model', parts: [{ text: reply }] });
+
+      } else if (parsed && parsed.type === 'chat') {
+        addMsg('bot', parsed.message || raw);
+        history.push({ role: 'model', parts: [{ text: parsed.message || raw }] });
+      } else {
+        addMsg('bot', raw);
+        history.push({ role: 'model', parts: [{ text: raw }] });
+      }
+
+    } catch(e) {
+      var think2 = getEl('nb-train-think');
+      if (think2) think2.remove();
+      addMsg('bot', 'خطأ: ' + (e.message || e));
+    }
+
+    saving = false;
   }
-  function _removeTThinking() { var t = document.getElementById('training-thinking'); if (t) t.remove(); }
-  function _esc(t) { return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  window.loadTrainingList = async function() {
-    var list = document.getElementById('training-list'); if (!list) return;
-    list.innerHTML = '<div class="text-center text-brand-400 text-sm py-4">جاري التحميل...</div>';
+  async function doLoadList() {
+    var list = getEl('training-list');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;color:#6a9e72;padding:16px;font-size:13px;">جاري التحميل...</div>';
     try {
-      var r = await fetch(SURL + '/rest/v1/ai_training_examples?select=*&order=created_at.desc', { headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY } });
+      var r = await fetch(SURL + '/rest/v1/ai_training_examples?select=*&order=created_at.desc', {
+        headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY }
+      });
       var items = await r.json();
-      if (!Array.isArray(items) || !items.length) { list.innerHTML = '<div class="text-center text-brand-400 text-sm py-6">لا توجد امثلة بعد. ابدأ بتعليم البوت!</div>'; return; }
+      if (!Array.isArray(items) || !items.length) {
+        list.innerHTML = '<div style="text-align:center;color:#6a9e72;padding:16px;font-size:13px;">لا توجد أمثلة بعد. ابدأ بتعليم البوت!</div>';
+        return;
+      }
       list.innerHTML = '';
       items.forEach(function(item) {
         var d = document.createElement('div');
-        d.className = 'flex items-start gap-3 p-3 rounded-xl border ' + (item.is_active ? 'border-brand-200 bg-brand-50' : 'border-gray-200 bg-gray-50 opacity-60');
-        d.innerHTML = '<div class="flex-1 min-w-0"><div class="text-xs text-brand-500 font-semibold mb-1">الموقف</div><div class="text-sm text-brand-900 font-medium mb-2">' + _esc(item.situation) + '</div><div class="text-xs text-brand-500 font-semibold mb-1">الاسلوب</div><div class="text-sm text-brand-700">' + _esc(item.style_response) + '</div></div><div class="flex flex-col gap-1.5 flex-shrink-0"><button onclick="window._toggleTEx(' + item.id + ',' + (!item.is_active) + ')" class="text-xs px-2.5 py-1 rounded-lg border ' + (item.is_active ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-gray-300 text-gray-500') + '">' + (item.is_active ? 'فعال' : 'معطل') + '</button><button onclick="window._deleteTEx(' + item.id + ')" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">حذف</button></div>';
+        d.style.cssText = 'display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;border:1px solid ' + (item.is_active ? '#bbf7d0' : '#e5e7eb') + ';background:' + (item.is_active ? '#f0fdf4' : '#f9fafb') + ';margin-bottom:8px;' + (item.is_active ? '' : 'opacity:0.6;');
+        var esc = function(t) { return (t||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+        d.innerHTML = '<div style="flex:1;min-width:0;">'
+          + '<div style="font-size:11px;color:#6b7280;font-weight:600;margin-bottom:4px;">الموقف</div>'
+          + '<div style="font-size:13px;color:#111827;font-weight:600;margin-bottom:8px;">' + esc(item.situation) + '</div>'
+          + '<div style="font-size:11px;color:#6b7280;font-weight:600;margin-bottom:4px;">الأسلوب</div>'
+          + '<div style="font-size:13px;color:#166534;">' + esc(item.style_response) + '</div>'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">'
+          + '<button data-id="' + item.id + '" data-active="' + item.is_active + '" class="nb-toggle-btn" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid ' + (item.is_active ? '#86efac' : '#d1d5db') + ';color:' + (item.is_active ? '#166534' : '#6b7280') + ';background:transparent;cursor:pointer;">' + (item.is_active ? '✓ فعال' : 'معطل') + '</button>'
+          + '<button data-id="' + item.id + '" class="nb-delete-btn" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid #fca5a5;color:#dc2626;background:transparent;cursor:pointer;">حذف</button>'
+          + '</div>';
         list.appendChild(d);
       });
-    } catch(e) { list.innerHTML = '<div class="text-center text-red-400 text-sm py-4">خطأ: ' + e.message + '</div>'; }
-  };
 
-  window._deleteTEx = async function(id) {
-    if (!confirm('حذف هذا المثال؟')) return;
-    await fetch(SURL + '/rest/v1/ai_training_examples?id=eq.' + id, { method: 'DELETE', headers: H });
-    loadTrainingList();
-  };
-  window._toggleTEx = async function(id, newState) {
-    await fetch(SURL + '/rest/v1/ai_training_examples?id=eq.' + id, { method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify({ is_active: newState }) });
-    loadTrainingList();
-  };
+      // Bind delete/toggle events
+      list.querySelectorAll('.nb-delete-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          if (!confirm('حذف هذا المثال؟')) return;
+          fetch(SURL + '/rest/v1/ai_training_examples?id=eq.' + id, { method: 'DELETE', headers: H })
+            .then(function() { doLoadList(); });
+        });
+      });
+      list.querySelectorAll('.nb-toggle-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          var cur = this.getAttribute('data-active') === 'true';
+          fetch(SURL + '/rest/v1/ai_training_examples?id=eq.' + id, {
+            method: 'PATCH',
+            headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+            body: JSON.stringify({ is_active: !cur })
+          }).then(function() { doLoadList(); });
+        });
+      });
+    } catch(e) {
+      list.innerHTML = '<div style="color:#dc2626;font-size:12px;padding:8px;">خطأ في التحميل: ' + (e.message || e) + '</div>';
+    }
+  }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    var _orig = window.showSection;
-    window.showSection = function(s) { if (_orig) _orig(s); if (s === 'ai') setTimeout(loadTrainingList, 150); };
-    var sec = document.getElementById('section-ai');
-    if (sec && !sec.classList.contains('hidden')) loadTrainingList();
-  });
+  // Attach events via addEventListener (more reliable than onclick)
+  function attachEvents() {
+    var btn = getEl('training-send-btn');
+    var inp = getEl('training-input');
+    var refreshBtn = document.querySelector('[onclick="loadTrainingList()"]');
+
+    if (btn) {
+      btn.onclick = null;
+      btn.addEventListener('click', function(e) { e.preventDefault(); doSend(); });
+    }
+    if (inp) {
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+      });
+    }
+    // Refresh button
+    var refreshBtns = document.querySelectorAll('[onclick="loadTrainingList()"]');
+    refreshBtns.forEach(function(b) {
+      b.onclick = null;
+      b.addEventListener('click', function(e) { e.preventDefault(); doLoadList(); });
+    });
+  }
+
+  // Hook into showSection
+  function hookShowSection() {
+    var orig = window.showSection;
+    window.showSection = function(s) {
+      if (orig) orig(s);
+      if (s === 'ai') {
+        setTimeout(function() { attachEvents(); doLoadList(); }, 200);
+      }
+    };
+  }
+
+  // Init
+  function init() {
+    attachEvents();
+    hookShowSection();
+    // If AI section already visible, load list
+    var sec = getEl('section-ai');
+    if (sec && !sec.classList.contains('hidden')) {
+      doLoadList();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Also expose globally as fallback
+  window.loadTrainingList = doLoadList;
+
 })();
 </script>
 
