@@ -53,15 +53,28 @@
       '</div>' +
       '<span class="cat-icon-label">\u0628\u0643\u062c\u0627\u062a</span>';
     btn.addEventListener('click', function(e) {
-      document.querySelectorAll('.cat-icon-btn').forEach(function(b) {
-        b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
-      var g = document.getElementById('productsGrid');
-      if (!g) return;
-      g.querySelectorAll('.product-card-main').forEach(function(c) {
-        c.style.display = c.getAttribute('data-type') === 'package' ? '' : 'none';
-      });
+      // Use app.js filterProducts to show products with category='packages'
+      if (typeof window.filterProducts === 'function') {
+        window.filterProducts(e, 'packages');
+        // Also re-inject packages from the packages table (filterPatch may have hidden them)
+        var g = document.getElementById('productsGrid');
+        if (g && _allPackages && _allPackages.length) {
+          _injectPkgs(_allPackages);
+        }
+      } else {
+        // Fallback: show both data-type="package" and data-category="packages"
+        document.querySelectorAll('.cat-icon-btn').forEach(function(b) {
+          b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+        var g = document.getElementById('productsGrid');
+        if (!g) return;
+        g.querySelectorAll('.product-card-main').forEach(function(c) {
+          var isPackageType = c.getAttribute('data-type') === 'package';
+          var isPackageCategory = c.getAttribute('data-category') === 'packages';
+          c.style.display = (isPackageType || isPackageCategory) ? '' : 'none';
+        });
+      }
     });
     tabList.appendChild(btn);
     // تحميل صورة القسم من Supabase إن وجدت
