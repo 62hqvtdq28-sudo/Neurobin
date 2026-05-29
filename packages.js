@@ -2,7 +2,7 @@
 (function() {
   // CSS لأيقونة البكجات
   var _s = document.createElement('style');
-  _s.textContent = '.ci-pkg{background:#ffffff!important;}';
+  _s.textContent = '.ci-pkg{background:#f0fdf4!important;}';
   document.head.appendChild(_s);
 
   // بناء كرت البكج بنفس شكل كرت المنتج
@@ -49,7 +49,7 @@
     btn.innerHTML =
       '<div class="cat-icon-circle ci-pkg" id="cat_circle_packages">' +
         '<img alt="\u0628\u0643\u062c\u0627\u062a" id="cat_img_packages" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display=\'none\'">' +
-        '<i class="fa-solid fa-gift"></i>' +
+        '<i class="fa-solid fa-gift" style="font-size:1.8rem;color:#3D6B2D"></i>' +
       '</div>' +
       '<span class="cat-icon-label">\u0628\u0643\u062c\u0627\u062a</span>';
     btn.addEventListener('click', function(e) {
