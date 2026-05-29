@@ -336,22 +336,36 @@ function buildCatalogText() {
       })
     })
     .then(function(r) {
-      if (!r.ok) {
-        return r.text().then(function(b) { throw new Error('HTTP ' + r.status + ' ' + b.slice(0, 150)); });
-      }
-      return r.json();
+      return r.json().then(function(data) {
+        if (!r.ok) {
+          var status = r.status;
+          var errMsg = (data && data.error && data.error.message) ? data.error.message : ('HTTP ' + status);
+          var err = new Error(errMsg);
+          err.status = status;
+          throw err;
+        }
+        return data;
+      });
     })
     .then(function(data) {
-      if (!data.candidates || !data.candidates[0]) throw new Error('لا يوجد رد');
+      if (!data.candidates || !data.candidates[0]) throw new Error('no_response');
       var text = data.candidates[0].content.parts[0].text;
       addMsg('b', text, extractSuggestions(text));
       history.push({role:'model', parts:[{text:text}]});
       if (history.length > 20) history = history.slice(-20);
     })
     .catch(function(e) {
-            var friendlyMsg = '⚠️ عذراً، حدث خطأ مؤقت. حاول مجدداً بعد لحظة.';
-      if (e.message && (e.message.includes('429') || e.message.includes('quota') || e.message.includes('RESOURCE_EXHAUSTED'))) {
-        friendlyMsg = '⚠️ المساعد مشغول حالياً. حاول بعد دقيقة أو تواصل معنا عبر واتساب 📱';
+      var msg = e.message || '';
+      var status = e.status || 0;
+      var friendlyMsg;
+      if (status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('exceeded')) {
+        friendlyMsg = '⚠️ المساعد مشغول حالياً، يرجى المحاولة بعد دقيقة أو تواصل معنا عبر واتساب 📱';
+      } else if (status === 503 || status === 500 || msg.includes('network') || msg.includes('fetch')) {
+        friendlyMsg = '⚠️ لا يمكن الاتصال بالمساعد الآن. تحقق من اتصالك بالإنترنت.';
+      } else if (msg === 'no_response') {
+        friendlyMsg = '⚠️ لم أتلقَّ ردًا من المساعد. حاول مرة أخرى.';
+      } else {
+        friendlyMsg = '⚠️ عذراً، حدث خطأ مؤقت. حاول مجدداً بعد لحظة.';
       }
       addMsg('err', friendlyMsg);
       console.error('[NB Chat]', e);
