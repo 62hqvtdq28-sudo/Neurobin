@@ -1,5 +1,5 @@
-// Neurobin Pharmacy - Groq Proxy v1
-// Replaces Gemini with Groq (llama-3.3-70b-versatile) - free tier, very fast
+// Neurobin Pharmacy - Grok Proxy v2
+// Uses xAI Grok instead of Groq/Gemini
 // Response format mimics Gemini so frontend needs zero changes
 
 const CORS = {
@@ -8,8 +8,8 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const GROQ_MODEL = Deno.env.get('GROQ_MODEL') || 'llama-3.3-70b-versatile';
-const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
+const GROK_MODEL = Deno.env.get('GROK_MODEL') || 'grok-3-mini';
+const GROK_BASE = 'https://api.x.ai/v1/chat/completions';
 
 const FALLBACK_PROMPT = [
   'انت مساعد صيدلاني ذكي لصيدلية Neurobin في العراق.',
@@ -37,17 +37,17 @@ async function getConfig(): Promise<{ system_prompt: string }> {
     if (r.ok) {
       const rows = await r.json();
       if (Array.isArray(rows) && rows.length > 0 && rows[0].system_prompt) {
-        console.log('[groq-proxy] Loaded system prompt from ai_config');
+        console.log('[grok-proxy] Loaded system prompt from ai_config');
         return { system_prompt: rows[0].system_prompt };
       }
     }
   } catch (e) {
-    console.warn('[groq-proxy] DB error, using fallback prompt');
+    console.warn('[grok-proxy] DB error, using fallback prompt');
   }
   return defaults;
 }
 
-// Convert Gemini-style contents array to OpenAI/Groq messages format
+// Convert Gemini-style contents array to OpenAI/Grok messages format
 function convertContents(contents: Array<{role: string; parts: Array<{text: string}>}>, systemPrompt: string) {
   const messages: Array<{role: string; content: string}> = [
     { role: 'system', content: systemPrompt }
@@ -65,10 +65,10 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   try {
-    const groqKey = Deno.env.get('GROQ_API_KEY');
-    if (!groqKey) {
+    const grokKey = Deno.env.get('GROK_API_KEY');
+    if (!grokKey) {
       return new Response(
-        JSON.stringify({ error: 'GROQ_API_KEY not configured' }),
+        JSON.stringify({ error: 'GROK_API_KEY not configured' }),
         { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
       );
     }
@@ -82,55 +82,62 @@ Deno.serve(async (req) => {
     }
 
     const config = await getConfig();
-    const messages = convertContents(reqBody.contents, config.system_prompt);
+
+    // Merge system_instruction from frontend if provided
+    let systemPrompt = config.system_prompt;
+    if (reqBody.system_instruction?.parts?.[0]?.text) {
+      systemPrompt = reqBody.system_instruction.parts[0].text;
+    }
+
+    const messages = convertContents(reqBody.contents, systemPrompt);
     const genConfig = reqBody.generationConfig || {};
 
-    const groqBody = {
-      model: GROQ_MODEL,
+    const grokBody = {
+      model: GROK_MODEL,
       messages,
       temperature: genConfig.temperature ?? 0.4,
       max_tokens: genConfig.maxOutputTokens ?? 600,
     };
 
-    console.log('[groq-proxy] Calling Groq model:', GROQ_MODEL);
+    console.log('[grok-proxy] Calling Grok model:', GROK_MODEL);
 
-    let groqRes = await fetch(GROQ_BASE, {
+    let grokRes = await fetch(GROK_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + groqKey,
+        'Authorization': 'Bearer ' + grokKey,
       },
-      body: JSON.stringify(groqBody),
+      body: JSON.stringify(grokBody),
     });
 
     // Retry once on 429
-    if (groqRes.status === 429) {
-      console.log('[groq-proxy] Rate limited, retrying in 3s...');
+    if (grokRes.status === 429) {
+      console.log('[grok-proxy] Rate limited, retrying in 3s...');
       await new Promise(r => setTimeout(r, 3000));
-      groqRes = await fetch(GROQ_BASE, {
+      grokRes = await fetch(GROK_BASE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
-        body: JSON.stringify(groqBody),
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + grokKey },
+        body: JSON.stringify(grokBody),
       });
     }
 
-    const resData = await groqRes.json();
+    const resData = await grokRes.json();
 
-    if (!groqRes.ok) {
-      console.error('[groq-proxy] Groq error', groqRes.status, JSON.stringify(resData));
+    if (!grokRes.ok) {
+      console.error('[grok-proxy] Grok error', grokRes.status, JSON.stringify(resData));
       return new Response(JSON.stringify({ error: resData }), {
-        status: groqRes.status,
+        status: grokRes.status,
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
-    // Convert Groq (OpenAI format) response → Gemini format so frontend works unchanged
+    // Convert Grok (OpenAI format) response → Gemini format so frontend works unchanged
     const text = resData.choices?.[0]?.message?.content || '';
     const geminiResponse = {
       candidates: [{ content: { parts: [{ text }], role: 'model' } }],
     };
 
-    console.log('[groq-proxy] Success, tokens used:', resData.usage?.total_tokens);
+    console.log('[grok-proxy] Success, tokens used:', resData.usage?.total_tokens);
     return new Response(JSON.stringify(geminiResponse), {
       status: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[groq-proxy] Unhandled error:', msg);
+    console.error('[grok-proxy] Unhandled error:', msg);
     return new Response(
       JSON.stringify({ error: msg }),
       { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
