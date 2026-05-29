@@ -22,6 +22,7 @@
 
   var catalog = [];
   var quickReplies = [];
+  var trainingExamples = [];
   var history = [], isOpen = false, loading = false;
 
   function injectCSS() {
@@ -183,7 +184,28 @@
     });
   }
 
-  function buildCatalogText() {
+  
+  function loadTrainingExamples() {
+    fetch(SUPABASE_URL + '/rest/v1/ai_training_examples?select=situation,style_response&is_active=eq.true&order=created_at.asc', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      trainingExamples = Array.isArray(data) ? data : [];
+      console.log('[NB Chat] Training examples:', trainingExamples.length);
+    })
+    .catch(function(e) { console.warn('[NB Chat] Training examples failed:', e); });
+  }
+
+  function buildTrainingText() {
+    if (!trainingExamples.length) return '';
+    return '\n\n=== امثلة اسلوب الرد (طبقها بشكل طبيعي ومرن، لا تكرر حرفياً) ===\n' +
+      trainingExamples.map(function(ex, i) {
+        return (i + 1) + '. الموقف: ' + ex.situation + '\n   الاسلوب: ' + ex.style_response;
+      }).join('\n');
+  }
+
+function buildCatalogText() {
     if (!catalog.length) return 'لا توجد منتجات.';
     return '=== المنتجات المتاحة ===\n' + catalog.map(function(p) {
       var desc = p.description ? ' | ' + p.description.substring(0, 50) : ''; return '[' + p.id + '] ' + (p.name_ar || p.name || '') + ' | ' + (p.category || '') + ' | ' + (p.price || 0) + ' د.ع' + desc;
@@ -295,6 +317,7 @@
     buildUI();
     loadCatalog();
     loadQuickReplies();
+    loadTrainingExamples();
   }
 
   if (document.readyState === 'loading') {
