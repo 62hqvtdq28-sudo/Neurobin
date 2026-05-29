@@ -1186,6 +1186,7 @@
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="combination" style="background:#EFF6FF;color:#1D4ED8;border:1.5px solid #BFDBFE">💧 مختلطة</button>
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="oily" style="background:#FEFCE8;color:#A16207;border:1.5px solid #FDE68A">✨ دهنية</button>
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="dry" style="background:#F0FDF4;color:#15803D;border:1.5px solid #BBF7D0">🌿 جافة</button>
+          <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="all_types" style="background:#FAF5FF;color:#7C3AED;border:1.5px solid #DDD6FE">🌸 لكل أنواع البشرة</button>
         </div>
       </div>
 
@@ -2107,7 +2108,7 @@ async function saveCatImg(key, url) {
 
 <script src="packages.js?v=11"></script>
 <script src="bundles.js?v=6"></script>
-<script src="skin-type.js?v=1"></script>
+<script src="skin-type.js?v=3"></script>
 <script>
 // ── نوع البشرة — ربط مع admin functions ─────────────────────────────────
 (function() {
@@ -2118,18 +2119,37 @@ async function saveCatImg(key, url) {
     if (typeof SkinType !== 'undefined') SkinType.hookAdminFilter(filter);
   };
 
-  // Patch chip-skin buttons to work like chip-pill
+  // chip-skin = MULTI-SELECT (except 'بدون تحديد' which clears all)
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.chip-skin');
     if (!btn) return;
     var target = btn.dataset.chip;
     var val = btn.dataset.value || '';
     var hiddenEl = document.getElementById(target);
-    if (hiddenEl) hiddenEl.value = val;
-    // Update visual state
-    document.querySelectorAll('.chip-skin[data-chip="' + target + '"]').forEach(function(b) {
-      b.style.fontWeight = (b.dataset.value||'') === val ? '700' : '600';
-      b.style.boxShadow = (b.dataset.value||'') === val ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
+    var allBtns = document.querySelectorAll('.chip-skin[data-chip="' + target + '"]');
+    if (val === '') {
+      // 'بدون تحديد' → clear all
+      if (hiddenEl) hiddenEl.value = '';
+      allBtns.forEach(function(b) { b.style.fontWeight='600'; b.style.boxShadow='none'; b.style.opacity='1'; });
+      btn.style.fontWeight='700'; btn.style.boxShadow='0 0 0 2px #CBD5E1';
+      return;
+    }
+    // Toggle this chip
+    var current = hiddenEl ? hiddenEl.value : '';
+    var arr = current ? current.split(',').filter(Boolean) : [];
+    var idx = arr.indexOf(val);
+    if (idx === -1) { arr.push(val); } else { arr.splice(idx,1); }
+    if (hiddenEl) hiddenEl.value = arr.join(',');
+    // Deselect 'بدون تحديد'
+    var clearBtn = document.querySelector('.chip-skin[data-chip="' + target + '"][data-value=""]');
+    if (clearBtn) { clearBtn.style.fontWeight='600'; clearBtn.style.boxShadow='none'; }
+    // Update visuals
+    allBtns.forEach(function(b) {
+      var bVal = b.dataset.value || '';
+      if (bVal === '') return;
+      var isOn = arr.indexOf(bVal) !== -1;
+      b.style.fontWeight = isOn ? '700' : '600';
+      b.style.boxShadow = isOn ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
     });
   });
 
@@ -2156,10 +2176,18 @@ async function saveCatImg(key, url) {
       var catEl = document.getElementById('productCategory');
       if (catEl && catEl.value === 'skincare') {
         SkinType.handleModal('skincare');
-        // Update chip visual
+        // Restore multi-select chip visuals
+        var stArr = Array.isArray(st) ? st : (st ? st.split(',').filter(Boolean) : []);
+        var hiddenEl2 = document.getElementById('productSkinType');
+        if (hiddenEl2) hiddenEl2.value = stArr.join(',');
+        var clearBtn2 = document.querySelector('.chip-skin[data-value=""]');
+        if (clearBtn2) { clearBtn2.style.fontWeight = stArr.length ? '600' : '700'; clearBtn2.style.boxShadow = stArr.length ? 'none' : '0 0 0 2px #CBD5E1'; }
         document.querySelectorAll('.chip-skin[data-chip="productSkinType"]').forEach(function(b) {
-          b.style.fontWeight = (b.dataset.value||'') === (st||'') ? '700' : '600';
-          b.style.boxShadow = (b.dataset.value||'') === (st||'') ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
+          var bVal = b.dataset.value || '';
+          if (bVal === '') return;
+          var isOn = stArr.indexOf(bVal) !== -1;
+          b.style.fontWeight = isOn ? '700' : '600';
+          b.style.boxShadow = isOn ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
         });
       }
     }
@@ -2174,16 +2202,17 @@ async function saveCatImg(key, url) {
       var catEl = document.getElementById('productCategory');
       if (catEl && catEl.value === 'skincare') {
         var stEl = document.getElementById('productSkinType');
-        var skinType = stEl ? stEl.value : '';
+        var skinRaw = stEl ? stEl.value : '';
+        var skinTypes = skinRaw ? skinRaw.split(',').filter(Boolean) : [];
         // Get the saved product id
         var idEl = document.getElementById('productId');
         var productId = idEl ? idEl.value : null;
         // If new product, get from last loaded list
         if (!productId && typeof _allProducts !== 'undefined' && _allProducts.length) {
-          productId = _allProducts[0].id; // heuristic: most recent
+          productId = _allProducts[0].id;
         }
         if (productId && typeof SkinType !== 'undefined') {
-          await SkinType.save(productId, skinType || null);
+          await SkinType.save(productId, skinTypes.length ? skinTypes : null);
         }
       }
     } catch(e) { console.warn('[SkinType] save patch error:', e); }
