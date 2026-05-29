@@ -10,7 +10,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash-lite';
 const GEMINI_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // Fallback system prompt (used if DB is unreachable)
@@ -20,7 +20,7 @@ const FALLBACK_SYSTEM_PROMPT = [
   'عند اقتراح منتج اذكر رقمه بصيغة [ID] مثل [46].',
   'لا تقترح سوى منتجات موجودة في الكتالوج.',
   'اجب بشكل مختصر 3 الى 4 جمل فقط.',
-  'لا تقدم استشارات طبية تشخيصية.',
+  'ل�� تقدم استشارات طبية تشخيصية.',
   'الاسعار بالدينار العراقي.'
 ].join(' ');
 
