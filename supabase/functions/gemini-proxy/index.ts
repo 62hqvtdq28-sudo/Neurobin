@@ -1,6 +1,6 @@
-// Neurobin Pharmacy - Secure Gemini Proxy v8
+// Neurobin Pharmacy - Secure Gemini Proxy v9
+// v9: reads GEMINI_API_KEY from ai_config table (fallback to env var)
 // No external imports - uses fetch API directly
-// v8: retry on 429 rate limit with exponential backoff
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -21,25 +21,29 @@ const FALLBACK_PROMPT = [
   'الاسعار بالدينار العراقي.',
 ].join(' ');
 
-async function getSystemPrompt() {
+async function getAiConfig(): Promise<{ system_prompt: string; gemini_api_key: string | null }> {
+  const defaults = { system_prompt: FALLBACK_PROMPT, gemini_api_key: null };
   try {
     const sUrl = Deno.env.get('SUPABASE_URL');
     const sKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!sUrl || !sKey) return FALLBACK_PROMPT;
-    const r = await fetch(sUrl + '/rest/v1/ai_config?select=system_prompt&id=eq.1&limit=1', {
+    if (!sUrl || !sKey) return defaults;
+    const r = await fetch(sUrl + '/rest/v1/ai_config?select=system_prompt,gemini_api_key&id=eq.1&limit=1', {
       headers: { 'apikey': sKey, 'Authorization': 'Bearer ' + sKey },
     });
     if (r.ok) {
       const rows = await r.json();
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].system_prompt) {
-        console.log('[gemini-proxy] Loaded system_prompt from ai_config');
-        return rows[0].system_prompt;
+      if (Array.isArray(rows) && rows.length > 0) {
+        console.log('[gemini-proxy] Loaded config from ai_config table');
+        return {
+          system_prompt: rows[0].system_prompt || FALLBACK_PROMPT,
+          gemini_api_key: rows[0].gemini_api_key || null,
+        };
       }
     }
   } catch (e) {
-    console.warn('[gemini-proxy] DB error, using fallback');
+    console.warn('[gemini-proxy] DB error, using fallback config');
   }
-  return FALLBACK_PROMPT;
+  return defaults;
 }
 
 Deno.serve(async (req) => {
@@ -47,7 +51,10 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   try {
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const config = await getAiConfig();
+
+    // Key priority: DB → env var
+    const geminiKey = config.gemini_api_key || Deno.env.get('GEMINI_API_KEY');
     if (!geminiKey) {
       return new Response(
         JSON.stringify({ error: 'GEMINI_API_KEY not configured' }),
@@ -63,8 +70,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const systemPrompt = await getSystemPrompt();
-    const geminiBody = { ...reqBody, system_instruction: { parts: [{ text: systemPrompt }] } };
+    const geminiBody = { ...reqBody, system_instruction: { parts: [{ text: config.system_prompt }] } };
     const geminiUrl = GEMINI_BASE + '/' + GEMINI_MODEL + ':generateContent?key=' + geminiKey;
     const fetchOpts = {
       method: 'POST',
