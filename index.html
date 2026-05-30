@@ -17,6 +17,7 @@
 
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <link rel="dns-prefetch" href="https://hczsskviliuqyayylutv.supabase.co">
+<link rel="preconnect" href="https://hczsskviliuqyayylutv.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1129,6 +1130,15 @@ window.addEventListener('resize', function() {
   }
   _hookFilter();
 })();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/Neurobin/sw.js',{scope:'/Neurobin/'})
+      .then(function(r){console.log('[SW] registered scope:',r.scope);})
+      .catch(function(e){console.warn('[SW] failed:',e);});
+  });
+}
 </script>
 </body>
 </html>
