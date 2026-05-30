@@ -449,7 +449,6 @@ async function checkAuth() {
           sessionStorage.setItem('adminLastActivity', Date.now().toString());
           sessionStorage.setItem('adminSessionToken', generateSecureId());
         }
-        // Record session restore once per browser session (no Telegram — page refresh is not a new login)
         if (!sessionStorage.getItem('_loginSessionRecorded')) {
           sessionStorage.setItem('_loginSessionRecorded', '1');
           recordLoginEvent('session-restore', 'success');
@@ -733,23 +732,22 @@ async function showDashboard() {
     } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
   }, 300); // 300ms gives the DOM time to paint after adminDashboard becomes visible
 }
-
 // ─── Login Log & Telegram Helpers ────────────────────────────────────────────
 
 function _getDeviceInfo() {
   var ua = navigator.userAgent;
   var device = 'غير معروف';
-  if (/Android/i.test(ua)) device = 'Android';
-  else if (/iPhone|iPad|iPod/i.test(ua)) device = 'iOS';
-  else if (/Windows/i.test(ua)) device = 'Windows';
-  else if (/Macintosh|Mac OS X/i.test(ua)) device = 'Mac';
-  else if (/Linux/i.test(ua)) device = 'Linux';
+  if (ua.indexOf('Android') !== -1) device = 'Android';
+  else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1 || ua.indexOf('iPod') !== -1) device = 'iOS';
+  else if (ua.indexOf('Windows') !== -1) device = 'Windows';
+  else if (ua.indexOf('Macintosh') !== -1 || ua.indexOf('Mac OS X') !== -1) device = 'Mac';
+  else if (ua.indexOf('Linux') !== -1) device = 'Linux';
   var browser = 'غير معروف';
-  if (/Edg//.test(ua)) browser = 'Edge';
-  else if (/OPR/|Opera/.test(ua)) browser = 'Opera';
-  else if (/Chrome//.test(ua)) browser = 'Chrome';
-  else if (/Firefox//.test(ua)) browser = 'Firefox';
-  else if (/Safari//.test(ua)) browser = 'Safari';
+  if (ua.indexOf('Edg/') !== -1) browser = 'Edge';
+  else if (ua.indexOf('OPR/') !== -1 || ua.indexOf('Opera') !== -1) browser = 'Opera';
+  else if (ua.indexOf('Chrome/') !== -1) browser = 'Chrome';
+  else if (ua.indexOf('Firefox/') !== -1) browser = 'Firefox';
+  else if (ua.indexOf('Safari/') !== -1) browser = 'Safari';
   return { device: device, browser: browser };
 }
 
@@ -776,12 +774,9 @@ function _buildLoginMsg(status) {
   var now = new Date().toLocaleString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
   var icon = status === 'success' ? '✅' : '⚠️';
   var title = status === 'success' ? 'تسجيل دخول ناجح' : 'محاولة دخول فاشلة';
-  return icon + ' <b>' + title + '</b>
-' +
-         '📅 الوقت: ' + now + '
-' +
-         '💻 الجهاز: ' + info.device + '
-' +
+  return icon + ' <b>' + title + '</b>\n' +
+         '📅 الوقت: ' + now + '\n' +
+         '💻 الجهاز: ' + info.device + '\n' +
          '🌐 المتصفح: ' + info.browser;
 }
 
@@ -798,6 +793,7 @@ async function sendTelegramAlert(msg) {
     if (!data.ok) console.warn('[Telegram] Error:', data.description);
   } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
+
 
 function showSection(section) {
   // Add exit animation to current section
