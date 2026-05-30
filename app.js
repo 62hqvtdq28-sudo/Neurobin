@@ -1175,6 +1175,11 @@ function performSearch() {
   }
   if (matches.length === 0) {
     results.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
+    // 🤖 تشغيل تخمين AI بعد 700ms
+    if (_aiSearchTimer) clearTimeout(_aiSearchTimer);
+    if (rawQuery.length >= 3) {
+      _aiSearchTimer = setTimeout(function() { _aiSearchSuggest(rawQuery); }, 700);
+    }
   } else {
     const fuzzyNotice = isFuzzy ? `<div class="px-4 pt-3 text-xs text-brand-500">🔍 نتائج مقاربة لـ &quot;${SecurityValidator.escapeHtml(rawQuery)}&quot;</div>` : '';
     results.innerHTML = fuzzyNotice + matches.map(p => {
@@ -1207,6 +1212,119 @@ function performSearch() {
 }
 
 function handleSearchKeydown(e) { if (e.key === 'Escape') closeSearch(); }
+// ===================================================
+// 🤖 تخمين مطلب الزبون — AI Search Suggestion
+// ===================================================
+var _aiSearchTimer = null;
+
+async function _aiSearchSuggest(query) {
+  var resultsEl = document.getElementById('searchResults');
+  if (!resultsEl) return;
+
+  // عرض رمز التحميل
+  resultsEl.innerHTML =
+    '<div class="p-5 text-center text-brand-400">' +
+    '<svg class="w-5 h-5 animate-spin mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>' +
+    '<p class="text-xs text-purple-500 font-medium">🤖 يحاول فهم طلبك...</p>' +
+    '</div>';
+
+  // بناء قائمة المنتجات للـ AI
+  var productList = products.slice(0, 80).map(function(p, i) {
+    return (i + 1) + '. ' + (p.nameAr || p.name || '');
+  }).join('
+');
+
+  var prompt =
+    'أنت مساعد بحث لصيدلية نيوروبين.
+' +
+    'قائمة المنتجات المتاحة:
+' + productList + '
+
+' +
+    'الزبون يبحث عن: "' + query + '"
+
+' +
+    'اختر اسم المنتج الأنسب من القائمة بالضبط كما هو مكتوب بدون أي كلمات إضافية.
+' +
+    'إذا لم يكن هناك منتج مناسب اكتب فقط: لا يوجد';
+
+  try {
+    var resp = await fetch('https://hczsskviliuqyayylutv.supabase.co/functions/v1/gemini-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 80, temperature: 0.1 }
+      })
+    });
+    if (!resp.ok) throw new Error('AI error ' + resp.status);
+    var data = await resp.json();
+    var aiText = (data && data.candidates && data.candidates[0] &&
+      data.candidates[0].content && data.candidates[0].content.parts &&
+      data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text || '').trim();
+
+    if (!aiText || aiText === 'لا يوجد' || aiText.includes('لا يوجد')) {
+      resultsEl.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p><p class="text-xs mt-1 text-brand-300">جرب كلمات مختلفة</p></div>';
+      return;
+    }
+
+    // مطابقة نص الـ AI بالمنتجات
+    var matched = products.find(function(p) {
+      var pn = (p.nameAr || p.name || '').trim();
+      return pn === aiText.trim();
+    });
+    if (!matched) {
+      matched = products.find(function(p) {
+        var pn = (p.nameAr || p.name || '').trim();
+        return pn && (aiText.includes(pn) || pn.includes(aiText));
+      });
+    }
+
+    if (matched) {
+      var safeId    = SecurityValidator ? SecurityValidator.escapeHtml(String(matched.id)) : String(matched.id);
+      var safeName  = SecurityValidator ? SecurityValidator.escapeHtml(matched.nameAr || matched.name) : (matched.nameAr || matched.name);
+      var safePrice = typeof formatPrice === 'function' ? formatPrice(matched.price) : matched.price;
+      var _sn = (typeof matched.stock === 'number') ? matched.stock : null;
+      var stockBadge = (!matched.inStock || _sn === 0)
+        ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذت الكمية</span>'
+        : (_sn === 1 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعة</span>'
+        : (_sn === 2 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعتين</span>'
+        : '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">متوفر</span>'));
+      var imgHtml = matched.image
+        ? '<img src="' + (SecurityValidator ? SecurityValidator.escapeHtml(matched.image) : matched.image) + '" alt="" class="w-full h-full object-contain" loading="lazy">'
+        : '<svg class="w-7 h-7 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+
+      resultsEl.innerHTML =
+        '<div class="px-4 pt-3 pb-1 flex items-center gap-2">' +
+          '<span class="text-base">🤖</span>' +
+          '<span class="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full">ربما تقصد...</span>' +
+        '</div>' +
+        '<div class="search-result-item" onclick="openQuickView('' + safeId + ''); closeSearch();" style="gap:14px;padding:12px 16px;border-top:1px solid #f1f5f9;">' +
+          '<div class="flex-shrink-0 w-16 h-16 bg-brand-50 rounded-xl overflow-hidden flex items-center justify-center border border-brand-100">' + imgHtml + '</div>' +
+          '<div class="flex-grow min-w-0">' +
+            '<h4 class="font-semibold text-brand-900 text-sm leading-snug mb-1">' + safeName + '</h4>' +
+            '<p class="font-bold text-brand-700 text-sm mb-1">' + safePrice + '</p>' +
+            stockBadge +
+          '</div>' +
+          '<svg class="flex-shrink-0 w-4 h-4 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>' +
+        '</div>';
+    } else {
+      // AI أجاب لكن لم يطابق منتجاً — اعرض اقتراحه كنص
+      resultsEl.innerHTML =
+        '<div class="p-5 text-center">' +
+          '<span class="text-2xl">🤖</span>' +
+          '<p class="text-xs font-bold text-purple-600 mt-2 mb-1">ربما تبحث عن</p>' +
+          '<p class="text-sm font-semibold text-brand-800">' + (SecurityValidator ? SecurityValidator.escapeHtml(aiText) : aiText) + '</p>' +
+          '<p class="text-xs text-brand-400 mt-2">جرب البحث بهذا الاسم</p>' +
+        '</div>';
+    }
+  } catch (e) {
+    // في حال خطأ الشبكة — أخفِ رسالة التحميل وأعرض رسالة عادية
+    resultsEl.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
+    console.warn('[AI Search] error:', e.message);
+  }
+}
+
 
 function showToast(message, type = 'success') {
   const toast = document.getElementById('toast');
