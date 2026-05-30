@@ -762,14 +762,30 @@
 
       <!-- أكثر المنتجات مبيعاً -->
       <div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm">
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
-            <i data-lucide="trophy" class="w-4 h-4 text-brand-700"></i>
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+              <i data-lucide="trophy" class="w-4 h-4 text-brand-700"></i>
+            </div>
+            <h3 class="font-bold text-brand-900 text-base">أكثر المنتجات مبيعاً</h3>
           </div>
-          <h3 class="font-bold text-brand-900 text-base">أكثر المنتجات مبيعاً</h3>
+          <button onclick="toggleProfitDetails()" id="profitDetailsBtn" class="flex items-center gap-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+            تفاصيل الأرباح
+          </button>
         </div>
         <div id="topProductsList">
           <p class="text-brand-400 text-sm text-center py-6">جاري التحميل...</p>
+        </div>
+        <!-- Profit Details Panel -->
+        <div id="profitDetailsPanel" class="hidden mt-4 border-t border-brand-100 pt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+            <h4 class="font-bold text-brand-800 text-sm">تفاصيل صافي الربح</h4>
+          </div>
+          <div id="profitDetailsList">
+            <p class="text-brand-400 text-xs text-center py-4">اضغط تحديث لتحميل البيانات</p>
+          </div>
         </div>
       </div>
 
@@ -2342,15 +2358,18 @@ async function saveCatImg(key, url) {
       list.innerHTML = items.map(function(r) {
         var safeBtn = DOMPurify.sanitize(r.button_text);
         var safeResp = DOMPurify.sanitize(r.response_text);
-        return '<div class="flex items-start gap-3 p-3 bg-brand-50 rounded-xl border border-brand-100">' +
+        return '<div class="qr-item-wrapper" data-qr-id="' + r.id + '">' +
+          '<div class="flex items-start gap-3 p-3 bg-brand-50 rounded-xl border border-brand-100">' +
           '<div class="flex-1 min-w-0">' +
           '<div class="flex items-center gap-2 mb-1">' +
           '<span class="bg-brand-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg">' + safeBtn + '</span>' +
           (r.is_active ? '<span class="text-green-600 text-xs font-semibold">نشط</span>' : '<span class="text-gray-400 text-xs">مخفي</span>') + '</div>' +
           '<p class="text-sm text-brand-700 leading-relaxed">' + safeResp + '</p></div>' +
           '<div class="flex gap-1 flex-shrink-0">' +
+          '<button onclick="editQR(' + r.id + ',\'' + safeBtn.replace(/'/g,'') + '\',\'' + safeResp.replace(/'/g,'').replace(/\n/g,' ') + '\')" title="تعديل" class="text-blue-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50"><i data-lucide="pencil" class="w-4 h-4"></i></button>' +
           '<button onclick="toggleQR(' + r.id + ',' + !r.is_active + ')" title="' + (r.is_active ? 'إخفاء' : 'إظهار') + '" class="text-brand-500 hover:text-brand-700 p-1.5 rounded-lg hover:bg-brand-100"><i data-lucide="' + (r.is_active ? 'eye-off' : 'eye') + '" class="w-4 h-4"></i></button>' +
-          '<button onclick="deleteQR(' + r.id + ')" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>';
+          '<button onclick="deleteQR(' + r.id + ')" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>' +
+          '</div>';
       }).join('');
       if (window.lucide) lucide.createIcons();
     }).catch(function(e) { console.warn('[AI Admin] load QR:', e); });
@@ -2381,6 +2400,46 @@ async function saveCatImg(key, url) {
     if (!confirm('هل تريد حذف هذا الرد؟')) return;
     fetch(SURL + '/rest/v1/ai_quick_replies?id=eq.' + id, { method: 'DELETE', headers: H })
     .then(function() { loadQRList(); });
+  };
+  window.editQR = function(id, btnText, respText) {
+    var container = document.getElementById('ai-edit-qr-' + id);
+    if (container) { container.remove(); return; }
+    var listItem = document.querySelector('[data-qr-id="' + id + '"]');
+    if (!listItem) return;
+    var form = document.createElement('div');
+    form.id = 'ai-edit-qr-' + id;
+    form.className = 'bg-blue-50 rounded-xl p-4 mt-2 border border-blue-200';
+    form.innerHTML =
+      '<div class="grid grid-cols-1 gap-3">' +
+        '<div>' +
+          '<label class="block text-xs font-semibold text-brand-800 mb-1">نص الزر</label>' +
+          '<input id="eq-btn-' + id + '" type="text" value="' + btnText + '" class="w-full border border-brand-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" dir="rtl">' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-xs font-semibold text-brand-800 mb-1">الرد الجاهز</label>' +
+          '<textarea id="eq-resp-' + id + '" class="w-full border border-brand-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none h-20" dir="rtl">' + respText + '</textarea>' +
+        '</div>' +
+        '<div class="flex gap-2 justify-end">' +
+          '<button onclick="document.getElementById(\'ai-edit-qr-' + id + '\').remove()" class="text-brand-600 text-sm px-4 py-2 rounded-lg border border-brand-200 hover:bg-brand-50">إلغاء</button>' +
+          '<button onclick="saveEditQR(' + id + ')" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-5 py-2 rounded-lg">حفظ التعديل</button>' +
+        '</div>' +
+      '</div>';
+    listItem.appendChild(form);
+  };
+  window.saveEditQR = function(id) {
+    var btn = document.getElementById('eq-btn-' + id);
+    var resp = document.getElementById('eq-resp-' + id);
+    if (!btn || !resp) return;
+    var btnVal = btn.value.trim();
+    var respVal = resp.value.trim();
+    if (!btnVal || !respVal) { alert('يرجى ملء الحقلين'); return; }
+    fetch(SURL + '/rest/v1/ai_quick_replies?id=eq.' + id, {
+      method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
+      body: JSON.stringify({ button_text: btnVal, response_text: respVal })
+    }).then(function(r) {
+      if (r.ok) { var f = document.getElementById('ai-edit-qr-' + id); if (f) f.remove(); loadQRList(); }
+      else alert('خطأ في الحفظ');
+    }).catch(function(e) { alert('خطأ: ' + e.message); });
   };
 })();
 </script>
@@ -3062,3 +3121,4 @@ async function saveCatImg(key, url) {
 </script>
 </body>
 </html>
+
