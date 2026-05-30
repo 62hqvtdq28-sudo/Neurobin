@@ -296,7 +296,7 @@ window.handlePkgImageUpload = async function(input) {
     var _saveBtn2 = document.querySelector('[onclick="savePackage()"]');
     if (_saveBtn2) { _saveBtn2.style.opacity = ''; _saveBtn2.title = ''; }
     if(typeof showToast==='function') showToast('✅ تم رفع الصورة','success');
-  } catch(e){if(typeof showToast==='function') showToast('❌ فشل الرفع: '+(e.message||e),'error');}
+  } catch(e){ _pkgImageUploading=false; var _s=document.querySelector('[onclick="savePackage()"]'); if(_s){_s.style.opacity='';_s.title='';} if(typeof showToast==='function') showToast('❌ فشل الرفع: '+(e.message||e),'error');}
 };
 
 // ── إدارة فيديو الهيرو: إظهار إن وُجد، إخفاء إن لم يُحمَّل ──────────────
