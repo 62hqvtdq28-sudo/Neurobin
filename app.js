@@ -1221,31 +1221,20 @@ async function _aiSearchSuggest(query) {
   var resultsEl = document.getElementById('searchResults');
   if (!resultsEl) return;
 
-  // عرض رمز التحميل
   resultsEl.innerHTML =
     '<div class="p-5 text-center text-brand-400">' +
     '<svg class="w-5 h-5 animate-spin mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>' +
     '<p class="text-xs text-purple-500 font-medium">🤖 يحاول فهم طلبك...</p>' +
     '</div>';
 
-  // بناء قائمة المنتجات للـ AI
   var productList = products.slice(0, 80).map(function(p, i) {
     return (i + 1) + '. ' + (p.nameAr || p.name || '');
-  }).join('
-');
+  }).join('\n');
 
-  var prompt =
-    'أنت مساعد بحث لصيدلية نيوروبين.
-' +
-    'قائمة المنتجات المتاحة:
-' + productList + '
-
-' +
-    'الزبون يبحث عن: "' + query + '"
-
-' +
-    'اختر اسم المنتج الأنسب من القائمة بالضبط كما هو مكتوب بدون أي كلمات إضافية.
-' +
+  var prompt = 'أنت مساعد بحث لصيدلية نيوروبين.\n' +
+    'قائمة المنتجات المتاحة:\n' + productList + '\n\n' +
+    'الزبون يبحث عن: "' + query + '"\n\n' +
+    'اختر اسم المنتج الأنسب من القائمة بالضبط كما هو مكتوب بدون أي كلمات إضافية.\n' +
     'إذا لم يكن هناك منتج مناسب اكتب فقط: لا يوجد';
 
   try {
@@ -1268,10 +1257,8 @@ async function _aiSearchSuggest(query) {
       return;
     }
 
-    // مطابقة نص الـ AI بالمنتجات
     var matched = products.find(function(p) {
-      var pn = (p.nameAr || p.name || '').trim();
-      return pn === aiText.trim();
+      return (p.nameAr || p.name || '').trim() === aiText.trim();
     });
     if (!matched) {
       matched = products.find(function(p) {
@@ -1299,7 +1286,7 @@ async function _aiSearchSuggest(query) {
           '<span class="text-base">🤖</span>' +
           '<span class="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full">ربما تقصد...</span>' +
         '</div>' +
-        '<div class="search-result-item" onclick="openQuickView('' + safeId + ''); closeSearch();" style="gap:14px;padding:12px 16px;border-top:1px solid #f1f5f9;">' +
+        '<div class="search-result-item" onclick="openQuickView(\'' + safeId + '\'); closeSearch();" style="gap:14px;padding:12px 16px;border-top:1px solid #f1f5f9;">' +
           '<div class="flex-shrink-0 w-16 h-16 bg-brand-50 rounded-xl overflow-hidden flex items-center justify-center border border-brand-100">' + imgHtml + '</div>' +
           '<div class="flex-grow min-w-0">' +
             '<h4 class="font-semibold text-brand-900 text-sm leading-snug mb-1">' + safeName + '</h4>' +
@@ -1309,7 +1296,6 @@ async function _aiSearchSuggest(query) {
           '<svg class="flex-shrink-0 w-4 h-4 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>' +
         '</div>';
     } else {
-      // AI أجاب لكن لم يطابق منتجاً — اعرض اقتراحه كنص
       resultsEl.innerHTML =
         '<div class="p-5 text-center">' +
           '<span class="text-2xl">🤖</span>' +
@@ -1319,11 +1305,12 @@ async function _aiSearchSuggest(query) {
         '</div>';
     }
   } catch (e) {
-    // في حال خطأ الشبكة — أخفِ رسالة التحميل وأعرض رسالة عادية
     resultsEl.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
     console.warn('[AI Search] error:', e.message);
   }
 }
+
+
 
 
 function showToast(message, type = 'success') {
