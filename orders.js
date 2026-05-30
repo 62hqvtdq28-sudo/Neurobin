@@ -251,7 +251,9 @@ var _moItems = [];        // { id, name, price, qty }
 var _moAllProducts = [];  // cached product list
 
 function openManualOrderModal() {
-  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
+  if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+    showToast('يرجى تسجيل الدخول أولاً', 'error'); return;
+  }
 
   _moItems = [];
 
@@ -390,7 +392,9 @@ function updateManualTotal() {
 }
 
 async function saveManualOrder() {
-  if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
+  if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+    showToast('يرجى تسجيل الدخول أولاً', 'error'); return;
+  }
 
   var name     = ((document.getElementById('moName')    || {}).value || '').trim();
   var phone    = ((document.getElementById('moPhone')   || {}).value || '').trim();
