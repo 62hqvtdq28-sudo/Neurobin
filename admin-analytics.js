@@ -3,6 +3,7 @@ var _analyticsChartMonthly = null;
 var _analyticsPeriod = 'monthly'; // 'monthly' | 'weekly'
 var _lastAnalyticsSnapshot = null; // for undo
 var _profitBreakdownCache = null;
+var _productQtyCache = {};
 
 async function loadAnalytics() {
   var cardsEl    = document.getElementById('analyticsCards');
@@ -56,6 +57,7 @@ async function loadAnalytics() {
     var topProducts = Object.entries(productQty)
       .sort(function(a,b){ return b[1]-a[1]; })
       .slice(0, 7);
+    _productQtyCache = productQty;
 
     // حالات الطلبات — أعداد ونسب بدل رسم بياني
     var sc = { new:0, pending:0, progress:0, delivered:0, cancelled:0 };
@@ -362,20 +364,34 @@ async function _loadProfitBreakdown() {
       list.innerHTML = '<p class="text-sm text-amber-600 text-center py-3">لم يتم إدخال أسعار الكوست بعد — عدّل أي منتج وأدخل سعر الكوست</p>';
       return;
     }
-    var rows = products.map(function(p) {
-      var cost = Number(costMap[String(p.id)] || 0);
-      var price = Number(p.price || 0);
-      var profit = price - cost;
-      var margin = price > 0 && cost > 0 ? Math.round((profit/price)*100) : null;
-      var col = profit > 0 ? 'text-emerald-700' : profit < 0 ? 'text-red-600' : 'text-brand-400';
-      return '<div class="flex items-center justify-between py-2 border-b border-brand-50 last:border-0">' +
-        '<span class="text-sm text-brand-800 font-medium truncate" style="max-width:55%">' + (p.name_ar||p.name||'') + '</span>' +
-        '<div class="flex items-center gap-3 text-xs">' +
-          (cost>0 ? '<span class="text-brand-500">كوست: '+cost.toLocaleString('ar-IQ')+'</span>' : '<span class="text-brand-300">بدون كوست</span>') +
-          (margin!==null ? '<span class="font-bold '+col+'">'+(profit>=0?'+':'')+profit.toLocaleString('ar-IQ')+' ('+margin+'%)</span>' : '') +
-        '</div></div>';
-    }).join('');
-    var html = '<div class="divide-y divide-brand-50">' + rows + '</div>';
+    var rows = products
+      .filter(function(p){ return Number(costMap[String(p.id)]||0) > 0 || Number(p.price||0) > 0; })
+      .map(function(p) {
+        var cost   = Number(costMap[String(p.id)] || 0);
+        var price  = Number(p.price || 0);
+        var profit = price - cost;
+        var margin = price > 0 && cost > 0 ? Math.round((profit/price)*100) : null;
+        var pName  = p.name_ar || p.name || '';
+        var soldQty = _productQtyCache[pName] || 0;
+        var soldLabel = soldQty > 0 ? ' <span style="color:#64748b;font-size:12px;">(' + soldQty + ' قطعة)</span>' : '';
+        return '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9;">' +
+          '<div style="font-weight:700;font-size:14px;color:#1e293b;margin-bottom:6px;">' + pName + soldLabel + '</div>' +
+          '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+            (cost>0
+              ? '<span style="font-size:15px;font-weight:700;color:#111827;font-family:Cairo,sans-serif;">كوست: ' + cost.toLocaleString('en-US') + ' د.ع</span>'
+              : '<span style="font-size:13px;color:#94a3b8;">بدون كوست</span>') +
+            (price>0
+              ? '<span style="font-size:15px;font-weight:700;color:#dc2626;font-family:Cairo,sans-serif;">سعر: ' + price.toLocaleString('en-US') + ' د.ع</span>'
+              : '') +
+            (margin!==null
+              ? '<span style="font-size:15px;font-weight:800;color:' + (profit>=0?'#059669':'#dc2626') + ';font-family:Cairo,sans-serif;">' +
+                  (profit>=0?'+':'') + profit.toLocaleString('en-US') + ' (' + margin + '%)' +
+                '</span>'
+              : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    var html = '<div style="padding:4px 8px;">' + rows + '</div>';
     list.innerHTML = html;
     _profitBreakdownCache = html;
   } catch(e) {
