@@ -614,26 +614,7 @@
 <!-- ══════════════════════════════════════════
      🎁 Bundles / عروض التوفير Section
 ══════════════════════════════════════════ -->
-<section id="section-packages" class="section-content hidden">
-  <div class="flex items-center justify-between mb-6">
-    <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-gradient-to-br from-brand-600 to-brand-800 rounded-xl flex items-center justify-center">
-        <i data-lucide="package" class="w-6 h-6 text-white"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-xl sm:text-2xl text-brand-900">الباقات</h1>
-        <p class="text-brand-500 text-sm">إدارة الباقات المتاحة للزبائن</p>
-      </div>
-    </div>
-    <button onclick="openPackageModal(null)" class="flex items-center gap-2 bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">
-      <i data-lucide="plus" class="w-4 h-4"></i>
-      <span>باقة جديدة</span>
-    </button>
-  </div>
-  <div id="packagesList" class="grid grid-cols-1 gap-4 min-h-48">
-    <div class="text-center py-8 text-brand-400 col-span-full">جاري التحميل...</div>
-  </div>
-</section>
+<!-- section-packages merged into section-bundles -->
 
 <section id="section-bundles" class="section-content hidden">
   <div class="flex items-center justify-between mb-6">
@@ -646,10 +627,16 @@
         <p class="text-brand-500 text-sm">باقات مخصصة بأسعار خاصة</p>
       </div>
     </div>
-    <button onclick="openBundleModal(null)" class="flex items-center gap-2 bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">
-      <i data-lucide="plus" class="w-4 h-4"></i>
-      <span>باقة جديدة</span>
-    </button>
+    <div class="flex gap-2">
+      <button onclick="openPackageModal(null); setTimeout(loadPackages,100);" class="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-colors text-sm" title="بكج بسيط بسعر واحد">
+        <i data-lucide="gift" class="w-4 h-4"></i>
+        <span>بكج بسيط</span>
+      </button>
+      <button onclick="openBundleModal(null)" class="flex items-center gap-2 bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm" title="عرض توفير بمنتجات متعددة">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>عرض توفير</span>
+      </button>
+    </div>
   </div>
   <div id="bundlesList" class="grid grid-cols-1 gap-4 min-h-48">
     <div class="text-center py-8 text-brand-400 col-span-full">جاري التحميل...</div>
