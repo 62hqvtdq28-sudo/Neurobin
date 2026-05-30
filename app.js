@@ -139,6 +139,7 @@ const DELIVERY_FEE = 4000; // 4,000 \u062f\u064a\u0646\u0627\u0631 \u0639\u0631\
 let products = []; // loaded from Supabase
 let cart = [];
 let favorites = [];
+let _showingFavorites = false;
 let displayedProducts = [...products];
 let activeCategory   = 'all';  // tracks current filter tab
 
@@ -692,6 +693,7 @@ function formatPrice(price) {
 
 // FIX #2: \u062a\u0645\u0631\u064a\u0631 event \u0643\u0645\u0639\u0627\u0645\u0644 \u2014 \u0644\u0627 global event object
 function filterProducts(e, category) {
+  _showingFavorites = false;
   // Remove active from all
   document.querySelectorAll('.cat-icon-btn').forEach(function(btn) {
     btn.classList.remove('active');
@@ -1194,6 +1196,22 @@ function _aiSearchSuggest(query) {
 // ===================================================
 // نظام البحث الذكي — Arabic Fuzzy Search
 // ===================================================
+
+// ── Arabic phonetic transliteration (e.g. 'سيمبل' → 'simple') ──────────
+function arabicToPhonetic(str) {
+  const m = {
+    'ا':'a','أ':'a','إ':'a','آ':'a','ب':'b','ت':'t','ث':'th','ج':'j',
+    'ح':'h','خ':'kh','د':'d','ذ':'z','ر':'r','ز':'z','س':'s','ش':'sh',
+    'ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'g','ف':'f','ق':'k',
+    'ك':'k','ل':'l','م':'m','ن':'n','ه':'h','و':'o','ي':'i','ى':'i',
+    'ة':'h','ء':'','ئ':'a','ؤ':'o','ى':'i',' ':' '
+  };
+  let r = str.replace(/[ً-ٰٟ]/g,'');
+  let out = '';
+  for (const c of r) out += (m[c] !== undefined ? m[c] : c);
+  return out.toLowerCase().trim();
+}
+
 function normalizeArabic(str) {
   if (!str) return '';
   return str
@@ -1255,6 +1273,21 @@ function performSearch() {
   if (matches.length === 0 && rawQuery.length >= 2) {
     matches = products.filter(p => fuzzyMatchArabic(rawQuery, p.nameAr) || fuzzyMatchArabic(rawQuery, p.name));
     isFuzzy = matches.length > 0;
+  }
+  // Step 3: Phonetic transliteration (Arabic → English, e.g. سيمبل → simple)
+  if (matches.length === 0 && rawQuery.length >= 3) {
+    const phonetic = arabicToPhonetic(rawQuery).replace(/s+/g,'');
+    if (phonetic.length >= 3) {
+      matches = products.filter(function(p) {
+        const eng = (p.name || '').toLowerCase().replace(/s+/g,'');
+        if (!eng) return false;
+        if (eng.includes(phonetic) || phonetic.includes(eng.substring(0, phonetic.length))) return true;
+        const maxD = phonetic.length <= 4 ? 1 : phonetic.length <= 6 ? 2 : 3;
+        const engSlice = eng.substring(0, phonetic.length + 2);
+        return levenshtein(phonetic, engSlice) <= maxD;
+      });
+      if (matches.length > 0) isFuzzy = true;
+    }
   }
   if (matches.length === 0) {
     results.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
