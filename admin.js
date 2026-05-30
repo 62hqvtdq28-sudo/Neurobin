@@ -905,26 +905,46 @@ var _deviceCheckInterval = null;
 function loadLoginLogs() {
   var container = document.getElementById('loginLogsTable');
   if (!container) return;
-  var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+
+  function _esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var logs = [];
+  try {
+    var raw = localStorage.getItem('adminLoginLogs');
+    logs = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(logs)) logs = [];
+  } catch(e) {
+    localStorage.removeItem('adminLoginLogs');
+    logs = [];
+  }
+
   if (logs.length === 0) {
     container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
     return;
   }
-  container.innerHTML = logs.map(function(log) {
-    var d = new Date(log.time);
-    var dateStr = d.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' });
-    var timeStr = d.toLocaleTimeString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
-    var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
-    var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
-    var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
-    return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
-      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(dateStr) + '<br><span class="text-xs text-brand-400">' + escapeHTML(timeStr) + '</span></td>' +
-      '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
-      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(log.device || 'غير معروف') + '</td>' +
-      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(log.browser || 'غير معروف') + '</td>' +
-      '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
-      '</tr>';
-  }).join('');
+
+  try {
+    container.innerHTML = logs.map(function(log) {
+      var d = new Date(log.time);
+      var dateStr = d.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' });
+      var timeStr = d.toLocaleTimeString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
+      var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
+      var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
+      var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
+      return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
+        '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(dateStr) + '<br><span class="text-xs text-brand-400">' + _esc(timeStr) + '</span></td>' +
+        '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
+        '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.device || 'غير معروف') + '</td>' +
+        '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.browser || 'غير معروف') + '</td>' +
+        '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
+  }
 }
 
 function clearLoginLogs() {
