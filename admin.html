@@ -200,6 +200,10 @@
         <i data-lucide="gift" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">عروض التوفير</span>
       </button>
+      <button onclick="showSection('packages'); setTimeout(loadPackages, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="packages">
+        <i data-lucide="package" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">الباقات</span>
+      </button>
       <button onclick="showSection('ai')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="ai">
         <i data-lucide="bot" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">إعدادات AI</span>
@@ -607,6 +611,27 @@
 <!-- ══════════════════════════════════════════
      🎁 Bundles / عروض التوفير Section
 ══════════════════════════════════════════ -->
+<section id="section-packages" class="section-content hidden">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-brand-600 to-brand-800 rounded-xl flex items-center justify-center">
+        <i data-lucide="package" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-xl sm:text-2xl text-brand-900">الباقات</h1>
+        <p class="text-brand-500 text-sm">إدارة الباقات المتاحة للزبائن</p>
+      </div>
+    </div>
+    <button onclick="openPackageModal(null)" class="flex items-center gap-2 bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>باقة جديدة</span>
+    </button>
+  </div>
+  <div id="packagesList" class="grid grid-cols-1 gap-4 min-h-48">
+    <div class="text-center py-8 text-brand-400 col-span-full">جاري التحميل...</div>
+  </div>
+</section>
+
 <section id="section-bundles" class="section-content hidden">
   <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-3">
@@ -771,7 +796,7 @@
           </div>
           <button onclick="toggleProfitDetails()" id="profitDetailsBtn" class="flex items-center gap-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
             <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
-            تفاصيل الأرباح
+            <span>تفاصيل الأرباح</span>
           </button>
         </div>
         <div id="topProductsList">
@@ -862,6 +887,7 @@
       <textarea id="ai-system-prompt"
         class="w-full border border-brand-200 rounded-xl p-4 text-sm text-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y min-h-[160px] font-medium"
         placeholder="مثال: أنت مساعد صيدلاني ودود واحترافي لصيدلية نيوروبين في العراق. تتحدث بالعربية دائماً..."
+        style="background:white;color:#2D5016;"
         dir="rtl"></textarea>
       <div class="flex items-center justify-between mt-4">
         <span id="ai-prompt-status" class="text-sm text-green-600 hidden">تم الحفظ بنجاح!</span>
@@ -887,8 +913,7 @@
         <textarea id="training-input" rows="1" dir="rtl"
           placeholder="مثال: عندما يسأل عن التوصيل، كن مختصراً وودوداً ..."
           class="flex-1 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-medium"
-          style="max-height:80px;overflow-y:auto;"
-          
+          style="max-height:80px;overflow-y:auto;background:white;color:#2D5016;"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px';"
         ></textarea>
         <button id="training-send-btn" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-4 py-3 rounded-xl transition-colors text-sm flex-shrink-0" style="cursor:pointer;">
