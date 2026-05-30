@@ -210,6 +210,11 @@
         <span class="font-semibold text-sm sm:text-base">سجل المحادثات</span>
         <span id="chatlogsBadge" class="hidden absolute left-3 top-3 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
       </button>
+      <button onclick="showSection('notifyreqs'); loadNotifyRequests();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right relative" data-section="notifyreqs">
+        <i data-lucide="bell" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">طلبات الإشعار</span>
+        <span id="notifyBadge" class="hidden absolute left-3 top-3 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
+      </button>
     </nav>
 
     <div class="p-3 sm:p-4 border-t border-brand-700/50">
@@ -1025,21 +1030,43 @@
       </div>
 
       <!-- Conversation viewer -->
-      <div class="flex-1 bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b border-brand-100 bg-brand-50 flex items-center gap-2">
-          <i data-lucide="message-circle" class="w-4 h-4 text-brand-600"></i>
-          <span id="cl-viewer-title" class="font-bold text-brand-800 text-sm">اختر محادثة من القائمة</span>
+      <div class="flex-1 bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden flex flex-col min-w-0">
+        <div class="px-4 py-3 border-b border-brand-100 bg-brand-50 flex items-center gap-2 flex-wrap">
+          <i data-lucide="message-circle" class="w-4 h-4 text-brand-600 flex-shrink-0"></i>
+          <span id="cl-viewer-title" class="font-bold text-brand-800 text-sm flex-1 min-w-0 truncate">اختر محادثة من القائمة</span>
+          <button id="cl-ai-toggle" onclick="toggleAIForSession()" style="display:none;" class="flex-shrink-0 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors bg-green-100 hover:bg-green-200 text-green-700" title="تفعيل/تعطيل الردود الآلية">
+            🤖 <span id="cl-ai-label">AI مفعّل</span>
+          </button>
         </div>
-        <div id="cl-viewer" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm" dir="rtl">
+        <div id="cl-viewer" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm" dir="rtl" style="max-height:380px;">
           <div class="text-center text-brand-300 py-16">
             <i data-lucide="mouse-pointer-click" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
             <p>اضغط على أي محادثة لعرضها</p>
+          </div>
+        </div>
+        <div id="cl-reply-bar" style="display:none;" class="border-t border-brand-100 p-3 bg-brand-50">
+          <div class="flex items-center gap-2">
+            <input type="text" id="cl-reply-input" class="flex-1 border border-brand-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500 bg-white" placeholder="رد كـمختص..." dir="rtl" onkeydown="if(event.key==='Enter')sendAdminReply()">
+            <button onclick="sendAdminReply()" class="bg-brand-700 hover:bg-brand-800 text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors flex-shrink-0 flex items-center">
+              ↩
+            </button>
           </div>
         </div>
       </div>
     </div>
   </section>
 
+
+  <section id="section-notifyreqs" class="section-content hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl flex items-center justify-center"><i data-lucide="bell" class="w-6 h-6 text-white"></i></div>
+        <div><h1 class="text-xl sm:text-2xl font-bold text-brand-900">طلبات الإشعار عند التوفر</h1><p class="text-brand-600 text-sm">عملاء طلبوا إشعارهم عند توفر منتج</p></div>
+        <button onclick="loadNotifyRequests()" class="mr-auto bg-brand-100 hover:bg-brand-200 text-brand-700 font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث</button>
+      </div>
+    </div>
+    <div id="notify-list" class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden"><div class="text-center text-brand-400 text-sm py-10">جاري التحميل...</div></div>
+  </section>
 </main>
 </div>
 
@@ -1113,36 +1140,78 @@
     .catch(function(e) { list.innerHTML = '<div class="text-center text-red-400 text-sm py-8">خطأ: ' + e.message + '</div>'; });
   };
 
+  window._clCurrentSession = null;
+
   window.viewSession = function(idx) {
     var s = window._clSessions && window._clSessions[idx];
     if (!s) return;
+    window._clCurrentSession = s;
     var viewer = document.getElementById('cl-viewer');
     var title = document.getElementById('cl-viewer-title');
+    var replyBar = document.getElementById('cl-reply-bar');
+    var aiToggle = document.getElementById('cl-ai-toggle');
+    var aiLabel = document.getElementById('cl-ai-label');
     if (!viewer || !title) return;
-
-    var sorted = s.messages.slice().sort(function(a, b) { return a.created_at.localeCompare(b.created_at); });
-    title.textContent = 'محادثة #' + (idx+1) + ' · ' + sorted.length + ' رسالة · ' + fmt(sorted[0].created_at);
-
+    var sorted = s.messages.slice().sort(function(a,b){ return a.created_at.localeCompare(b.created_at); });
+    var visible = sorted.filter(function(m){ return m.role !== 'system'; });
+    title.textContent = 'محادثة #'+(idx+1)+' · '+visible.length+' رسالة · '+fmt(sorted[0].created_at);
+    var sysMsg = sorted.filter(function(m){ return m.role==='system'&&(m.message==='[AI_DISABLED]'||m.message==='[AI_ENABLED]'); });
+    var aiDisabled = sysMsg.length>0 && sysMsg[sysMsg.length-1].message==='[AI_DISABLED]';
+    if(aiToggle){ aiToggle.style.display='inline-flex'; aiToggle.style.background=aiDisabled?'#fee2e2':'#dcfce7'; aiToggle.style.color=aiDisabled?'#dc2626':'#15803d'; if(aiLabel) aiLabel.textContent=aiDisabled?'AI معطّل':'AI مفعّل'; }
+    if(replyBar) replyBar.style.display='';
     viewer.innerHTML = sorted.map(function(m) {
-      var isUser = m.role === 'user';
-      return '<div class="flex ' + (isUser ? 'justify-start' : 'justify-end') + '">' +
-        '<div style="max-width:80%">' +
-        '<div class="text-xs text-brand-400 mb-1 ' + (isUser ? '' : 'text-left') + '">' +
-        (isUser ? '👤 عميل' : '🤖 مساعد') + ' · ' + fmt(m.created_at) + '</div>' +
-        '<div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ' +
-        (isUser ? 'bg-brand-100 text-brand-800 rounded-tr-sm' : 'bg-green-700 text-white rounded-tl-sm') +
-        '">' + m.message.replace(/</g,'&lt;') + '</div>' +
-        '</div></div>';
+      if(m.role==='system') return '';
+      var isUser=m.role==='user', isAdmin=m.role==='admin';
+      var label=isUser?'👤 عميل':(isAdmin?'👨‍⚕️ مختص':'🤖 مساعد');
+      var bg=isUser?'background:#f0fdf4;color:#14532d':(isAdmin?'background:#1e40af;color:#fff':'background:#15803d;color:#fff');
+      var radius=isUser?'border-radius:4px 18px 18px 18px':'border-radius:18px 4px 18px 18px';
+      var align=isUser?'flex-start':'flex-end';
+      return '<div style="display:flex;justify-content:'+align+';margin-bottom:8px"><div style="max-width:80%"><div style="font-size:10px;color:#9ca3af;margin-bottom:3px">'+label+' · '+fmt(m.created_at)+'</div><div style="padding:10px 14px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;'+bg+';'+radius+'">'+m.message.replace(/</g,'&lt;')+'</div></div></div>';
     }).join('');
-
     viewer.scrollTop = viewer.scrollHeight;
+    document.querySelectorAll('#cl-sessions-list > div').forEach(function(el){ el.classList.remove('bg-green-50','border-r-4','border-green-600'); });
+    var sel=document.getElementById('cl-session-'+idx); if(sel) sel.classList.add('bg-green-50','border-r-4','border-green-600');
+  };
 
-    // Highlight selected session
-    document.querySelectorAll('#cl-sessions-list > div').forEach(function(el) {
-      el.classList.remove('bg-green-50', 'border-r-4', 'border-green-600');
-    });
-    var sel = document.getElementById('cl-session-' + idx);
-    if (sel) sel.classList.add('bg-green-50', 'border-r-4', 'border-green-600');
+  window.sendAdminReply = function() {
+    var s=window._clCurrentSession;
+    if(!s){ if(typeof showToast==='function') showToast('يرجى اختيار محادثة','warning'); return; }
+    var input=document.getElementById('cl-reply-input');
+    var text=(input?input.value:'').trim(); if(!text) return;
+    fetch(SURL+'/rest/v1/chat_messages',{method:'POST',headers:Object.assign({},H,{'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({session_id:s.id,role:'admin',message:text})})
+    .then(function(r){ if(r.ok||r.status===201){ if(input)input.value=''; if(typeof showToast==='function')showToast('✅ تم إرسال الرد','success'); setTimeout(loadChatSessions,500); } else { if(typeof showToast==='function')showToast('فشل الإرسال','error'); } })
+    .catch(function(){ if(typeof showToast==='function')showToast('خطأ في الإرسال','error'); });
+  };
+
+  window.toggleAIForSession = function() {
+    var s=window._clCurrentSession; if(!s) return;
+    var sorted=s.messages.slice().sort(function(a,b){return a.created_at.localeCompare(b.created_at);});
+    var sysMsg=sorted.filter(function(m){return m.role==='system'&&(m.message==='[AI_DISABLED]'||m.message==='[AI_ENABLED]');});
+    var aiDisabled=sysMsg.length>0&&sysMsg[sysMsg.length-1].message==='[AI_DISABLED]';
+    var newStatus=aiDisabled?'[AI_ENABLED]':'[AI_DISABLED]';
+    fetch(SURL+'/rest/v1/chat_messages',{method:'POST',headers:Object.assign({},H,{'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({session_id:s.id,role:'system',message:newStatus})})
+    .then(function(r){ if(r.ok||r.status===201){ if(typeof showToast==='function')showToast(aiDisabled?'✅ تم تفعيل AI':'⛔ تم تعطيل AI للعميل','warning'); setTimeout(loadChatSessions,500); } });
+  };
+})();
+</script>
+
+<script>
+/* Notify Requests */
+(function(){
+  'use strict';
+  var SN='https://hczsskviliuqyayylutv.supabase.co';
+  var KN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var HN={apikey:KN,Authorization:'Bearer '+KN};
+  function fN(dt){var d=new Date(dt);return d.toLocaleDateString('ar-IQ',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'});}
+  window.loadNotifyRequests=function(){
+    var list=document.getElementById('notify-list'); if(!list)return;
+    list.innerHTML='<div class="text-center text-brand-400 text-sm py-10">جاري التحميل...</div>';
+    fetch(SN+'/rest/v1/contact_messages?name=eq.'+encodeURIComponent('إشعار عند التوفر')+'&order=created_at.desc&limit=200',{headers:HN})
+    .then(function(r){return r.json();}).then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){list.innerHTML='<div class="text-center text-brand-400 text-sm py-10">لا توجد طلبات إشعار بعد</div>';var b=document.getElementById('notifyBadge');if(b)b.classList.add('hidden');return;}
+      var b=document.getElementById('notifyBadge');if(b){b.textContent=rows.length;b.classList.remove('hidden');}
+      list.innerHTML='<div class="overflow-x-auto"><table class="w-full text-sm" dir="rtl"><thead><tr class="bg-amber-50 text-amber-800 text-right"><th class="px-4 py-3 font-semibold">رقم الهاتف</th><th class="px-4 py-3 font-semibold">المنتج</th><th class="px-4 py-3 font-semibold">التاريخ</th></tr></thead><tbody>'+rows.map(function(r,i){var m=(r.message||'').replace(/^أريد الإشعار عند توفر: /,'').replace(/</g,'&lt;');var p=(r.contact_info||'').replace(/</g,'&lt;');return '<tr class="border-t border-brand-50 '+(i%2===0?'bg-white':'bg-amber-50/30')+'"><td class="px-4 py-3 font-mono" dir="ltr">'+p+'</td><td class="px-4 py-3">'+m+'</td><td class="px-4 py-3 text-xs text-brand-500">'+fN(r.created_at)+'</td></tr>';}).join('')+'</tbody></table></div>';
+    }).catch(function(e){list.innerHTML='<div class="text-center text-red-400 text-sm py-10">خطأ: '+e.message+'</div>';});
   };
 })();
 </script>
@@ -1493,6 +1562,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Attach discount type change handler
   var discountType = document.getElementById('discountType');
   if (discountType) discountType.addEventListener('change', updateDiscountStep);
+
+  // iPad/Safari: addEventListener more reliable than onchange for file inputs
+  var _bImgInp = document.getElementById('bundleImageInput');
+  if (_bImgInp) { _bImgInp.addEventListener('change', function() { if(typeof uploadBundleImageNow==='function') uploadBundleImageNow(this); }); }
 
   // checkAuth already called by admin.js DOMContentLoaded
 });

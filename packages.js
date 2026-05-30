@@ -115,7 +115,8 @@ var _pkgImageUploading = false;
     var iv = setInterval(function() {
       attempts++;
       var grid = document.getElementById('productsGrid');
-      if ((grid && grid.children.length > 0) || attempts > 20) {
+      var catGrid = document.querySelector('.cat-icon-grid');
+      if (((grid && grid.children.length > 0) || attempts > 20) && catGrid) {
         clearInterval(iv);
         _addFilterBtn();
         _patchFilter();

@@ -388,7 +388,7 @@ async function _loadProfitBreakdown() {
                   (profit>=0?'+':'') + profit.toLocaleString('en-US') + ' (' + margin + '%)' +
                 '</span>' +
                 (profit>0
-                  ? ' <span style="font-size:12px;font-weight:600;color:#0ea5e9;background:#f0f9ff;padding:2px 6px;border-radius:6px;" title="ربح ١٠ قطع">×١٠: +' + (profit*10).toLocaleString('en-US') + '</span>'
+                  ? (soldQty > 0 ? ' <span style="font-size:12px;font-weight:600;color:#0ea5e9;background:#f0f9ff;padding:2px 6px;border-radius:6px;" title="إجمالي ربح المبيعات">×' + soldQty + ': +' + (profit*soldQty).toLocaleString('en-US') + '</span>' : '')
                   : '')
               : '') +
           '</div>' +
