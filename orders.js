@@ -425,19 +425,17 @@ async function saveManualOrder() {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline-block ml-1"></i> جاري الحفظ...'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
 
   try {
+    if (!_moItems.length) { showToast('يرجى إضافة منتج واحد على الأقل', 'error'); if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب';if(typeof lucide!=='undefined')lucide.createIcons();} return; }
     var result = await SupaDB._db.from('orders').insert({
       customer_name:    name,
-      name:             name,
       customer_phone:   phone,
-      phone:            phone,
       customer_address: address  || null,
-      address:          address  || null,
       notes:            notes    || null,
       status:           status,
       total_amount:     totalAmount,
-      total:            totalAmount,
       delivery_fee:     delivery,
       items:            orderItems,
+      order_items:      orderItems,
       created_at:       new Date().toISOString()
     }).select().single();
 
@@ -449,7 +447,10 @@ async function saveManualOrder() {
     showToast('تم إضافة الطلب بنجاح ✅', 'success');
   } catch(e) {
     console.error('[ManualOrder] save error:', e);
-    showToast('خطأ في حفظ الطلب: ' + (e.message || 'غير معروف'), 'error');
+    var _errDetail = (e.message||'') + (e.details?' — '+e.details:'') + (e.hint?' — '+e.hint:'') || JSON.stringify(e)||'غير معروف';
+    console.error('[ManualOrder full error]', JSON.stringify(e));
+    showToast('❌ خطأ في الحفظ: ' + _errDetail.substring(0,120), 'error');
+    alert('تفاصيل الخطأ:\n' + JSON.stringify(e, null, 2));
     if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب'; }
   }
 }
