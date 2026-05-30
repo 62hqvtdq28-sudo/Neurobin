@@ -1093,6 +1093,7 @@ window.addEventListener('resize', function() {
 });
 </script>
 <script src="skin-type.js?v=5" defer></script>
+<script src="telegram-notify.js" defer></script>
 <script>
 // ── نوع البشرة — ربط مع filterProducts ─────────────────────────────────
 (function() {
@@ -1192,7 +1193,7 @@ window.addEventListener('resize', function() {
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('/Neurobin/sw.js',{scope:'/Neurobin/'})
+    navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(function(r){console.log('[SW] registered scope:',r.scope);})
       .catch(function(e){console.warn('[SW] failed:',e);});
   });
