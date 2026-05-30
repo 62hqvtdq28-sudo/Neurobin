@@ -345,7 +345,6 @@ function deleteCurrentStats() {
   if (compEl)  compEl.innerHTML  = '';
   if (tableEl) tableEl.innerHTML = '';
   if (visitorsChart) { try { visitorsChart.destroy(); visitorsChart=null; } catch(e){} }
-  if (categoryChart) { try { categoryChart.destroy(); categoryChart=null; } catch(e){} }
 
   var undoBtn = document.getElementById('statsUndoBtn');
   if (undoBtn) undoBtn.classList.remove('hidden');
@@ -365,7 +364,10 @@ function undoDeleteStats() {
 
 function resetTodayStats() {
   if (!isAuthenticated()) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
-  showToast('الإحصائيات تُقرأ من Supabase مباشرةً ولا يمكن إعادة تعيينها من هنا', 'error');
+  _chartsData = null;
+  setDateRange('today');
+  initCategoryChart();
+  showToast('تم تحديث بيانات اليوم', 'success');
 }
 
 function resetAllStats() {
