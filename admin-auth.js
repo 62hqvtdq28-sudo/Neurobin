@@ -834,6 +834,7 @@ function showSection(section) {
   if (section === 'testimonials') loadTestimonials();
   if (section === 'categories') loadCategoryImages();
   if (section === 'bundles') loadBundles();
+  if (section === 'loginlogs') { setTimeout(function() { if (typeof loadLoginLogs === 'function') loadLoginLogs(); }, 50); }
 
   closeMobileMenu();
   // Close all open modals when switching sections
