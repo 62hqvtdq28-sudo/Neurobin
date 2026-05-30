@@ -449,6 +449,11 @@ async function checkAuth() {
           sessionStorage.setItem('adminLastActivity', Date.now().toString());
           sessionStorage.setItem('adminSessionToken', generateSecureId());
         }
+        // Record session restore once per browser session (no Telegram — page refresh is not a new login)
+        if (!sessionStorage.getItem('_loginSessionRecorded')) {
+          sessionStorage.setItem('_loginSessionRecorded', '1');
+          recordLoginEvent('session-restore', 'success');
+        }
         showDashboard();
         return;
       }
@@ -597,10 +602,14 @@ async function handleLogin(e) {
       await window.SupaDB.Auth.signIn(email, password);
       if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
       _commitSession(null, null);
+      recordLoginEvent('fresh-login', 'success');
+      sendTelegramAlert(_buildLoginMsg('success'));
       showDashboard();
       return;
     } catch (authErr) {
       if (typeof recordAttempt === 'function') recordAttempt();
+      recordLoginEvent('fresh-login', 'failed');
+      sendTelegramAlert(_buildLoginMsg('failed'));
       var authMsg = authErr.message || '';
       if (authMsg.includes('Invalid login credentials') || authMsg.includes('invalid_credentials') || authMsg.includes('Invalid email or password')) {
         showErr('البريد الإلكتروني أو كلمة المرور غير صحيحة');
@@ -633,6 +642,8 @@ async function handleLogin(e) {
       var hex  = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
       if (hex !== storedHash) {
         if (typeof recordAttempt === 'function') recordAttempt();
+        recordLoginEvent('fresh-login', 'failed');
+        sendTelegramAlert(_buildLoginMsg('failed'));
         showErr('كلمة المرور غير صحيحة');
         return;
       }
@@ -644,6 +655,8 @@ async function handleLogin(e) {
       }
       if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
       _commitSession(storedHash, storedSalt);
+      recordLoginEvent('fresh-login', 'success');
+      sendTelegramAlert(_buildLoginMsg('success'));
       showDashboard();
     } catch(_) { showErr('خطأ في التحقق من كلمة المرور'); }
     return;
@@ -654,12 +667,16 @@ async function handleLogin(e) {
     var ok = await verifyPassword(password, storedHash, storedSalt);
     if (!ok) {
       if (typeof recordAttempt === 'function') recordAttempt();
+      recordLoginEvent('fresh-login', 'failed');
+      sendTelegramAlert(_buildLoginMsg('failed'));
       showErr('كلمة المرور غير صحيحة');
       return;
     }
   }
   if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
   _commitSession(storedHash, storedSalt);
+  recordLoginEvent('fresh-login', 'success');
+  sendTelegramAlert(_buildLoginMsg('success'));
   showDashboard();
 
   } catch(loginErr) {
@@ -715,6 +732,71 @@ async function showDashboard() {
       if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
     } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
   }, 300); // 300ms gives the DOM time to paint after adminDashboard becomes visible
+}
+
+// ─── Login Log & Telegram Helpers ────────────────────────────────────────────
+
+function _getDeviceInfo() {
+  var ua = navigator.userAgent;
+  var device = 'غير معروف';
+  if (/Android/i.test(ua)) device = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(ua)) device = 'iOS';
+  else if (/Windows/i.test(ua)) device = 'Windows';
+  else if (/Macintosh|Mac OS X/i.test(ua)) device = 'Mac';
+  else if (/Linux/i.test(ua)) device = 'Linux';
+  var browser = 'غير معروف';
+  if (/Edg//.test(ua)) browser = 'Edge';
+  else if (/OPR/|Opera/.test(ua)) browser = 'Opera';
+  else if (/Chrome//.test(ua)) browser = 'Chrome';
+  else if (/Firefox//.test(ua)) browser = 'Firefox';
+  else if (/Safari//.test(ua)) browser = 'Safari';
+  return { device: device, browser: browser };
+}
+
+function recordLoginEvent(type, status) {
+  try {
+    var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+    var info = _getDeviceInfo();
+    logs.unshift({
+      id: Date.now(),
+      time: new Date().toISOString(),
+      type: type,
+      status: status,
+      device: info.device,
+      browser: info.browser,
+      userAgent: navigator.userAgent.slice(0, 200)
+    });
+    if (logs.length > 100) logs.splice(100);
+    localStorage.setItem('adminLoginLogs', JSON.stringify(logs));
+  } catch(e) { console.warn('[LoginLog]', e.message); }
+}
+
+function _buildLoginMsg(status) {
+  var info = _getDeviceInfo();
+  var now = new Date().toLocaleString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
+  var icon = status === 'success' ? '✅' : '⚠️';
+  var title = status === 'success' ? 'تسجيل دخول ناجح' : 'محاولة دخول فاشلة';
+  return icon + ' <b>' + title + '</b>
+' +
+         '📅 الوقت: ' + now + '
+' +
+         '💻 الجهاز: ' + info.device + '
+' +
+         '🌐 المتصفح: ' + info.browser;
+}
+
+async function sendTelegramAlert(msg) {
+  try {
+    var s = JSON.parse(localStorage.getItem('phSettings') || '{}');
+    if (!s.telegramBotToken || !s.telegramChatId) return;
+    var resp = await fetch('https://api.telegram.org/bot' + s.telegramBotToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: s.telegramChatId, text: msg, parse_mode: 'HTML' })
+    });
+    var data = await resp.json();
+    if (!data.ok) console.warn('[Telegram] Error:', data.description);
+  } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
 
 function showSection(section) {
