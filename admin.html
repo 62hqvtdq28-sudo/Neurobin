@@ -389,7 +389,10 @@
       <div class="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
         <button onclick="filterOrders('all')" class="tab-btn active px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-700 text-white font-medium text-xs sm:text-sm" data-filter="all">الكل</button>
         <button onclick="filterOrders('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">جديدة</button>
-        <button onclick="filterOrders('progress')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="progress">قيد التوصيل</button>
+        <button onclick="filterOrders('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">✅ جديد</button>
+        <button onclick="filterOrders('preparing')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="preparing">📦 تجهيز</button>
+        <button onclick="filterOrders('shipped')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="shipped">🚐 مع المندوب</button>
+        <button onclick="filterOrders('on_the_way')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="on_the_way">🚚 في الطريق</button>
         <button onclick="filterOrders('delivered')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="delivered">تم التوصيل</button>
         <button onclick="filterOrders('cancelled')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="cancelled">ملغاة</button>
         <button onclick="filterOrders('deleted')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="deleted">🗑️ محذوفات</button>
@@ -398,11 +401,38 @@
       <div class="mb-4">
         <div class="search-box">
           <i data-lucide="search" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-400"></i>
-          <input type="text" id="orderSearch" class="input-field" placeholder="ابحث في الطلبات..." oninput="searchOrders()">
+          <input type="text" id="orderSearch" class="input-field" placeholder="ابحث بالاسم أو الهاتف أو الموقع أو المنتج..." oninput="searchOrders()">
         </div>
       </div>
 
-      <div id="ordersList" class="space-y-3 sm:space-y-4"></div>
+
+      <!-- Auto-Advance Orders -->
+      <div id="autoAdvancePanel" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="timer" class="w-5 h-5 text-amber-700"></i>
+            <span class="font-bold text-amber-800 text-sm">التقدم التلقائي للطلبات</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="autoAdvanceToggle" class="sr-only peer" onchange="toggleAutoAdvance()">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+          </label>
+        </div>
+        <div id="autoAdvanceSettings" class="hidden space-y-2">
+          <p class="text-xs text-amber-700">انتقل الطلب تلقائياً للحالة التالية بعد:</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">تثبيت → تجهيز</label><input type="number" id="aa_new" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">تجهيز → مندوب</label><input type="number" id="aa_preparing" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">مندوب → طريق</label><input type="number" id="aa_shipped" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">طريق → توصيل</label><input type="number" id="aa_on_the_way" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button onclick="saveAutoAdvance()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">حفظ الإعدادات</button>
+            <button onclick="runAutoAdvanceNow()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">تطبيق الآن</button>
+          </div>
+          <p id="autoAdvanceStatus" class="text-xs text-green-700 hidden"></p>
+        </div>
+      </div>      <div id="ordersList" class="space-y-3 sm:space-y-4"></div>
       <div id="noOrders" class="hidden text-center py-10 sm:py-12 md:py-16 bg-white rounded-xl sm:rounded-2xl shadow-sm">
         <i data-lucide="inbox" class="w-16 h-16 text-brand-200 mx-auto mb-4"></i>
         <p class="text-brand-400 text-lg md:text-xl">لا توجد طلبات</p>
@@ -574,9 +604,7 @@
         <button onclick="filterProductsAdmin('perfumes')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="perfumes">عطور</button>
         <button onclick="filterProductsAdmin('haircare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="haircare">✂️ شعر</button>
         <button onclick="filterProductsAdmin('dental')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="dental">😊 أسنان</button>
-        <button onclick="filterProductsAdmin('packages')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="packages">🎁 بكجات</button>
-
-      </div>
+        </div>
 
       <!-- نوع البشرة sub-filter -->
       <div id="skinTypeSubFilterContainer_admin" class="mb-2"></div>
@@ -645,7 +673,7 @@
 
 <!-- Bundle Modal -->
 <div id="bundleModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
-  <div class="modal-content max-w-lg">
+  <div class="modal-content bg-white rounded-2xl p-6 max-w-lg max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between mb-6">
       <h2 id="bundleModalTitle" class="font-bold text-xl text-brand-900">إضافة باقة</h2>
       <button onclick="closeBundleModal()" class="p-2 hover:bg-brand-100 rounded-xl transition-colors"><i data-lucide="x" class="w-5 h-5 text-brand-600"></i></button>
@@ -3204,6 +3232,93 @@ async function saveCatImg(key, url) {
     } catch(e) { console.warn('[Cost] save error:', e); }
     return result;
   };
+})();
+</script>
+
+<script>
+/* ── Auto-Advance Orders ─────────────────────────────────────── */
+(function(){
+  var _aaTimer = null;
+  var _aaKey = 'neurobin_auto_advance';
+  var _SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var _SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var _H = { apikey: _SK, Authorization: 'Bearer ' + _SK, 'Content-Type': 'application/json' };
+  var _FLOW = {new:'preparing',preparing:'shipped',shipped:'on_the_way',on_the_way:'delivered'};
+
+  function _loadSettings() {
+    try { return JSON.parse(localStorage.getItem(_aaKey)||'{}'); } catch(e){ return {}; }
+  }
+  function _saveSettings(s) { localStorage.setItem(_aaKey, JSON.stringify(s)); }
+
+  window.toggleAutoAdvance = function() {
+    var chk = document.getElementById('autoAdvanceToggle');
+    var panel = document.getElementById('autoAdvanceSettings');
+    if (!chk || !panel) return;
+    if (chk.checked) {
+      panel.classList.remove('hidden');
+      _loadSettingsIntoUI();
+    } else {
+      panel.classList.add('hidden');
+      if(_aaTimer){ clearInterval(_aaTimer); _aaTimer=null; }
+    }
+  };
+
+  function _loadSettingsIntoUI() {
+    var s = _loadSettings();
+    ['new','preparing','shipped','on_the_way'].forEach(function(st){
+      var el = document.getElementById('aa_'+st);
+      if(el && s[st]) el.value = s[st];
+    });
+  }
+
+  window.saveAutoAdvance = function() {
+    var s = {};
+    ['new','preparing','shipped','on_the_way'].forEach(function(st){
+      var el = document.getElementById('aa_'+st);
+      var val = el ? parseInt(el.value)||0 : 0;
+      if(val>0) s[st] = val;
+    });
+    _saveSettings(s);
+    if(_aaTimer){ clearInterval(_aaTimer); _aaTimer=null; }
+    _aaTimer = setInterval(_runAutoAdvance, 5*60*1000); // check every 5 minutes
+    _runAutoAdvance(); // run immediately
+    var st = document.getElementById('autoAdvanceStatus');
+    if(st){ st.textContent='✅ تم حفظ الإعدادات — يتم الفحص كل 5 دقائق'; st.classList.remove('hidden'); setTimeout(function(){ st.classList.add('hidden'); },4000); }
+  };
+
+  window.runAutoAdvanceNow = function() { _runAutoAdvance(); };
+
+  async function _runAutoAdvance() {
+    var s = _loadSettings();
+    if(!Object.keys(s).length) return;
+    var now = Date.now();
+    try {
+      var r = await fetch(_SURL+'/rest/v1/orders?select=id,status,updated_at,created_at&is[deleted_at]=null&limit=200', {headers:_H});
+      if(!r.ok) return;
+      var orders = await r.json();
+      if(!Array.isArray(orders)) return;
+      var updates = [];
+      orders.forEach(function(o){
+        var hours = s[o.status];
+        if(!hours || !_FLOW[o.status]) return;
+        var lastChange = new Date(o.updated_at||o.created_at).getTime();
+        var elapsedHours = (now - lastChange) / 3600000;
+        if(elapsedHours >= hours) {
+          updates.push({ id: o.id, newStatus: _FLOW[o.status] });
+        }
+      });
+      for(var i=0;i<updates.length;i++){
+        await fetch(_SURL+'/rest/v1/orders?id=eq.'+updates[i].id, {
+          method:'PATCH', headers:_H,
+          body:JSON.stringify({ status: updates[i].newStatus, updated_at: new Date().toISOString() })
+        });
+      }
+      if(updates.length>0){
+        if(typeof loadOrders==='function') loadOrders();
+        if(typeof showToast==='function') showToast('⚡ تقدم '+updates.length+' طلب تلقائياً','success');
+      }
+    } catch(e){ console.warn('[AutoAdvance]',e); }
+  }
 })();
 </script>
 </body>
