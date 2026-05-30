@@ -215,7 +215,7 @@
         <span class="font-semibold text-sm sm:text-base">طلبات الإشعار</span>
         <span id="notifyBadge" class="hidden absolute left-3 top-3 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
       </button>
-      <button onclick="showSection('loginlogs'); loadLoginLogs();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
+      <button onclick="showSection('loginlogs'); if(typeof loadLoginLogs==='function') loadLoginLogs(); else { var _tb=document.getElementById('loginLogsTable'); if(_tb) _tb.innerHTML='<tr><td colspan=5 class=\'text-center py-8 text-brand-400\'>لا يوجد سجل دخول بعد</td></tr>'; }" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
         <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-500"></i>
         <span class="font-medium text-brand-700 text-xs sm:text-sm">سجل الدخول</span>
       </button>
