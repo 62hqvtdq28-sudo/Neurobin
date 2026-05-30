@@ -665,8 +665,8 @@ function renderProducts(productsToRender) {
           ${safeDesc ? `<p class="text-xs text-gray-900 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
           <div class="flex items-center justify-between">
             <div class="flex flex-col leading-none">
-              ${product.originalPrice ? `<span class="text-xs text-gray-400 line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
-              <span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-red-600 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
+              ${product.originalPrice && product.originalPrice > product.price ? `<span class="text-xs text-gray-400 line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
+              <span class="${product.originalPrice && product.originalPrice > product.price ? 'text-base' : 'text-sm'} font-bold text-red-600 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
               ${product.qty2Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-1">٢ قطعة: ${SecurityValidator.escapeHtml(formatPrice(product.qty2Price))}</span>` : ''}${product.qty3Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-0.5">٣ قطع: ${SecurityValidator.escapeHtml(formatPrice(product.qty3Price))}</span>` : ''}
             </div>
             <button onclick="addToCart('${safeId}')" class="btn-primary ${!product.inStock ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-700 hover:bg-brand-600'} text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all" >
