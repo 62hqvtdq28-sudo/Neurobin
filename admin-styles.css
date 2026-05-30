@@ -17,6 +17,11 @@ html {
   }
 }
 
+/* ── Sidebar: always solid background ── */
+aside#sidebar {
+  background: linear-gradient(180deg, #1a3a0a 0%, #2D5016 100%) !important;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E350F; }
 
