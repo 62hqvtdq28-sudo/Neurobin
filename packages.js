@@ -1,4 +1,5 @@
 // ── FRONTEND: دمج البكجات في شبكة المنتجات ──────────────────────────────
+var _pkgImageUploading = false;
 (function() {
   // CSS لأيقونة البكجات
   var _s = document.createElement('style');
@@ -216,6 +217,7 @@ function removePkgImage() {
 }
 
 async function savePackage() {
+  if (_pkgImageUploading) { showToast && showToast('الصورة لا تزال تُرفع، انتظر لحظة...', 'error'); return; }
   var name  = document.getElementById('pkgName').value.trim();
   var price = parseFloat(String(document.getElementById('pkgPrice').value).replace(/[^0-9.]/g,'')) || 0;
   var desc  = document.getElementById('pkgDesc').value.trim();
@@ -257,6 +259,7 @@ async function deletePackage(id) {
 
 // ── Package Image Upload (iOS-compatible, mirrors product upload) ──────────
 window.handlePkgImageUpload = async function(input) {
+  _pkgImageUploading = false;
   var file = input && input.files && input.files[0];
   if (!file) { await new Promise(function(r){setTimeout(r,1500);}); file = input && input.files && input.files[0]; }
   if (!file) { if(typeof showToast==='function') showToast('⚠️ لم يتم اختيار صورة','error'); return; }
@@ -268,6 +271,10 @@ window.handlePkgImageUpload = async function(input) {
     document.getElementById('pkgImagePreviewContainer').classList.remove('hidden');
     document.getElementById('pkgImagePreview').classList.add('hidden');
     document.getElementById('pkgImage').value = e.target.result;
+    _pkgImageUploading = true;
+    // Show uploading indicator on save button
+    var _saveBtn = document.querySelector('[onclick="savePackage()"]');
+    if (_saveBtn) { _saveBtn.style.opacity = '0.6'; _saveBtn.title = 'يرجى انتظار انتهاء رفع الصورة'; }
   };
   fr.readAsDataURL(file);
   if (typeof SupaDB==='undefined'||!SupaDB.ImageStorage||typeof SupaDB.ImageStorage.upload!=='function') {
@@ -285,6 +292,9 @@ window.handlePkgImageUpload = async function(input) {
     if(!url||!url.startsWith('http')) throw new Error('رابط غير صالح');
     document.getElementById('pkgImage').value=url;
     document.getElementById('pkgImagePreviewImg').src=url;
+    _pkgImageUploading = false;
+    var _saveBtn2 = document.querySelector('[onclick="savePackage()"]');
+    if (_saveBtn2) { _saveBtn2.style.opacity = ''; _saveBtn2.title = ''; }
     if(typeof showToast==='function') showToast('✅ تم رفع الصورة','success');
   } catch(e){if(typeof showToast==='function') showToast('❌ فشل الرفع: '+(e.message||e),'error');}
 };
@@ -307,3 +317,4 @@ window.handlePkgImageUpload = async function(input) {
     }, 1500);
   });
 })();
+
