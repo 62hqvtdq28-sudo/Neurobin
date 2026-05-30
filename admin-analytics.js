@@ -2,6 +2,7 @@
 var _analyticsChartMonthly = null;
 var _analyticsPeriod = 'monthly'; // 'monthly' | 'weekly'
 var _lastAnalyticsSnapshot = null; // for undo
+var _profitBreakdownCache = null;
 
 async function loadAnalytics() {
   var cardsEl    = document.getElementById('analyticsCards');
@@ -331,6 +332,57 @@ function _renderSalesChart(allOrders, delivered) {
   }
 }
 
+// ═══ تفاصيل الربح (toggle) ═══
+function toggleProfitDetails() {
+  var panel = document.getElementById('profitDetailsPanel');
+  var btn = document.getElementById('profitDetailsBtn');
+  if (!panel) return;
+  var isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    panel.classList.remove('hidden');
+    if (btn) { var sp=btn.querySelector('span'); if(sp) sp.textContent='إخفاء التفاصيل'; }
+    _loadProfitBreakdown();
+  } else {
+    panel.classList.add('hidden');
+    if (btn) { var sp2=btn.querySelector('span'); if(sp2) sp2.textContent='تفاصيل الربح'; }
+  }
+}
+
+async function _loadProfitBreakdown() {
+  var list = document.getElementById('profitDetailsList');
+  if (!list) return;
+  if (_profitBreakdownCache) { list.innerHTML = _profitBreakdownCache; return; }
+  list.innerHTML = '<p class="text-sm text-brand-400 text-center py-3">جاري التحميل...</p>';
+  try {
+    var products = await SupaDB.Products.list();
+    var settings = await SupaDB.Settings.get();
+    var costsRaw = settings && settings.product_costs;
+    var costMap = costsRaw ? JSON.parse(costsRaw) : {};
+    if (!Object.keys(costMap).length) {
+      list.innerHTML = '<p class="text-sm text-amber-600 text-center py-3">لم يتم إدخال أسعار الكوست بعد — عدّل أي منتج وأدخل سعر الكوست</p>';
+      return;
+    }
+    var rows = products.map(function(p) {
+      var cost = Number(costMap[String(p.id)] || 0);
+      var price = Number(p.price || 0);
+      var profit = price - cost;
+      var margin = price > 0 && cost > 0 ? Math.round((profit/price)*100) : null;
+      var col = profit > 0 ? 'text-emerald-700' : profit < 0 ? 'text-red-600' : 'text-brand-400';
+      return '<div class="flex items-center justify-between py-2 border-b border-brand-50 last:border-0">' +
+        '<span class="text-sm text-brand-800 font-medium truncate" style="max-width:55%">' + (p.name_ar||p.name||'') + '</span>' +
+        '<div class="flex items-center gap-3 text-xs">' +
+          (cost>0 ? '<span class="text-brand-500">كوست: '+cost.toLocaleString('ar-IQ')+'</span>' : '<span class="text-brand-300">بدون كوست</span>') +
+          (margin!==null ? '<span class="font-bold '+col+'">'+(profit>=0?'+':'')+profit.toLocaleString('ar-IQ')+' ('+margin+'%)</span>' : '') +
+        '</div></div>';
+    }).join('');
+    var html = '<div class="divide-y divide-brand-50">' + rows + '</div>';
+    list.innerHTML = html;
+    _profitBreakdownCache = html;
+  } catch(e) {
+    list.innerHTML = '<p class="text-sm text-red-500 text-center py-3">خطأ في التحميل: '+(e.message||'')+'</p>';
+  }
+}
+
 // ═══ حذف الإحصائيات الحالية + تراجع ═══
 function deleteAnalyticsView() {
   var cards=document.getElementById('analyticsCards');
@@ -340,7 +392,7 @@ function deleteAnalyticsView() {
   if (!_lastAnalyticsSnapshot) { if(typeof showToast==='function') showToast('لا توجد بيانات لحذفها','error'); return; }
   if (!confirm('هل تريد مسح عرض الإحصائيات الحالية؟ يمكنك التراجع لاحقاً')) return;
   if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-10 text-brand-400"><p>تم مسح العرض — اضغط "تراجع" لاستعادته أو "تحديث" لإعادة التحميل</p></div>';
-  if (products) products.innerHTML='';
+  // توزيع المنتجات (products) يبقى — لا يُحذف
   if (status) status.innerHTML='';
   if (_analyticsChartMonthly) { _analyticsChartMonthly.destroy(); _analyticsChartMonthly=null; }
   var summaryEl=document.getElementById('analyticsSalesSummary'); if(summaryEl) summaryEl.innerHTML='';
