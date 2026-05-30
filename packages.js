@@ -8,7 +8,7 @@ var _pkgImageUploading = false;
 
   // بناء كرت البكج بنفس شكل كرت المنتج
   function _pkgCard(pkg) {
-    var price = pkg.price ? Number(pkg.price).toLocaleString('ar-IQ') + ' \u062f.\u0639' : '';
+    var price = pkg.price ? Number(pkg.price).toLocaleString('en-US') + ' \u062f.\u0639' : '';
     var inStock = pkg.in_stock !== false;
     var imgHtml = pkg.image
       ? '<img src="' + pkg.image + '" alt="" class="w-full h-full object-contain bg-white" loading="lazy">'
@@ -21,7 +21,7 @@ var _pkgImageUploading = false;
         '<h3 class="font-heading font-bold text-sm text-brand-900 mb-1 leading-snug">' + (pkg.name || '') + '</h3>' +
         '<div class="flex items-center justify-between">' +
           (price ? '<span class="text-sm font-bold text-brand-700 leading-none">' + price + '</span>' : '<span></span>') +
-          '<a href="#contact" class="btn-primary bg-amber-500 hover:bg-amber-400 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 flex-shrink-0 transition-all">\u0627\u0637\u0644\u0628</a>' +
+          '<button onclick="event.stopPropagation();if(typeof window.addToCart===\'function\'){var c=this.closest(\'[data-id]\');if(c)window.addToCart(c);}else{var el=document.getElementById(\'track-order\');if(el)el.scrollIntoView({behavior:\'smooth\'});}" class="btn-primary bg-amber-500 hover:bg-amber-400 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 flex-shrink-0 transition-all">أضف للسلة</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -103,7 +103,7 @@ var _pkgImageUploading = false;
       if (cat === 'all') {
         g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.remove(); });
         if (_allPackages && _allPackages.length) { _injectPkgs(_allPackages); }
-      } else if (cat !== 'bundles') {
+      } else if (cat !== 'bundles' && cat !== 'packages') {
         g.querySelectorAll('[data-type="package"]').forEach(function(c) { c.style.display = 'none'; });
       }
     };
@@ -160,7 +160,7 @@ function renderPackagesList(list) {
   grid.innerHTML = list.map(function(pkg) {
     var id = escapeHTML(String(pkg.id));
     var img = pkg.image || '';
-    var price = pkg.price ? Number(pkg.price).toLocaleString('ar-IQ') + ' د.ع' : '—';
+    var price = pkg.price ? Number(pkg.price).toLocaleString('en-US') + ' د.ع' : '—';
     var inStock = pkg.in_stock !== false;
     return '<div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden animate-fade-in">' +
       '<div class="relative">' +
