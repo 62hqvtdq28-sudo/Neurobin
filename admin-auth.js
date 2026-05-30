@@ -849,4 +849,33 @@ function loadAllData() {
   loadTestimonials();
   updateCommentsBadge();
   updateOrdersBadge();
+  _syncTelegramConfig();
+}
+
+async function _syncTelegramConfig() {
+  try {
+    var resp = await fetch('/api/config');
+    if (!resp.ok) return;
+    var cfg = await resp.json();
+    if (!cfg.telegramBotToken && !cfg.telegramChatId) return;
+    var settings = JSON.parse(localStorage.getItem('phSettings') || '{}');
+    var changed = false;
+    if (cfg.telegramBotToken && settings.telegramBotToken !== cfg.telegramBotToken) {
+      settings.telegramBotToken = cfg.telegramBotToken;
+      changed = true;
+    }
+    if (cfg.telegramChatId && settings.telegramChatId !== cfg.telegramChatId) {
+      settings.telegramChatId = cfg.telegramChatId;
+      changed = true;
+    }
+    if (changed) {
+      localStorage.setItem('phSettings', JSON.stringify(settings));
+      var tokenEl = document.getElementById('telegramBotToken');
+      var chatEl = document.getElementById('telegramChatId');
+      if (tokenEl) tokenEl.value = settings.telegramBotToken || '';
+      if (chatEl) chatEl.value = settings.telegramChatId || '';
+    }
+  } catch(e) {
+    console.warn('[Config] Telegram sync failed:', e.message);
+  }
 }
