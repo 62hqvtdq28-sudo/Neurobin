@@ -215,6 +215,10 @@
         <span class="font-semibold text-sm sm:text-base">طلبات الإشعار</span>
         <span id="notifyBadge" class="hidden absolute left-3 top-3 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
       </button>
+      <button onclick="showSection('loginlogs'); loadLoginLogs();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
+        <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-500"></i>
+        <span class="font-medium text-brand-700 text-xs sm:text-sm">سجل الدخول</span>
+      </button>
     </nav>
 
     <div class="p-3 sm:p-4 border-t border-brand-700/50">
@@ -568,6 +572,36 @@
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             <span>حذف الطلبات</span>
           </button>
+        </div>
+      </div>
+
+
+      <!-- Telegram Notifications Card -->
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
+        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+          <i data-lucide="send" class="w-4 h-4 sm:w-5 sm:h-6 text-blue-500"></i>
+          تنبيهات تيليجرام
+        </h2>
+        <p class="text-xs text-brand-400 mb-4">أدخل بيانات بوت تيليجرام لتلقي إشعار فوري عند كل تسجيل دخول للوحة التحكم.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2">رمز البوت (Bot Token)</label>
+            <input type="text" id="telegramBotToken" class="input-field" placeholder="123456789:AAXXXXXX..." dir="ltr" autocomplete="off">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-2">معرّف المحادثة (Chat ID)</label>
+            <input type="text" id="telegramChatId" class="input-field" placeholder="-100123456789" dir="ltr" autocomplete="off">
+          </div>
+          <div class="flex flex-wrap gap-2 sm:gap-3">
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>حفظ</span>
+            </button>
+            <button onclick="testTelegramAlert()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>اختبار الإرسال</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -1081,6 +1115,50 @@
       </div>
     </div>
     <div id="notify-list" class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden"><div class="text-center text-brand-400 text-sm py-10">جاري التحميل...</div></div>
+  </section>
+
+  <!-- ── Login Log Section ─────────────────────────────── -->
+  <section id="section-loginlogs" class="section-content hidden">
+    <div class="mb-4 sm:mb-6 md:mb-8">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">سجل الدخول</h1>
+          <p class="text-brand-600 text-xs sm:text-sm">سجل كامل بعمليات الدخول إلى لوحة التحكم</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
+      <div class="flex items-center justify-between mb-4 sm:mb-6">
+        <h2 class="font-bold text-base sm:text-lg text-brand-900 flex items-center gap-2">
+          <i data-lucide="list" class="w-4 h-4 text-brand-600"></i>
+          سجلات الدخول
+        </h2>
+        <button onclick="clearLoginLogs()" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>مسح السجل</span>
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b-2 border-brand-100">
+              <th class="px-4 py-3 text-right text-sm font-bold text-brand-700">الوقت</th>
+              <th class="px-4 py-3 text-right text-sm font-bold text-brand-700">النوع</th>
+              <th class="px-4 py-3 text-right text-sm font-bold text-brand-700">الجهاز</th>
+              <th class="px-4 py-3 text-right text-sm font-bold text-brand-700">المتصفح</th>
+              <th class="px-4 py-3 text-right text-sm font-bold text-brand-700">الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="loginLogsTable">
+            <tr><td colspan="5" class="text-center py-8 text-brand-400">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 </main>
 </div>
