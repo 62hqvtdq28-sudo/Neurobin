@@ -368,6 +368,12 @@ async function _loadProfitBreakdown() {
     var rows = products
       .filter(function(p){ return Number(costMap[String(p.id)]||0) > 0 || Number(p.price||0) > 0; })
       .map(function(p) {
+        // calc profit first for sort
+        p._sortProfit = Number(p.price||0) - Number(costMap[String(p.id)]||0);
+        return p;
+      })
+      .sort(function(a,b){ return b._sortProfit - a._sortProfit; })
+      .map(function(p) {
         var cost   = Number(costMap[String(p.id)] || 0);
         var price  = Number(p.price || 0);
         var profit = price - cost;
