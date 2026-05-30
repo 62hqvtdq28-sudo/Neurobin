@@ -1,6 +1,7 @@
-// Neurobin Pharmacy - Groq Proxy v3
-// Uses Groq (llama-3.3-70b-versatile) — fast, free tier
+// Neurobin Pharmacy - Groq Proxy v4
+// Uses Groq (llama-4-scout) — fast, free tier
 // Response format mimics Gemini so frontend needs zero changes
+// v4: API key can be stored in ai_config.gemini_api_key (DB) as fallback
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -25,36 +26,48 @@ const FALLBACK_PROMPT = [
   'اذكر العروض والتوفير بإيجابية لتشجيع الشراء.',
 ].join(' ');
 
-async function getConfig(): Promise<{ system_prompt: string }> {
-  const defaults = { system_prompt: FALLBACK_PROMPT };
+interface ConfigRow {
+  system_prompt: string;
+  gemini_api_key?: string;
+}
+
+async function getConfig(): Promise<{ system_prompt: string; db_api_key: string | null }> {
+  const defaults = { system_prompt: FALLBACK_PROMPT, db_api_key: null };
   try {
     const sUrl = Deno.env.get('SUPABASE_URL');
     const sKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!sUrl || !sKey) return defaults;
-    const r = await fetch(sUrl + '/rest/v1/ai_config?select=system_prompt&id=eq.1&limit=1', {
-      headers: { 'apikey': sKey, 'Authorization': 'Bearer ' + sKey },
-    });
+    const r = await fetch(
+      sUrl + '/rest/v1/ai_config?select=system_prompt,gemini_api_key&id=eq.1&limit=1',
+      { headers: { 'apikey': sKey, 'Authorization': 'Bearer ' + sKey } },
+    );
     if (r.ok) {
-      const rows = await r.json();
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].system_prompt) {
-        console.log('[groq-proxy] Loaded system prompt from ai_config');
-        return { system_prompt: rows[0].system_prompt };
+      const rows: ConfigRow[] = await r.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        const row = rows[0];
+        console.log('[groq-proxy] Loaded config from ai_config');
+        return {
+          system_prompt: row.system_prompt || FALLBACK_PROMPT,
+          db_api_key: row.gemini_api_key || null,
+        };
       }
     }
   } catch (e) {
-    console.warn('[groq-proxy] DB error, using fallback prompt');
+    console.warn('[groq-proxy] DB error, using fallback config');
   }
   return defaults;
 }
 
-// Convert Gemini-style contents array to OpenAI/Groq messages format
-function convertContents(contents: Array<{role: string; parts: Array<{text: string}>}>, systemPrompt: string) {
-  const messages: Array<{role: string; content: string}> = [
-    { role: 'system', content: systemPrompt }
+function convertContents(
+  contents: Array<{ role: string; parts: Array<{ text: string }> }>,
+  systemPrompt: string,
+) {
+  const messages: Array<{ role: string; content: string }> = [
+    { role: 'system', content: systemPrompt },
   ];
   for (const c of contents) {
     const role = c.role === 'model' ? 'assistant' : 'user';
-    const content = (c.parts || []).map(p => p.text || '').join('');
+    const content = (c.parts || []).map((p) => p.text || '').join('');
     if (content.trim()) messages.push({ role, content });
   }
   return messages;
@@ -65,12 +78,21 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   try {
-    // Support both GROQ_API_KEY and GROK_API_KEY env var names
-    const groqKey = Deno.env.get('GROQ_API_KEY') || Deno.env.get('GROK_API_KEY');
+    const config = await getConfig();
+
+    // Key resolution order:
+    // 1. GROQ_API_KEY env var (Supabase secret)
+    // 2. GROK_API_KEY env var (Supabase secret — alternate name)
+    // 3. ai_config.gemini_api_key from DB (set via admin panel or REST API)
+    const groqKey =
+      Deno.env.get('GROQ_API_KEY') ||
+      Deno.env.get('GROK_API_KEY') ||
+      config.db_api_key;
+
     if (!groqKey) {
       return new Response(
-        JSON.stringify({ error: 'GROQ_API_KEY not configured' }),
-        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Groq API key not configured' }),
+        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -78,21 +100,14 @@ Deno.serve(async (req) => {
     if (!reqBody.contents || !Array.isArray(reqBody.contents)) {
       return new Response(
         JSON.stringify({ error: 'Invalid request: contents array required' }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
       );
     }
 
-    const config = await getConfig();
-
-    // Two modes:
-    // 1. Admin training panel → sends system_instruction directly (special AI, bypass DB)
-    // 2. Customer chat widget → sends catalog_context only (use DB personality + catalog)
     let systemPrompt: string;
     if (reqBody.system_instruction?.parts?.[0]?.text) {
-      // Admin training mode: use as-is so training AI works correctly
       systemPrompt = reqBody.system_instruction.parts[0].text;
     } else {
-      // Customer chat mode: DB personality + catalog + training examples
       systemPrompt = config.system_prompt;
       if (reqBody.catalog_context && typeof reqBody.catalog_context === 'string') {
         systemPrompt = systemPrompt + '\n\n' + reqBody.catalog_context;
@@ -120,10 +135,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify(groqBody),
     });
 
-    // Retry once on 429
     if (groqRes.status === 429) {
       console.log('[groq-proxy] Rate limited, retrying in 3s...');
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 3000));
       groqRes = await fetch(GROQ_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
@@ -141,7 +155,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Convert Groq (OpenAI format) response → Gemini format so frontend works unchanged
     const text = resData.choices?.[0]?.message?.content || '';
     const geminiResponse = {
       candidates: [{ content: { parts: [{ text }], role: 'model' } }],
@@ -152,13 +165,12 @@ Deno.serve(async (req) => {
       status: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
-
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[groq-proxy] Unhandled error:', msg);
     return new Response(
       JSON.stringify({ error: msg }),
-      { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } },
     );
   }
 });
