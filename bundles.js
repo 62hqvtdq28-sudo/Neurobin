@@ -251,7 +251,8 @@ async function saveBundle() {
     var imageFile  = (imgInputEl && imgInputEl.files && imgInputEl.files.length > 0) ? imgInputEl.files[0] : null;
     var imageUrl   = imgUrlEl ? (imgUrlEl.value || null) : null;
 
-    if (imageFile) {
+    // If uploadBundleImageNow already uploaded and set the URL, skip re-upload
+    if (imageFile && (!imageUrl || imageUrl.startsWith('data:'))) {
       try {
         imageUrl = await SupaDB.ImageStorage.upload(imageFile, 'bundle_' + Date.now());
       } catch(imgErr) {
