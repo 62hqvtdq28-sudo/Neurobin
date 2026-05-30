@@ -503,6 +503,8 @@ async function checkAuth() {
           // Update remember token with new session token
           tokenData.sessionToken = newSessionToken;
           localStorage.setItem('adminRememberToken', JSON.stringify(tokenData));
+          recordLoginEvent('remember-me', 'success');
+          sendTelegramAlert(_buildLoginMsg('success'));
           showDashboard();
           return;
         }
