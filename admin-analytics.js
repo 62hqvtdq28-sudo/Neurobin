@@ -93,15 +93,16 @@ async function loadAnalytics() {
         }
       });
     });
-    var profitMargin = totalRevenue > 0 && totalCost > 0
-      ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+    var _costRevenue = totalCost + totalProfit;
+    var profitMargin = _costRevenue > 0 && totalCost > 0
+      ? Math.round((totalProfit / _costRevenue) * 100) : 0;
     var hasCostData = Object.keys(_costMap).length > 0;
 
     // ═══ RENDER STATS CARDS ═══
     var statsData = [
-      { icon:'banknote',       label:'إجمالي المبيعات',      val:totalRevenue.toLocaleString('ar-IQ')+' د.ع', cls:'green'  },
+      { icon:'banknote',       label:'إجمالي المبيعات',      val:totalRevenue.toLocaleString('en-US')+' د.ع', cls:'green'  },
       { icon:'check-circle-2', label:'طلبات مكتملة',         val:delivered.length,                            cls:'blue'   },
-      { icon:'trending-up',    label:'متوسط قيمة الطلب',     val:avgOrder.toLocaleString('ar-IQ')+' د.ع',    cls:'purple' },
+      { icon:'trending-up',    label:'متوسط قيمة الطلب',     val:avgOrder.toLocaleString('en-US')+' د.ع',    cls:'purple' },
       { icon:'users',          label:'عميل نشط (30 يوم)',    val:activePhones.size,                           cls:'amber'  }
     ];
     var clsMap = {
@@ -139,7 +140,7 @@ async function loadAnalytics() {
               '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-700 text-lg">💰</div>'+
               '<span class="text-xs sm:text-sm font-semibold text-brand-600">صافي الربح</span>'+
             '</div>'+
-            '<p class="text-xl sm:text-2xl font-bold '+(totalProfit>=0?'text-emerald-700':'text-red-600')+'">'+(totalProfit>=0?'+':'')+totalProfit.toLocaleString('ar-IQ')+' د.ع</p>'+
+            '<p class="text-xl sm:text-2xl font-bold '+(totalProfit>=0?'text-emerald-700':'text-red-600')+'">'+(totalProfit>=0?'+':'')+totalProfit.toLocaleString('en-US')+' د.ع</p>'+
             '<p class="text-xs text-brand-400 mt-1">من الطلبات المكتملة</p>'+
           '</div>'+
           '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-orange-100 bg-orange-50 shadow-sm">'+
@@ -147,7 +148,7 @@ async function loadAnalytics() {
               '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-orange-100 text-orange-700 text-lg">📦</div>'+
               '<span class="text-xs sm:text-sm font-semibold text-brand-600">إجمالي التكلفة</span>'+
             '</div>'+
-            '<p class="text-xl sm:text-2xl font-bold text-orange-700">'+totalCost.toLocaleString('ar-IQ')+' د.ع</p>'+
+            '<p class="text-xl sm:text-2xl font-bold text-orange-700">'+totalCost.toLocaleString('en-US')+' د.ع</p>'+
             '<p class="text-xs text-brand-400 mt-1">تكلفة المنتجات المباعة</p>'+
           '</div>'+
           '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-sky-100 bg-sky-50 shadow-sm">'+
@@ -305,7 +306,7 @@ function _renderSalesChart(allOrders, delivered) {
             label: function(ctx){
               var v=ctx.raw||0;
               var pct = totalSales>0 ? Math.round(v/totalSales*100) : 0;
-              return ' '+v.toLocaleString('ar-IQ')+' د.ع ('+pct+'%)';
+              return ' '+v.toLocaleString('en-US')+' د.ع ('+pct+'%)';
             }
           }
         }
@@ -327,7 +328,7 @@ function _renderSalesChart(allOrders, delivered) {
         return '<div class="flex items-center gap-1.5 text-xs">'+
           '<div class="w-2 h-2 rounded-full bg-brand-600"></div>'+
           '<span class="text-brand-600 font-semibold">'+labels[i]+':</span>'+
-          '<span class="text-brand-900 font-bold">'+v.toLocaleString('ar-IQ')+'</span>'+
+          '<span class="text-brand-900 font-bold">'+v.toLocaleString('en-US')+'</span>'+
           '<span class="text-brand-400">('+pct+'%)</span>'+
           '</div>';
       }).join('') + '</div>';
@@ -489,9 +490,9 @@ async function loadVisitorStats() {
     }).join('');
 
     var html = '<div id="visitorStatsSection" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">' +
-      '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('ar-IQ') + '</p></div>' +
-      '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700"><i data-lucide="calendar-check" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('ar-IQ') + '</p></div>' +
-      '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('ar-IQ') + '</p></div>' +
+      '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('en-US') + '</p></div>' +
+      '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700"><i data-lucide="calendar-check" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('en-US') + '</p></div>' +
+      '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('en-US') + '</p></div>' +
       '<div class="sm:col-span-2 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><h4 class="text-sm font-bold text-brand-700 mb-4">الزيارات — آخر 7 أيام</h4><div class="flex items-end gap-2 h-24">' + barsHtml + '</div></div>' +
       '<div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><h4 class="text-sm font-bold text-brand-700 mb-4">نوع الجهاز</h4><div class="space-y-3">' +
         '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📱 موبايل</span><span>' + mobilePercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-green-400 rounded-full" style="width:' + mobilePercent + '%"></div></div></div>' +
