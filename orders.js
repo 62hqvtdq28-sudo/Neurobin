@@ -15,12 +15,16 @@ async function loadOrders() {
     var orders = allOrders;
     var q = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
     if (currentOrderFilter !== 'all' && currentOrderFilter !== 'deleted') orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
-    if (q) orders = orders.filter(function(o){ return (o.name||o.customer_name||'').toLowerCase().includes(q) || (o.phone||o.customer_phone||'').includes(q); });
+    if (q) orders = orders.filter(function(o){ var itemsStr=(Array.isArray(o.items)?o.items:Array.isArray(o.order_items)?o.order_items:[]).map(function(it){return (it.name||it.product_name||'').toLowerCase();}).join(' '); return (o.name||o.customer_name||'').toLowerCase().includes(q)||(o.phone||o.customer_phone||'').includes(q)||(o.customer_address||o.address||'').toLowerCase().includes(q)||itemsStr.includes(q); });
     if (!orders.length) { container.classList.add('hidden'); noOrders.classList.remove('hidden'); return; }
     container.classList.remove('hidden'); noOrders.classList.add('hidden');
-    var statusLabels={new:'قيد المراجعة',pending:'قيد المراجعة',preparing:'قيد التحضير',progress:'في الطريق 🚚',on_the_way:'في الطريق 🚚',delivered:'تم التسليم',cancelled:'تم الإلغاء'};
-    var statusClasses={new:'order-new',pending:'order-new',preparing:'order-progress',progress:'order-progress',on_the_way:'order-progress',delivered:'order-delivered',cancelled:'order-cancelled'};
+    var statusLabels={new:'✅ تم التثبيت',pending:'✅ تم التثبيت',preparing:'📦 جاري التجهيز',shipped:'🚐 مع المندوب',progress:'🚚 في الطريق',on_the_way:'🚚 في الطريق',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
+    var statusClasses={new:'order-new',pending:'order-new',preparing:'order-progress',shipped:'order-progress',progress:'order-progress',on_the_way:'order-progress',delivered:'order-delivered',cancelled:'order-cancelled'};
     var html = '';
+    // Sequential numbering: sort all non-cancelled/deleted orders globally, then find index for each
+    var _numberedOrders = (allOrders||[]).filter(function(o){ return o.status!=='cancelled' && !o.deleted_at; }).slice().sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
+    var _numMap = {};
+    _numberedOrders.forEach(function(o,i){ _numMap[String(o.id)] = i+1; });
     orders.forEach(function(order) {
       var oid = escapeHTML(String(order.id));
       var status = order.status || 'new';
@@ -39,11 +43,14 @@ async function loadOrders() {
         actionBtns = '<p class="text-center text-sm text-red-500 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
         actionBtns += '<button data-action="delete-order" data-order-id="' + oid + '" class="w-full mt-2 bg-red-50 text-red-400 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors">🗑️ حذف</button>';
       } else {
-        if (status !== 'progress' && status !== 'on_the_way') {
-          actionBtns += '<button data-action="status-progress" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">في الطريق 🚚</button>';
+        var _statusFlow = {new:'preparing',preparing:'shipped',shipped:'on_the_way',on_the_way:'delivered'};
+        var _statusBtnLabels = {new:'📦 تجهيز الطلب',preparing:'🚐 تسليم للمندوب',shipped:'🚚 المندوب في الطريق',on_the_way:'✅ تم التوصيل'};
+        var _nextStatus = _statusFlow[status];
+        if (_nextStatus) {
+          actionBtns += '<button data-action="status-next" data-order-id="' + oid + '" data-next-status="' + _nextStatus + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">' + (_statusBtnLabels[status]||'التالي') + '</button>';
         }
-        actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">تم التسليم ✓</button>' +
-          '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">إلغاء ✕</button>';
+        actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">✅ تم التسليم</button>' +
+          '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">✕ إلغاء</button>';
       }
 
       // ─── بناء HTML الكارد بشكل صحيح ───
@@ -52,7 +59,7 @@ async function loadOrders() {
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
       cardHtml += '<div>';
-      cardHtml += '<h3 class="font-bold text-brand-900">' + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
+      var _orderNum = _numMap[String(order.id)]; var _numBadge = _orderNum ? '<span class="inline-block bg-brand-800 text-white text-xs font-mono font-bold px-2 py-0.5 rounded mr-1">#NB-' + String(_orderNum).padStart(3,'0') + '</span> ' : ''; cardHtml += '<h3 class="font-bold text-brand-900">' + _numBadge + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
       cardHtml += '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'') + '</p>';
       if (order.tracking_code) {
         cardHtml += '<p class="text-xs font-bold text-amber-700">📱 ' + escapeHTML(order.tracking_code) + '</p>';
@@ -114,7 +121,7 @@ function searchOrders() { loadOrders(); }
 async function updateOrderStatus(orderId, status) {
   // Validate inputs directly (no sessionStorage dependency)
   if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
-  var validStatuses = ['new','pending','preparing','progress','on_the_way','delivered','cancelled'];
+  var validStatuses = ['new','pending','preparing','shipped','progress','on_the_way','delivered','cancelled'];
   if (!validStatuses.includes(status)) { showToast('حالة غير صالحة: ' + status,'error'); return; }
   try {
     await SupaDB.Orders.updateStatus(String(orderId), status);
@@ -203,6 +210,7 @@ document.addEventListener('click', function(e) {
   var action = btn.dataset.action;
   switch(action) {
     case 'status-progress':  updateOrderStatus(btn.dataset.orderId,'progress');  break;
+      case 'status-next':      updateOrderStatus(btn.dataset.orderId, btn.dataset.nextStatus||'preparing'); break;
     case 'status-delivered': updateOrderStatus(btn.dataset.orderId,'delivered'); break;
     case 'status-cancelled': updateOrderStatus(btn.dataset.orderId,'cancelled'); break;
     case 'delete-order':      deleteOrder(btn.dataset.orderId);     break;
