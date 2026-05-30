@@ -2407,6 +2407,7 @@ async function saveCatImg(key, url) {
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('[data-chip]');
     if (!btn) return;
+    if (btn.classList.contains('chip-skin')) return; // multi-select handled separately
     var fid = btn.dataset.chip, val = btn.dataset.value;
     var inp = document.getElementById(fid);
     if (inp) inp.value = val;
