@@ -885,14 +885,6 @@ section, div { max-width: 100%; }
   </div>
 </footer>
 
-<!-- WhatsApp Float Button -->
-<a href="https://wa.me/9647870404967" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="تواصل معنا عبر واتساب">
-  <div class="pulse-ring"></div>
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.06 6.988 2.943a9.84 9.84 0 012.893 3.841 9.82 9.82 0 011.404 5.132c-.002 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-  </svg>
-</a>
-
 <script src="app.js" charset="utf-8" defer></script>
 
 <!-- Notify Modal -->
@@ -905,7 +897,7 @@ section, div { max-width: 100%; }
       </button>
     </div>
     <p id="notifyProductTitle" class="text-brand-700 font-semibold text-sm mb-3"></p>
-    <p class="text-brand-500 text-sm mb-4">أدخل رقم هاتفك وسنُرسل إليك رسالة على واتساب حين يعود هذا المنتج للتوفر.</p>
+    <p class="text-brand-500 text-sm mb-4">أدخل رقم هاتفك وسنُبلّغك فور توفر المنتج.</p>
     <input type="tel" id="notifyPhone"
       class="w-full px-4 py-3 border-2 border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all mb-4"
       placeholder="07XX XXX XXXX" maxlength="14" autocomplete="tel"
@@ -1132,6 +1124,72 @@ window.addEventListener('resize', function() {
 })();
 </script>
 <script>
+/* ── Contact Form → Supabase ──────────────────────────────────── */
+(function() {
+  var _SB_URL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var _HDR = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+  function _hookContactForm() {
+    var form = document.getElementById('contactForm');
+    if (!form || form._hooked) return;
+    form._hooked = true;
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var name = (document.getElementById('contactName').value || '').trim();
+      var info = (document.getElementById('contactInfo').value || '').trim();
+      var msg  = (document.getElementById('contactMessage').value || '').trim();
+      if (!name || !info || !msg) return;
+      var btn = form.querySelector('button[type="submit"]');
+      var sp  = btn && btn.querySelector('span');
+      if (btn) btn.disabled = true;
+      if (sp) sp.textContent = 'جاري الإرسال...';
+      try {
+        var r = await fetch(_SB_URL + '/rest/v1/contact_messages', {
+          method: 'POST', headers: _HDR,
+          body: JSON.stringify({ name: name, contact_info: info, message: msg })
+        });
+        if (r.ok || r.status === 201) {
+          form.reset();
+          var ok = document.createElement('div');
+          ok.className = 'mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-center font-semibold text-sm';
+          ok.textContent = '✅ وصلت رسالتك! سنتواصل معك قريباً.';
+          form.parentNode.appendChild(ok);
+          setTimeout(function() { ok.remove(); }, 5000);
+        } else { alert('حدث خطأ. يرجى المحاولة لاحقاً.'); }
+      } catch(err) { alert('خطأ في الإرسال: ' + err.message); }
+      finally { if (btn) btn.disabled = false; if (sp) sp.textContent = 'إرسال الرسالة'; }
+    });
+  }
+
+  /* Override submitNotifyRequest → Supabase */
+  window.submitNotifyRequest = async function() {
+    var phone   = (document.getElementById('notifyPhone') ? document.getElementById('notifyPhone').value : '').trim();
+    var product = document.getElementById('notifyProductTitle') ? document.getElementById('notifyProductTitle').textContent.trim() : 'منتج';
+    if (!phone || phone.replace(/\D/g,'').length < 10) { alert('يرجى إدخال رقم هاتف صحيح'); return; }
+    var btn = document.getElementById('notifySubmitBtn');
+    if (btn) btn.disabled = true;
+    try {
+      var r = await fetch(_SB_URL + '/rest/v1/contact_messages', {
+        method: 'POST', headers: _HDR,
+        body: JSON.stringify({ name: 'إشعار عند التوفر', contact_info: phone, message: 'أريد الإشعار عند توفر: ' + product })
+      });
+      if (r.ok || r.status === 201) {
+        if (typeof closeNotifyModal === 'function') closeNotifyModal();
+        var ok = document.createElement('div');
+        ok.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 24px;border-radius:14px;font-weight:700;z-index:9999;font-family:Cairo,sans-serif;';
+        ok.textContent = '✅ تم تسجيل طلبك! سنُبلّغك عند توفر المنتج.';
+        document.body.appendChild(ok);
+        setTimeout(function() { ok.remove(); }, 4000);
+      } else { alert('حدث خطأ. يرجى المحاولة مجدداً.'); }
+    } catch(err) { alert('خطأ: ' + err.message); }
+    finally { if (btn) btn.disabled = false; }
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _hookContactForm);
+  else _hookContactForm();
+})();
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('/Neurobin/sw.js',{scope:'/Neurobin/'})
