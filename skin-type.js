@@ -1,4 +1,4 @@
-// skin-type.js v4 — نوع البشرة sub-filter
+// skin-type.js v5 — نوع البشرة sub-filter
 // Multi-select admin | Single-select customer | Direct click hook (no wrapper needed)
 
 (function() {
@@ -9,11 +9,14 @@ var _skinTypeMap     = {};
 var _settingsLoaded  = false;
 
 var SKIN_TYPES = [
-  { value: null,        label: 'الكل',               icon: '',   bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' },
-  { value: 'combination', label: 'بشرة مختلطة',     icon: '💧', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
-  { value: 'oily',       label: 'بشرة دهنية',        icon: '✨', bg: '#FEFCE8', color: '#A16207', border: '#FDE68A' },
-  { value: 'dry',        label: 'بشرة جافة',          icon: '🌿', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
-  { value: 'all_types',  label: 'لكل أنواع البشرة', icon: '🌸', bg: '#FAF5FF', color: '#7C3AED', border: '#DDD6FE' }
+  { value: null,          label: 'الكل',                      icon: '',   bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' },
+  { value: 'combination', label: 'بشرة مختلطة',          icon: '💧', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  { value: 'oily',        label: 'بشرة دهنية',           icon: '✨', bg: '#FEFCE8', color: '#A16207', border: '#FDE68A' },
+  { value: 'dry',         label: 'بشرة جافة',             icon: '🌿', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
+  { value: 'normal',      label: 'بشرة عادية',             icon: '⭐', bg: '#F8FAFC', color: '#0F766E', border: '#99F6E4' },
+  { value: 'sensitive',   label: 'بشرة حساسة جداً',       icon: '🌹', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' },
+  { value: 'acne_prone',  label: 'بشرة معرضة للحبوب', icon: '🟠', bg: '#FFF7ED', color: '#C2410C', border: '#FDBA74' },
+  { value: 'all_types',   label: 'لكل أنواع البشرة',   icon: '🌸', bg: '#FAF5FF', color: '#7C3AED', border: '#DDD6FE' }
 ];
 
 function _parseTypes(raw) {
@@ -81,11 +84,14 @@ function _buildAdminSubFilterHTML() {
 
 // ── CUSTOMER SITE sub-filter (colored squares) ────────────────────────────
 function _buildMainSubFilterHTML() {
-  var sqOpts = [
-    { value: 'combination', label: 'بشرة مختلطة',     emoji: '💧', bg: '#DBEAFE', activeBg: '#3B82F6', border: '#93C5FD', color: '#1E40AF' },
-    { value: 'oily',        label: 'بشرة دهنية',       emoji: '✨', bg: '#FEF9C3', activeBg: '#EAB308', border: '#FDE68A', color: '#854D0E' },
-    { value: 'dry',         label: 'بشرة جافة',         emoji: '🌿', bg: '#DCFCE7', activeBg: '#22C55E', border: '#86EFAC', color: '#166534' },
-    { value: 'all_types',   label: 'لكل أنواع البشرة', emoji: '🌸', bg: '#F3E8FF', activeBg: '#9333EA', border: '#D8B4FE', color: '#6B21A8' }
+    var sqOpts = [
+    { value: 'combination', label: 'بشرة مختلطة',          emoji: '💧', bg: '#DBEAFE', activeBg: '#3B82F6', border: '#93C5FD', color: '#1E40AF' },
+    { value: 'oily',        label: 'بشرة دهنية',           emoji: '✨', bg: '#FEF9C3', activeBg: '#EAB308', border: '#FDE68A', color: '#854D0E' },
+    { value: 'dry',         label: 'بشرة جافة',             emoji: '🌿', bg: '#DCFCE7', activeBg: '#22C55E', border: '#86EFAC', color: '#166534' },
+    { value: 'normal',      label: 'بشرة عادية',             emoji: '⭐', bg: '#F0FDFA', activeBg: '#0D9488', border: '#99F6E4', color: '#0F766E' },
+    { value: 'sensitive',   label: 'حساسة جداً',             emoji: '🌹', bg: '#FFF1F2', activeBg: '#E11D48', border: '#FECDD3', color: '#BE123C' },
+    { value: 'acne_prone',  label: 'معرضة للحبوب',        emoji: '🟠', bg: '#FFF7ED', activeBg: '#EA580C', border: '#FDBA74', color: '#C2410C' },
+    { value: 'all_types',   label: 'لكل الأنواع',          emoji: '🌸', bg: '#F3E8FF', activeBg: '#9333EA', border: '#D8B4FE', color: '#6B21A8' }
   ];
   var isNone = !_currentSkinType;
   var allBtn = '<button onclick="SkinType.setFilter(\'\')" class="skin-type-sq-main" data-skin="" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:75px;height:75px;border-radius:14px;background:' + (isNone?'#CBD5E1':'#F8FAFC') + ';color:#475569;border:2px solid ' + (isNone?'#94A3B8':'#E2E8F0') + ';font-size:11px;font-weight:' + (isNone?'700':'600') + ';cursor:pointer;transition:all 0.2s;font-family:Cairo,sans-serif;box-shadow:' + (isNone?'0 4px 12px rgba(0,0,0,0.12)':'0 1px 4px rgba(0,0,0,0.06)') + ';"><span style="font-size:20px;">🔍</span><span>الكل</span></button>';
