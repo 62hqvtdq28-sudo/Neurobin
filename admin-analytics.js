@@ -14,6 +14,20 @@ async function loadAnalytics() {
     var allOrders = await SupaDB.Orders.list();
     var delivered = allOrders.filter(function(o){ return o.status === 'delivered'; });
 
+    // ── تحميل بيانات التكلفة والمنتجات لحساب الأرباح ──────────────────
+    var _costMap = {};  // productId → costPrice
+    var _nameToId = {}; // productName → productId
+    try {
+      var _settings = await SupaDB.Settings.get();
+      var _costsRaw = _settings && _settings.product_costs;
+      _costMap = _costsRaw ? JSON.parse(_costsRaw) : {};
+      var _products = await SupaDB.Products.list();
+      _products.forEach(function(p) {
+        _nameToId[(p.name_ar||p.name||'').trim()] = String(p.id);
+        _nameToId[(p.name||'').trim()] = String(p.id);
+      });
+    } catch(e) { console.warn('[Analytics] cost load error:', e.message); }
+
     var totalRevenue = delivered.reduce(function(s,o){
       return s + (Number(o.total_amount || o.total) || 0);
     }, 0);
@@ -58,6 +72,28 @@ async function loadAnalytics() {
       newCount: newCount, progressCount: progressCount, deliveredCount: deliveredCount, cancelledCount: cancelledCount
     };
 
+    // ═══ حساب الأرباح ═══
+    var totalCost = 0, totalProfit = 0, profitableItems = 0, totalItems = 0;
+    delivered.forEach(function(o) {
+      var items = o.items || o.order_items || o.cart_items || [];
+      items.forEach(function(item) {
+        var name = (item.name || item.product_name || '').trim();
+        var pid  = _nameToId[name];
+        var cost = pid ? (_costMap[pid] || 0) : 0;
+        var sell = Number(item.price || item.unit_price || 0);
+        var qty  = Number(item.quantity || 1);
+        totalItems += qty;
+        if (cost > 0) {
+          totalCost   += cost * qty;
+          totalProfit += (sell - cost) * qty;
+          profitableItems += qty;
+        }
+      });
+    });
+    var profitMargin = totalRevenue > 0 && totalCost > 0
+      ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+    var hasCostData = Object.keys(_costMap).length > 0;
+
     // ═══ RENDER STATS CARDS ═══
     var statsData = [
       { icon:'banknote',       label:'إجمالي المبيعات',      val:totalRevenue.toLocaleString('ar-IQ')+' د.ع', cls:'green'  },
@@ -82,6 +118,54 @@ async function loadAnalytics() {
           '<p class="text-xl sm:text-2xl font-bold text-brand-900">'+s.val+'</p>'+
           '</div>';
       }).join('');
+
+      // ── بطاقات الأرباح ─────────────────────────────────────────────────
+      var profitSection = document.getElementById('analyticsProfitCards');
+      if (!profitSection) {
+        profitSection = document.createElement('div');
+        profitSection.id = 'analyticsProfitCards';
+        profitSection.className = 'grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4';
+        cardsEl.parentNode.insertBefore(profitSection, cardsEl.nextSibling);
+      }
+      if (hasCostData) {
+        var marginColor = profitMargin >= 30 ? 'emerald' : profitMargin >= 15 ? 'amber' : 'red';
+        var marginIcon  = profitMargin >= 30 ? '🟢' : profitMargin >= 15 ? '🟡' : '🔴';
+        profitSection.innerHTML =
+          '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-100 bg-emerald-50 shadow-sm">'+
+            '<div class="flex items-center gap-3 mb-3">'+
+              '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-700 text-lg">💰</div>'+
+              '<span class="text-xs sm:text-sm font-semibold text-brand-600">صافي الربح</span>'+
+            '</div>'+
+            '<p class="text-xl sm:text-2xl font-bold '+(totalProfit>=0?'text-emerald-700':'text-red-600')+'">'+(totalProfit>=0?'+':'')+totalProfit.toLocaleString('ar-IQ')+' د.ع</p>'+
+            '<p class="text-xs text-brand-400 mt-1">من الطلبات المكتملة</p>'+
+          '</div>'+
+          '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-orange-100 bg-orange-50 shadow-sm">'+
+            '<div class="flex items-center gap-3 mb-3">'+
+              '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-orange-100 text-orange-700 text-lg">📦</div>'+
+              '<span class="text-xs sm:text-sm font-semibold text-brand-600">إجمالي التكلفة</span>'+
+            '</div>'+
+            '<p class="text-xl sm:text-2xl font-bold text-orange-700">'+totalCost.toLocaleString('ar-IQ')+' د.ع</p>'+
+            '<p class="text-xs text-brand-400 mt-1">تكلفة المنتجات المباعة</p>'+
+          '</div>'+
+          '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-sky-100 bg-sky-50 shadow-sm">'+
+            '<div class="flex items-center gap-3 mb-3">'+
+              '<div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700 text-lg">'+marginIcon+'</div>'+
+              '<span class="text-xs sm:text-sm font-semibold text-brand-600">هامش الربح</span>'+
+            '</div>'+
+            '<p class="text-xl sm:text-2xl font-bold text-sky-700">'+profitMargin+'%</p>'+
+            '<p class="text-xs text-brand-400 mt-1">نسبة الربح من المبيعات</p>'+
+          '</div>';
+      } else {
+        profitSection.innerHTML =
+          '<div class="sm:col-span-3 bg-gradient-to-l from-brand-50 to-amber-50 rounded-2xl p-4 border border-amber-100 flex items-center gap-3">'+
+            '<span class="text-2xl">💡</span>'+
+            '<div>'+
+              '<p class="text-sm font-bold text-brand-800">أضف سعر الكوست لمنتجاتك لحساب أرباحك</p>'+
+              '<p class="text-xs text-brand-500 mt-0.5">اذهب إلى المنتجات ← عدّل أي منتج ← أدخل السعر (الكوست)</p>'+
+            '</div>'+
+          '</div>';
+      }
+
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
