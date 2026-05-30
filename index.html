@@ -464,6 +464,10 @@ section, div { max-width: 100%; }
         <span>اكتشف منتجاتنا</span>
         <i data-lucide="arrow-down" class="w-5 h-5"></i>
       </a>
+      <a href="#track-order" class="btn-animated border-2 border-gold text-gold px-10 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 hover:bg-gold hover:text-brand-900 transition-all duration-300 w-full sm:w-auto backdrop-blur-sm">
+        <i data-lucide="map-pin" class="w-5 h-5"></i>
+        <span>تتبع طلبك</span>
+      </a>
     </div>
 
     <div class="fade-in mt-16 md:mt-20 grid grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto" role="list" aria-label="إحصائيات الموقع">
@@ -667,11 +671,11 @@ section, div { max-width: 100%; }
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center mb-16 scroll-animate">
       <span class="inline-block bg-gold/20 text-brand-700 font-semibold px-5 py-2 rounded-full text-sm mb-4">لماذا نحن</span>
-      <h2 id="featuresTitle" class="font-heading font-bold text-3xl md:text-4xl text-brand-900 mb-4">مميزات تجعلنا مميزين</h2>
+      <h2 id="featuresTitle" class="font-heading font-bold text-3xl md:text-4xl text-brand-900 mb-4">مميزات تجعلنا الأفضل</h2>
       <p class="text-brand-700/70 max-w-2xl mx-auto">نقدم لك تجربة تسوق فريدة مع ضمان الجودة والخدمة المتميزة</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
       <div class="feature-card scroll-animate delay-100">
         <div class="feature-icon bg-gradient-to-br from-green-100 to-green-200 mb-6">
           <i data-lucide="shield-check" class="w-8 h-8 text-green-700"></i>
@@ -702,6 +706,14 @@ section, div { max-width: 100%; }
         </div>
         <h3 class="font-heading font-bold text-xl text-brand-900 mb-3">دفع آمن ومتنوع</h3>
         <p class="text-brand-600/80 leading-relaxed">نوفر لك عدة طرق دفع آمنة تتضمن الدفع عند الاستلام والتحويل البنكي</p>
+      </div>
+
+      <div class="feature-card scroll-animate delay-500">
+        <div class="feature-icon bg-gradient-to-br from-purple-100 to-purple-200 mb-6">
+          <i data-lucide="map-pin" class="w-8 h-8 text-purple-700"></i>
+        </div>
+        <h3 class="font-heading font-bold text-xl text-brand-900 mb-3">تتبع طلبك</h3>
+        <p class="text-brand-600/80 leading-relaxed">تابع حالة طلبك لحظة بلحظة من الاستلام حتى الوصول إلى باب منزلك</p>
       </div>
     </div>
   </div>
@@ -965,14 +977,21 @@ window.addEventListener('load', function() {
         var circle = document.getElementById('cat_circle_' + catKey);
         if (!circle || !row.value || !row.value.startsWith('http')) return;
         // Use background-image — reliable on all browsers/iOS, no position issues
-        circle.style.backgroundImage  = 'url(' + row.value + ')';
-        circle.style.backgroundSize   = 'contain';
-        circle.style.backgroundRepeat = 'no-repeat';
-        circle.style.backgroundPosition = 'center';
+        // Show image directly via <img> tag for reliability
         var icoEl = circle.querySelector('i');
         if (icoEl) icoEl.style.display = 'none';
         var imgEl = circle.querySelector('img');
-        if (imgEl) imgEl.style.display = 'none';
+        if (imgEl) {
+          imgEl.src = row.value;
+          imgEl.style.display = 'block';
+        } else {
+          // Fallback: background-image
+          circle.style.backgroundImage  = 'url(' + row.value + ')';
+          circle.style.backgroundSize   = 'cover';
+          circle.style.backgroundRepeat = 'no-repeat';
+          circle.style.backgroundPosition = 'center';
+          circle.style.backgroundColor = 'transparent';
+        }
       });
     } catch(e) { /* silent — icons remain */ }
   }, 900);
@@ -1200,3 +1219,4 @@ window.addEventListener('resize', function() {
 </script>
 </body>
 </html>
+
