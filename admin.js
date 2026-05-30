@@ -9,10 +9,14 @@ function saveSettings() {
   var instagramUrl = validateURL(document.getElementById('instagramUrl').value);
   var whatsappNumber = validatePhone(document.getElementById('whatsappNumber').value);
 
+  var telegramBotToken = (document.getElementById('telegramBotToken').value || '').trim();
+  var telegramChatId = (document.getElementById('telegramChatId').value || '').trim();
   var settings = {
     siteName: siteName,
     instagramUrl: instagramUrl,
-    whatsappNumber: whatsappNumber
+    whatsappNumber: whatsappNumber,
+    telegramBotToken: telegramBotToken,
+    telegramChatId: telegramChatId
   };
   localStorage.setItem('phSettings', JSON.stringify(settings));
   showToast('تم حفظ الإعدادات بنجاح', 'success');
@@ -115,6 +119,10 @@ function loadSettings() {
   document.getElementById('siteName').value = escapeHTML(settings.siteName || '');
   document.getElementById('instagramUrl').value = escapeHTML(settings.instagramUrl || '');
   document.getElementById('whatsappNumber').value = escapeHTML(settings.whatsappNumber || '');
+  if (document.getElementById('telegramBotToken'))
+    document.getElementById('telegramBotToken').value = settings.telegramBotToken || '';
+  if (document.getElementById('telegramChatId'))
+    document.getElementById('telegramChatId').value = settings.telegramChatId || '';
 }
 
 
@@ -892,3 +900,52 @@ async function saveCategoryImage(catFilter, imageUrl) {
 var _deviceCheckInterval = null;
 
 // توليد توكن فريد وتسجيله في Supabase
+// ─── Login Logs ───────────────────────────────────────────────────────────────
+
+function loadLoginLogs() {
+  var container = document.getElementById('loginLogsTable');
+  if (!container) return;
+  var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+  if (logs.length === 0) {
+    container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
+    return;
+  }
+  container.innerHTML = logs.map(function(log) {
+    var d = new Date(log.time);
+    var dateStr = d.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' });
+    var timeStr = d.toLocaleTimeString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
+    var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
+    var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
+    var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
+    return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
+      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(dateStr) + '<br><span class="text-xs text-brand-400">' + escapeHTML(timeStr) + '</span></td>' +
+      '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
+      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(log.device || 'غير معروف') + '</td>' +
+      '<td class="px-4 py-3 text-sm text-brand-700">' + escapeHTML(log.browser || 'غير معروف') + '</td>' +
+      '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function clearLoginLogs() {
+  if (!confirm('هل أنت متأكد من حذف سجل الدخول كاملاً؟')) return;
+  localStorage.removeItem('adminLoginLogs');
+  loadLoginLogs();
+  showToast('تم مسح سجل الدخول', 'success');
+}
+
+async function testTelegramAlert() {
+  var botToken = document.getElementById('telegramBotToken').value.trim();
+  var chatId = document.getElementById('telegramChatId').value.trim();
+  if (!botToken || !chatId) { showToast('أدخل رمز البوت و Chat ID أولاً', 'error'); return; }
+  try {
+    var resp = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: '✅ رسالة تجريبية من لوحة تحكم Neurobin', parse_mode: 'HTML' })
+    });
+    var data = await resp.json();
+    if (data.ok) showToast('تم الإرسال! تحقق من تيليجرام', 'success');
+    else showToast('خطأ: ' + (data.description || 'تأكد من البيانات'), 'error');
+  } catch(e) { showToast('تعذر الاتصال بتيليجرام', 'error'); }
+}
