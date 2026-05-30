@@ -1187,6 +1187,9 @@
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="oily" style="background:#FEFCE8;color:#A16207;border:1.5px solid #FDE68A">✨ دهنية</button>
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="dry" style="background:#F0FDF4;color:#15803D;border:1.5px solid #BBF7D0">🌿 جافة</button>
           <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="all_types" style="background:#FAF5FF;color:#7C3AED;border:1.5px solid #DDD6FE">🌸 لكل أنواع البشرة</button>
+          <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="normal" style="background:#F0FDFA;color:#0F766E;border:1.5px solid #99F6E4">⭐ عادية</button>
+          <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="sensitive" style="background:#FFF1F2;color:#BE123C;border:1.5px solid #FECDD3">🌹 حساسة جداً</button>
+          <button type="button" class="chip-pill chip-skin" data-chip="productSkinType" data-value="acne_prone" style="background:#FFF7ED;color:#C2410C;border:1.5px solid #FDBA74">🟠 معرضة للحبوب</button>
         </div>
       </div>
 
@@ -2125,6 +2128,7 @@ async function saveCatImg(key, url) {
   };
 
   // chip-skin = MULTI-SELECT (except 'بدون تحديد' which clears all)
+  // Uses classList.toggle('chip-selected') + CSS for reliable cross-browser visuals
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.chip-skin');
     if (!btn) return;
@@ -2133,29 +2137,25 @@ async function saveCatImg(key, url) {
     var hiddenEl = document.getElementById(target);
     var allBtns = document.querySelectorAll('.chip-skin[data-chip="' + target + '"]');
     if (val === '') {
-      // 'بدون تحديد' → clear all
+      // 'بدون تحديد' → clear all selections
       if (hiddenEl) hiddenEl.value = '';
-      allBtns.forEach(function(b) { b.style.fontWeight='600'; b.style.boxShadow='none'; b.style.opacity='1'; });
-      btn.style.fontWeight='700'; btn.style.boxShadow='0 0 0 2px #CBD5E1';
+      allBtns.forEach(function(b) { b.classList.remove('chip-selected'); });
+      btn.classList.add('chip-selected');
       return;
     }
-    // Toggle this chip
-    var current = hiddenEl ? hiddenEl.value : '';
-    var arr = current ? current.split(',').filter(Boolean) : [];
-    var idx = arr.indexOf(val);
-    if (idx === -1) { arr.push(val); } else { arr.splice(idx,1); }
-    if (hiddenEl) hiddenEl.value = arr.join(',');
-    // Deselect 'بدون تحديد'
+    // Deselect 'بدون تحديد' button
     var clearBtn = document.querySelector('.chip-skin[data-chip="' + target + '"][data-value=""]');
-    if (clearBtn) { clearBtn.style.fontWeight='600'; clearBtn.style.boxShadow='none'; }
-    // Update visuals
+    if (clearBtn) clearBtn.classList.remove('chip-selected');
+    // Toggle this chip
+    btn.classList.toggle('chip-selected');
+    // Build new value from all selected chips
+    var arr = [];
     allBtns.forEach(function(b) {
-      var bVal = b.dataset.value || '';
-      if (bVal === '') return;
-      var isOn = arr.indexOf(bVal) !== -1;
-      b.style.fontWeight = isOn ? '700' : '600';
-      b.style.boxShadow = isOn ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
+      if (b.dataset.value && b.classList.contains('chip-selected')) arr.push(b.dataset.value);
     });
+    if (hiddenEl) hiddenEl.value = arr.join(',');
+    // If nothing selected, re-select 'بدون تحديد'
+    if (arr.length === 0 && clearBtn) clearBtn.classList.add('chip-selected');
   });
 
   // Show/hide skin type section when category chips change
@@ -2185,14 +2185,14 @@ async function saveCatImg(key, url) {
         var stArr = Array.isArray(st) ? st : (st ? st.split(',').filter(Boolean) : []);
         var hiddenEl2 = document.getElementById('productSkinType');
         if (hiddenEl2) hiddenEl2.value = stArr.join(',');
-        var clearBtn2 = document.querySelector('.chip-skin[data-value=""]');
-        if (clearBtn2) { clearBtn2.style.fontWeight = stArr.length ? '600' : '700'; clearBtn2.style.boxShadow = stArr.length ? 'none' : '0 0 0 2px #CBD5E1'; }
+        // Restore chip visuals using classList (matches the new multi-select handler)
         document.querySelectorAll('.chip-skin[data-chip="productSkinType"]').forEach(function(b) {
           var bVal = b.dataset.value || '';
-          if (bVal === '') return;
-          var isOn = stArr.indexOf(bVal) !== -1;
-          b.style.fontWeight = isOn ? '700' : '600';
-          b.style.boxShadow = isOn ? '0 0 0 2px ' + (b.style.borderColor || '#CBD5E1') : 'none';
+          if (bVal === '') {
+            b.classList.toggle('chip-selected', stArr.length === 0);
+          } else {
+            b.classList.toggle('chip-selected', stArr.indexOf(bVal) !== -1);
+          }
         });
       }
     }
@@ -2399,6 +2399,7 @@ async function saveCatImg(key, url) {
 .chip-in.chip-selected  { background: #15803d; border-color: #15803d; }
 .chip-warn.chip-selected{ background: #c2410c; border-color: #c2410c; }
 .chip-out.chip-selected { background: #dc2626; border-color: #dc2626; }
+.chip-skin.chip-selected { font-weight: 700 !important; box-shadow: 0 0 0 2.5px currentColor inset !important; opacity: 1 !important; }
 </style>
 <script>
 (function(){
