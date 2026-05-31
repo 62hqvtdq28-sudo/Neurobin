@@ -2510,8 +2510,7 @@ body.modal-open {
   transform: translate3d(0, 0, 0) !important;
   -webkit-backface-visibility: hidden !important;
   backface-visibility: hidden !important;
-  -webkit-perspective: 1000px !important;
-  perspective: 1000px !important;
+  /* perspective removed — causes 3D rendering context on Safari/iPad, darkens page content */
   will-change: transform !important;
   isolation: isolate !important;
 }
@@ -2526,7 +2525,7 @@ body.modal-open {
 }
 
 /* ─── 7. GPU acceleration — only needed elements ─ */
-.product-card-main,
+/* NOTE: .product-card-main removed from translateZ(0) — 20+ GPU layers crashes iPad Safari */
 .cart-sidebar,
 .drawer-panel,
 #drawerPanel,
