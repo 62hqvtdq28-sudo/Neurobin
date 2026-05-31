@@ -17,7 +17,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- Security: Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
@@ -215,13 +215,9 @@
         <span class="font-semibold text-sm sm:text-base">طلبات الإشعار</span>
         <span id="notifyBadge" class="hidden absolute left-3 top-3 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
       </button>
-      <button onclick="showSection('loginlogs'); if(typeof loadLoginLogs==='function') loadLoginLogs();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
+      <button onclick="showSection('loginlogs'); if(typeof loadLoginLogs==='function') loadLoginLogs(); else { var _tb=document.getElementById('loginLogsTable'); if(_tb) _tb.innerHTML='<tr><td colspan=6 class=\'text-center py-8 text-brand-400\'>لا يوجد سجل دخول بعد</td></tr>'; }" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
         <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-500"></i>
         <span class="font-medium text-brand-700 text-xs sm:text-sm">سجل الدخول</span>
-      </button>
-      <button onclick="showSection('blacklist'); if(typeof loadBlacklist==='function') loadBlacklist();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="blacklist">
-        <i data-lucide="ban" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
-        <span class="font-medium text-brand-700 text-xs sm:text-sm">القائمة السوداء</span>
       </button>
     </nav>
 
@@ -415,60 +411,73 @@
 
 
       <!-- Auto-Advance Orders -->
-      <div id="autoAdvancePanel" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
-        <div class="flex items-center justify-between">
+      <div id="autoAdvancePanel" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i data-lucide="timer" class="w-4 h-4 text-amber-800"></i>
-            </div>
-            <div>
-              <span class="font-bold text-amber-900 text-sm block">التقدم التلقائي للطلبات</span>
-              <span class="text-xs text-amber-600">ينقل الطلب تلقائياً للمرحلة التالية بعد عدد محدد من الساعات</span>
-            </div>
+            <i data-lucide="timer" class="w-5 h-5 text-amber-700"></i>
+            <span class="font-bold text-amber-800 text-sm">التقدم التلقائي للطلبات</span>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+          <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="autoAdvanceToggle" class="sr-only peer" onchange="toggleAutoAdvance()">
             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
           </label>
         </div>
-        <div id="autoAdvanceSettings" class="hidden mt-4">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="bg-white rounded-xl p-3 border border-amber-200">
-              <div class="text-xs font-bold text-amber-900 mb-2 text-center">تثبيت ← تجهيز</div>
-              <div class="flex items-center gap-1 justify-center">
-                <input type="number" id="aa_new" value="0" min="0" max="72" class="w-14 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <span class="text-xs text-amber-600 font-semibold">ساعة</span>
-              </div>
-            </div>
-            <div class="bg-white rounded-xl p-3 border border-amber-200">
-              <div class="text-xs font-bold text-amber-900 mb-2 text-center">تجهيز ← مندوب</div>
-              <div class="flex items-center gap-1 justify-center">
-                <input type="number" id="aa_preparing" value="0" min="0" max="72" class="w-14 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <span class="text-xs text-amber-600 font-semibold">ساعة</span>
-              </div>
-            </div>
-            <div class="bg-white rounded-xl p-3 border border-amber-200">
-              <div class="text-xs font-bold text-amber-900 mb-2 text-center">مندوب ← طريق</div>
-              <div class="flex items-center gap-1 justify-center">
-                <input type="number" id="aa_shipped" value="0" min="0" max="72" class="w-14 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <span class="text-xs text-amber-600 font-semibold">ساعة</span>
-              </div>
-            </div>
-            <div class="bg-white rounded-xl p-3 border border-amber-200">
-              <div class="text-xs font-bold text-amber-900 mb-2 text-center">طريق ← تسليم</div>
-              <div class="flex items-center gap-1 justify-center">
-                <input type="number" id="aa_on_the_way" value="0" min="0" max="72" class="w-14 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <span class="text-xs text-amber-600 font-semibold">ساعة</span>
-              </div>
-            </div>
+        <div id="autoAdvanceSettings" class="hidden space-y-2">
+          <p class="text-xs text-amber-700">انتقل الطلب تلقائياً للحالة التالية بعد:</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">تثبيت → تجهيز</label><input type="number" id="aa_new" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">تجهيز → مندوب</label><input type="number" id="aa_preparing" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">مندوب → طريق</label><input type="number" id="aa_shipped" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
+            <div class="flex items-center gap-2"><label class="text-xs font-semibold text-amber-800">طريق → توصيل</label><input type="number" id="aa_on_the_way" value="0" min="0" max="72" class="w-16 border border-amber-300 rounded-lg px-2 py-1 text-sm text-center" placeholder="ساعة"><span class="text-xs text-amber-600">ساعة</span></div>
           </div>
-          <div class="flex gap-2 mt-3">
-            <button onclick="saveAutoAdvance()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> حفظ</button>
-            <button onclick="runAutoAdvanceNow()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5"></i> تطبيق الآن</button>
+          <div class="flex gap-2 mt-2">
+            <button onclick="saveAutoAdvance()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">حفظ الإعدادات</button>
+            <button onclick="runAutoAdvanceNow()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">تطبيق الآن</button>
           </div>
-          <p id="autoAdvanceStatus" class="text-xs text-green-700 mt-2 hidden font-semibold"></p>
+          <p id="autoAdvanceStatus" class="text-xs text-green-700 hidden"></p>
         </div>
-      </div>      <div id="ordersList" class="space-y-3 sm:space-y-4"></div>
+      </div>      <!-- Blacklist toggle button -->
+      <div class="mb-3">
+        <button onclick="toggleBlacklistPanel()" id="blacklistToggleBtn" class="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl font-semibold text-sm transition-colors">
+          <i data-lucide="ban" class="w-4 h-4"></i>
+          <span>القائمة السوداء</span>
+          <span id="blacklistCountBadge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden"></span>
+        </button>
+      </div>
+
+      <!-- Blacklist Panel (hidden by default) -->
+      <div id="blacklistPanel" class="hidden mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i data-lucide="ban" class="w-5 h-5 text-red-600"></i>
+            <h3 class="font-bold text-red-800 text-base">عملاء محظورون</h3>
+            <span class="text-xs text-red-500">يظهر تحذير على طلباتهم</span>
+          </div>
+          <button onclick="toggleBlacklistPanel()" class="text-red-400 hover:text-red-700 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <!-- Add phone form -->
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="blacklistPhoneInput" class="flex-1 border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-400 bg-white" placeholder="رقم الهاتف" dir="ltr">
+          <input type="text" id="blacklistReasonInput" class="flex-1 border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-400 bg-white" placeholder="السبب (اختياري)">
+          <button onclick="addToBlacklist()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-colors flex items-center gap-1">
+            <i data-lucide="plus" class="w-4 h-4"></i> إضافة
+          </button>
+        </div>
+        <!-- Blacklist table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-right text-red-700 border-b border-red-200">
+              <th class="px-3 py-2 font-semibold">رقم الهاتف</th>
+              <th class="px-3 py-2 font-semibold">السبب</th>
+              <th class="px-3 py-2 font-semibold">التاريخ</th>
+              <th class="px-3 py-2"></th>
+            </tr></thead>
+            <tbody id="blacklistTableBody"><tr><td colspan="4" class="text-center py-4 text-red-300 text-sm">القائمة فارغة</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="ordersList" class="space-y-3 sm:space-y-4"></div>
       <div id="noOrders" class="hidden text-center py-10 sm:py-12 md:py-16 bg-white rounded-xl sm:rounded-2xl shadow-sm">
         <i data-lucide="inbox" class="w-16 h-16 text-brand-200 mx-auto mb-4"></i>
         <p class="text-brand-400 text-lg md:text-xl">لا توجد طلبات</p>
@@ -771,7 +780,7 @@
             </div>
             <input type="file" id="bundleImageInput" accept="image/*"
               style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;cursor:pointer;z-index:10;"
-              onchange="uploadBundleImageNow(this)">
+              onchange="previewBundleImage(this)">
           </div>
           <button type="button" onclick="clearBundleImage()" id="bundleImageClearBtn" class="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors hidden flex-shrink-0">
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -958,19 +967,9 @@
         <div class="w-12 h-12 bg-gradient-to-br from-green-600 to-green-800 rounded-xl flex items-center justify-center">
           <i data-lucide="bot" class="w-6 h-6 text-white"></i>
         </div>
-        <div class="flex-1">
+        <div>
           <h1 class="text-xl sm:text-2xl font-bold text-brand-900">إعدادات المساعد الذكي</h1>
           <p class="text-brand-600 text-sm">اضبط شخصية وردود مساعد AI</p>
-        </div>
-        <div class="flex items-center gap-3 bg-white rounded-2xl px-4 py-2.5 border border-brand-100 shadow-sm flex-shrink-0">
-          <div>
-            <p id="ai-active-label" class="text-sm font-bold text-green-700">المساعد مفعّل</p>
-            <p class="text-xs text-brand-500">الردود التلقائية للعملاء</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="aiGlobalToggle" class="sr-only peer" onchange="toggleGlobalAI(this.checked)">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-          </label>
         </div>
       </div>
     </div>
@@ -1138,8 +1137,8 @@
         <div id="cl-reply-bar" style="display:none;" class="border-t border-brand-100 p-3 bg-brand-50">
           <div class="flex items-center gap-2">
             <input type="text" id="cl-reply-input" class="flex-1 border border-brand-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500 bg-white" placeholder="رد كـمختص..." dir="rtl" onkeydown="if(event.key==='Enter')sendAdminReply()">
-            <button onclick="sendAdminReply()" class="bg-brand-700 hover:bg-brand-800 text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors flex-shrink-0 flex items-center">
-              ↩
+            <button id="cl-send-btn" onclick="sendAdminReply()" class="bg-brand-700 hover:bg-brand-800 text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors flex-shrink-0 flex items-center">
+              إرسال
             </button>
           </div>
         </div>
@@ -1203,57 +1202,6 @@
       </div>
     </div>
   </section>
-
-  <!-- ══ Blacklist Section ══ -->
-  <section id="section-blacklist" class="section-content hidden">
-    <div class="mb-6">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center">
-          <i data-lucide="ban" class="w-6 h-6 text-white"></i>
-        </div>
-        <div class="flex-1">
-          <h1 class="text-xl sm:text-2xl font-bold text-brand-900">القائمة السوداء</h1>
-          <p class="text-brand-600 text-sm">عملاء محظورون — يظهر تحذير على طلباتهم</p>
-        </div>
-        <button onclick="openBlacklistModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors">
-          <i data-lucide="plus" class="w-4 h-4"></i> إضافة
-        </button>
-      </div>
-    </div>
-    <div id="blacklistTable" class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
-      <div class="text-center text-brand-400 text-sm py-10">جاري التحميل...</div>
-    </div>
-  </section>
-
-  <!-- Blacklist Modal -->
-  <div id="blacklistModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
-    <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-bold text-lg text-brand-900">إضافة إلى القائمة السوداء</h2>
-        <button onclick="document.getElementById('blacklistModal').classList.add('hidden')" class="p-2 hover:bg-brand-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-brand-600"></i></button>
-      </div>
-      <div class="space-y-3">
-        <div><label class="block text-sm font-semibold text-brand-700 mb-1">رقم الهاتف *</label><input id="bl-phone" type="tel" class="input-field" placeholder="07xxxxxxxxx" dir="ltr"></div>
-        <div><label class="block text-sm font-semibold text-brand-700 mb-1">الاسم</label><input id="bl-name" type="text" class="input-field" placeholder="اسم العميل"></div>
-        <div><label class="block text-sm font-semibold text-brand-700 mb-1">العنوان</label><input id="bl-address" type="text" class="input-field" placeholder="العنوان"></div>
-        <div><label class="block text-sm font-semibold text-brand-700 mb-1">السبب</label>
-          <select id="bl-reason" class="input-field">
-            <option value="عدم الاستلام">عدم الاستلام</option>
-            <option value="رفض الدفع">رفض الدفع</option>
-            <option value="طلبات وهمية">طلبات وهمية</option>
-            <option value="إساءة">إساءة للموظفين</option>
-            <option value="أخرى">أخرى</option>
-          </select>
-        </div>
-        <div><label class="block text-sm font-semibold text-brand-700 mb-1">ملاحظات</label><textarea id="bl-notes" class="input-field" rows="2" placeholder="تفاصيل إضافية..."></textarea></div>
-      </div>
-      <div class="flex gap-2 mt-4">
-        <button onclick="saveToBlacklist()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-colors">حفظ في القائمة</button>
-        <button onclick="document.getElementById('blacklistModal').classList.add('hidden')" class="flex-1 bg-brand-100 hover:bg-brand-200 text-brand-700 font-bold py-2.5 rounded-xl transition-colors">إلغاء</button>
-      </div>
-    </div>
-  </div>
-
 </main>
 </div>
 
@@ -1365,9 +1313,21 @@
     if(!s){ if(typeof showToast==='function') showToast('يرجى اختيار محادثة','warning'); return; }
     var input=document.getElementById('cl-reply-input');
     var text=(input?input.value:'').trim(); if(!text) return;
-    fetch(SURL+'/rest/v1/chat_messages',{method:'POST',headers:Object.assign({},H,{'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({session_id:s.id,role:'admin',message:text})})
-    .then(function(r){ if(r.ok||r.status===201){ if(input)input.value=''; if(typeof showToast==='function')showToast('✅ تم إرسال الرد','success'); setTimeout(loadChatSessions,500); } else { if(typeof showToast==='function')showToast('فشل الإرسال','error'); } })
-    .catch(function(){ if(typeof showToast==='function')showToast('خطأ في الإرسال','error'); });
+    var btn=document.getElementById('cl-send-btn');
+    if(btn){btn.disabled=true;btn.textContent='جاري...';}
+    fetch(SURL+'/rest/v1/chat_messages',{method:'POST',headers:Object.assign({},H,{'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({session_id:s.id,role:'admin',message:text})})
+    .then(function(r){
+      if(btn){btn.disabled=false;btn.textContent='إرسال';}
+      if(r.ok||r.status===201){
+        if(input)input.value='';
+        if(typeof showToast==='function')showToast('✅ تم إرسال الرد','success');
+        // Reload sessions then re-open same session
+        var sessionIdx=null;
+        if(window._clSessions){for(var i=0;i<window._clSessions.length;i++){if(window._clSessions[i].id===s.id){sessionIdx=i;break;}}}
+        setTimeout(function(){ loadChatSessions(); if(sessionIdx!==null)setTimeout(function(){viewSession(sessionIdx);},300); },400);
+      } else { r.json().then(function(e){if(typeof showToast==='function')showToast('فشل الإرسال: '+(e.message||r.status),'error');}).catch(function(){if(typeof showToast==='function')showToast('فشل الإرسال','error');}); }
+    })
+    .catch(function(){ if(btn){btn.disabled=false;btn.textContent='إرسال';} if(typeof showToast==='function')showToast('خطأ في الإرسال','error'); });
   };
 
   window.toggleAIForSession = function() {
@@ -2620,30 +2580,10 @@ async function saveCatImg(key, url) {
   var _origShow = window.showSection;
   window.showSection = function(s) { if (_origShow) _origShow(s); if (s === 'ai') { loadAIConfig(); loadQRList(); } };
   window.loadAIConfig = function() {
-    fetch(SURL + '/rest/v1/ai_config?id=eq.1&select=system_prompt,is_active', { headers: H })
+    fetch(SURL + '/rest/v1/ai_config?id=eq.1&select=system_prompt', { headers: H })
     .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d && d[0]) {
-        var el = document.getElementById('ai-system-prompt');
-        if (el) el.value = d[0].system_prompt || '';
-        var tog = document.getElementById('aiGlobalToggle');
-        var lbl = document.getElementById('ai-active-label');
-        var isActive = d[0].is_active !== false;
-        if (tog) tog.checked = isActive;
-        if (lbl) { lbl.textContent = isActive ? 'المساعد مفعّل' : 'المساعد موقف'; lbl.className = 'text-sm font-bold ' + (isActive ? 'text-green-700' : 'text-red-600'); }
-      }
-    })
+    .then(function(d) { if (d && d[0]) document.getElementById('ai-system-prompt').value = d[0].system_prompt || ''; })
     .catch(function(e) { console.warn('[AI Admin] load config:', e); });
-  };
-  window.toggleGlobalAI = function(active) {
-    var lbl = document.getElementById('ai-active-label');
-    if (lbl) { lbl.textContent = active ? 'المساعد مفعّل' : 'المساعد موقف'; lbl.className = 'text-sm font-bold ' + (active ? 'text-green-700' : 'text-red-600'); }
-    fetch(SURL + '/rest/v1/ai_config?id=eq.1', {
-      method: 'PATCH', headers: Object.assign({}, H, { Prefer: 'return=minimal' }),
-      body: JSON.stringify({ is_active: active, updated_at: new Date().toISOString() })
-    }).then(function(r) {
-      if (r.ok) { if (typeof showToast === 'function') showToast(active ? '✅ تم تفعيل المساعد' : '⏹ تم إيقاف المساعد', active ? 'success' : 'info'); }
-    }).catch(function(e) { console.warn('[AI Toggle]', e); });
   };
   window.saveAIConfig = function() {
     var p = document.getElementById('ai-system-prompt').value.trim();
@@ -3515,132 +3455,157 @@ async function saveCatImg(key, url) {
 </script>
 
 <script>
-/* ══ Blacklist ══════════════════════════════════════════════════ */
+/* ── القائمة السوداء (Blacklist) ── */
 (function() {
   'use strict';
-  var SB = 'https://hczsskviliuqyayylutv.supabase.co';
-  var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var H = { apikey: SK, Authorization: 'Bearer ' + SK, 'Content-Type': 'application/json' };
+  var BL_KEY = 'adminBlacklist';
 
-  function _esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function _fmtDate(dt) { var d = new Date(dt); return d.toLocaleDateString('ar-IQ', { year:'numeric', month:'short', day:'numeric', timeZone:'Asia/Baghdad' }); }
+  function _load() {
+    try { return JSON.parse(localStorage.getItem(BL_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function _save(list) {
+    localStorage.setItem(BL_KEY, JSON.stringify(list));
+    window._adminBlacklist = list;
+  }
 
-  window.loadBlacklist = function() {
-    var el = document.getElementById('blacklistTable');
-    if (!el) return;
-    el.innerHTML = '<div class="text-center text-brand-400 text-sm py-10">جاري التحميل...</div>';
-    fetch(SB + '/rest/v1/blacklist?order=created_at.desc&limit=200', { headers: H })
-    .then(function(r) { return r.json(); })
-    .then(function(rows) {
-      if (!Array.isArray(rows) || !rows.length) {
-        el.innerHTML = '<div class="text-center text-brand-400 text-sm py-12"><i data-lucide="shield-check" class="w-10 h-10 mx-auto mb-3 opacity-30"></i><p>القائمة السوداء فارغة</p></div>';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        return;
-      }
-      el.innerHTML = '<div class="overflow-x-auto"><table class="w-full text-sm" dir="rtl"><thead><tr class="bg-red-50 text-red-800 text-right"><th class="px-4 py-3 font-semibold">الهاتف</th><th class="px-4 py-3 font-semibold">الاسم</th><th class="px-4 py-3 font-semibold">السبب</th><th class="px-4 py-3 font-semibold">ملاحظات</th><th class="px-4 py-3 font-semibold">التاريخ</th><th class="px-4 py-3 font-semibold">حذف</th></tr></thead><tbody>' +
-        rows.map(function(r, i) {
-          var bg = i % 2 === 0 ? 'bg-white' : 'bg-red-50/30';
-          return '<tr class="border-t border-red-50 ' + bg + '">' +
-            '<td class="px-4 py-3 font-mono font-bold text-red-700" dir="ltr">' + _esc(r.customer_phone) + '</td>' +
-            '<td class="px-4 py-3">' + _esc(r.customer_name || '—') + '</td>' +
-            '<td class="px-4 py-3"><span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">' + _esc(r.reason || '—') + '</span></td>' +
-            '<td class="px-4 py-3 text-brand-500 text-xs max-w-xs truncate">' + _esc(r.notes || '—') + '</td>' +
-            '<td class="px-4 py-3 text-xs text-brand-500">' + _fmtDate(r.created_at) + '</td>' +
-            '<td class="px-4 py-3"><button onclick="deleteFromBlacklist(\'' + r.id + '\')" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="حذف"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>' +
-            '</tr>';
-        }).join('') + '</tbody></table></div>';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    }).catch(function(e) { el.innerHTML = '<div class="text-center text-red-400 text-sm py-10">خطأ: ' + e.message + '</div>'; });
-  };
+  // Expose blacklist globally for orders.js to check
+  window._adminBlacklist = _load();
 
-  window.openBlacklistModal = function(phone, name, address) {
-    var m = document.getElementById('blacklistModal');
-    if (!m) return;
-    document.getElementById('bl-phone').value = phone || '';
-    document.getElementById('bl-name').value = name || '';
-    document.getElementById('bl-address').value = address || '';
-    document.getElementById('bl-notes').value = '';
-    m.classList.remove('hidden');
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function _renderBlacklist() {
+    var list = _load();
+    window._adminBlacklist = list;
+    var tbody = document.getElementById('blacklistTableBody');
+    var badge = document.getElementById('blacklistCountBadge');
+    if (badge) {
+      if (list.length > 0) { badge.textContent = list.length; badge.classList.remove('hidden'); }
+      else { badge.classList.add('hidden'); }
+    }
+    if (!tbody) return;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-300 text-sm">القائمة فارغة</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function(entry, i) {
+      var d = new Date(entry.addedAt);
+      var dateStr = d.toLocaleDateString('ar-IQ');
+      return '<tr class="border-b border-red-100 hover:bg-red-100/40 transition-colors">' +
+        '<td class="px-3 py-2 font-mono text-sm text-red-800" dir="ltr">' + _esc(entry.phone) + '</td>' +
+        '<td class="px-3 py-2 text-sm text-red-700">' + _esc(entry.reason || '—') + '</td>' +
+        '<td class="px-3 py-2 text-xs text-red-500">' + _esc(dateStr) + '</td>' +
+        '<td class="px-3 py-2 text-left">' +
+          '<button onclick="removeFromBlacklist(' + i + ')" class="text-red-400 hover:text-red-700 p-1 rounded transition-colors" title="إزالة"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
+        '</td></tr>';
+    }).join('');
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    // Reapply order warnings
+    _applyBlacklistWarnings();
+  }
+
+  window.toggleBlacklistPanel = function() {
+    var panel = document.getElementById('blacklistPanel');
+    if (!panel) return;
+    var hidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (hidden) { _renderBlacklist(); if (typeof lucide !== 'undefined') lucide.createIcons(); }
   };
 
-  window.saveToBlacklist = function() {
-    var phone = (document.getElementById('bl-phone').value || '').trim();
-    if (!phone) { if (typeof showToast !== 'undefined') showToast('يرجى إدخال رقم الهاتف', 'error'); return; }
-    var payload = {
-      customer_phone: phone,
-      customer_name: (document.getElementById('bl-name').value || '').trim() || null,
-      customer_address: (document.getElementById('bl-address').value || '').trim() || null,
-      reason: document.getElementById('bl-reason').value || null,
-      notes: (document.getElementById('bl-notes').value || '').trim() || null,
-      created_at: new Date().toISOString()
-    };
-    var btn = document.querySelector('#blacklistModal button[onclick="saveToBlacklist()"]');
-    if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
-    fetch(SB + '/rest/v1/blacklist', { method: 'POST', headers: Object.assign({}, H, { Prefer: 'return=minimal' }), body: JSON.stringify(payload) })
-    .then(function(r) {
-      if (r.ok || r.status === 201) {
-        document.getElementById('blacklistModal').classList.add('hidden');
-        if (typeof showToast !== 'undefined') showToast('✅ تم إضافة الرقم للقائمة السوداء', 'success');
-        window.loadBlacklist();
-        // Refresh blacklist cache
-        window._blPhones = null;
-      } else { r.text().then(function(t) { alert('خطأ: ' + t); }); }
-    }).catch(function(e) { alert('خطأ: ' + e.message); })
-    .finally(function() { if (btn) { btn.disabled = false; btn.textContent = 'حفظ في القائمة'; } });
+  window.addToBlacklist = function() {
+    var phoneEl = document.getElementById('blacklistPhoneInput');
+    var reasonEl = document.getElementById('blacklistReasonInput');
+    var phone = (phoneEl ? phoneEl.value : '').trim();
+    if (!phone) { if(typeof showToast==='function') showToast('أدخل رقم الهاتف', 'error'); return; }
+    var list = _load();
+    if (list.some(function(e){ return e.phone === phone; })) {
+      if(typeof showToast==='function') showToast('الرقم موجود بالفعل في القائمة', 'warning'); return;
+    }
+    list.push({ phone: phone, reason: reasonEl ? reasonEl.value.trim() : '', addedAt: new Date().toISOString() });
+    _save(list);
+    if (phoneEl) phoneEl.value = '';
+    if (reasonEl) reasonEl.value = '';
+    _renderBlacklist();
+    if(typeof showToast==='function') showToast('تمت الإضافة للقائمة السوداء', 'success');
   };
 
-  window.deleteFromBlacklist = function(id) {
-    if (!confirm('هل تريد إزالة هذا الرقم من القائمة السوداء؟')) return;
-    fetch(SB + '/rest/v1/blacklist?id=eq.' + id, { method: 'DELETE', headers: H })
-    .then(function() {
-      if (typeof showToast !== 'undefined') showToast('تم الحذف من القائمة', 'success');
-      window.loadBlacklist();
-      window._blPhones = null;
-    }).catch(function(e) { alert('خطأ: ' + e.message); });
+  window.removeFromBlacklist = function(idx) {
+    var list = _load();
+    list.splice(idx, 1);
+    _save(list);
+    _renderBlacklist();
+    if(typeof showToast==='function') showToast('تمت الإزالة من القائمة السوداء', 'success');
   };
 
-  // Cache blacklist phones for order checking
-  window._blPhones = null;
-  window.getBlacklistPhones = function() {
-    if (window._blPhones) return Promise.resolve(window._blPhones);
-    return fetch(SB + '/rest/v1/blacklist?select=customer_phone,customer_name,reason', { headers: H })
-      .then(function(r) { return r.json(); })
-      .then(function(rows) {
-        window._blPhones = Array.isArray(rows) ? rows : [];
-        return window._blPhones;
-      }).catch(function() { return []; });
-  };
-
-  // Hook into orders rendering — add ⛔ badge on blacklisted phones
-  window._blPatchOrders = function() {
-    if (typeof window.renderOrders !== 'function' || window._blPatched) return;
-    window._blPatched = true;
-    window.getBlacklistPhones().then(function(bl) {
-      if (!bl.length) return;
-      var phoneSet = {};
-      bl.forEach(function(b) { if (b.customer_phone) phoneSet[b.customer_phone.replace(/\s/g,'')] = b; });
-      // Mark visible order cards
-      document.querySelectorAll('[data-order-phone]').forEach(function(el) {
-        var ph = (el.getAttribute('data-order-phone') || '').replace(/\s/g,'');
-        if (phoneSet[ph]) {
-          if (!el.querySelector('.bl-badge')) {
-            var badge = document.createElement('span');
-            badge.className = 'bl-badge inline-flex items-center gap-1 text-xs font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full mr-2';
-            badge.title = 'محظور: ' + (phoneSet[ph].reason || '');
-            badge.textContent = '⛔ محظور';
-            el.prepend(badge);
-          }
-        }
-      });
+  window.isPhoneBlacklisted = function(phone) {
+    if (!phone) return false;
+    var clean = String(phone).replace(/\s/g, '');
+    return window._adminBlacklist.some(function(e) {
+      return e.phone.replace(/\s/g,'') === clean;
     });
   };
 
-  // Invalidate cache on section change
-  if (typeof window.showSection === 'function') {
-    var _origSS = window.showSection;
-    window.showSection = function(s) { _origSS(s); if (s === 'blacklist') window.loadBlacklist(); if (s === 'orders') { window._blPhones = null; setTimeout(window._blPatchOrders, 500); } };
+  // Apply warning badges to rendered order cards
+  function _applyBlacklistWarnings() {
+    var list = window._adminBlacklist;
+    if (!list || !list.length) return;
+    var cards = document.querySelectorAll('#ordersList [data-phone]');
+    cards.forEach(function(card) {
+      var phone = card.getAttribute('data-phone');
+      if (!phone) return;
+      var clean = phone.replace(/\s/g,'');
+      var isBlocked = list.some(function(e){ return e.phone.replace(/\s/g,'') === clean; });
+      var existing = card.querySelector('.blacklist-warning');
+      if (isBlocked && !existing) {
+        var warn = document.createElement('div');
+        warn.className = 'blacklist-warning bg-red-50 border border-red-300 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 mt-2';
+        warn.innerHTML = '🚫 <span>عميل محظور — تحقق من القائمة السوداء</span>';
+        card.prepend(warn);
+      } else if (!isBlocked && existing) {
+        existing.remove();
+      }
+    });
+    // Also scan for phone text in order cards if data-phone not set
+    document.querySelectorAll('#ordersList .order-card, #ordersList > div').forEach(function(card) {
+      if (card.querySelector('.blacklist-warning')) return;
+      var text = card.textContent || '';
+      var match = list.some(function(e) { return e.phone && text.includes(e.phone.replace(/\s/g,'')); });
+      if (match) {
+        var warn = document.createElement('div');
+        warn.className = 'blacklist-warning bg-red-50 border border-red-300 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 mb-2';
+        warn.innerHTML = '🚫 <span>عميل محظور — تحقق من القائمة السوداء</span>';
+        card.insertBefore(warn, card.firstChild);
+      }
+    });
   }
+
+  window._applyBlacklistWarnings = _applyBlacklistWarnings;
+
+  // Hook into loadOrders: apply warnings after orders render
+  var _origLoadOrders = null;
+  function _hookLoadOrders() {
+    if (typeof window.loadOrders === 'function' && !window._blacklistHooked) {
+      _origLoadOrders = window.loadOrders;
+      window.loadOrders = function() {
+        var r = _origLoadOrders.apply(this, arguments);
+        if (r && typeof r.then === 'function') {
+          r.then(function(){ setTimeout(_applyBlacklistWarnings, 400); });
+        } else {
+          setTimeout(_applyBlacklistWarnings, 400);
+        }
+        return r;
+      };
+      window._blacklistHooked = true;
+    }
+  }
+  // Try to hook immediately and after DOM ready
+  _hookLoadOrders();
+  document.addEventListener('DOMContentLoaded', _hookLoadOrders);
+  setTimeout(_hookLoadOrders, 1000);
+
+  // Initial badge count
+  (function(){ var list=_load(); var b=document.getElementById('blacklistCountBadge'); if(b&&list.length){b.textContent=list.length;b.classList.remove('hidden');} })();
 })();
 </script>
 </body>
