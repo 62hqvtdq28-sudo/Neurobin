@@ -21,7 +21,13 @@ async function loadOrders() {
     var statusLabels={new:'✅ تم التثبيت',pending:'✅ تم التثبيت',preparing:'📦 جاري التجهيز',shipped:'🚐 مع المندوب',progress:'🚚 في الطريق',on_the_way:'🚚 في الطريق',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
     var statusClasses={new:'order-new',pending:'order-new',preparing:'order-progress',shipped:'order-progress',progress:'order-progress',on_the_way:'order-progress',delivered:'order-delivered',cancelled:'order-cancelled'};
     var html = '';
-    // Sequential numbering: sort all non-cancelled/deleted orders globally, then find index for each
+    // ── VIP: count orders per phone (excluding cancelled) ──────────────────
+    var _phoneCount = {};
+    (allOrders||[]).filter(function(o){ return o.status!=='cancelled'&&o.status!=='deleted'; }).forEach(function(o){
+      var ph = (o.customer_phone||o.phone||'').trim();
+      if (ph) _phoneCount[ph] = (_phoneCount[ph]||0)+1;
+    });
+    // Sequential numbering
     var _numberedOrders = (allOrders||[]).filter(function(o){ return o.status!=='cancelled' && !o.deleted_at; }).slice().sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
     var _numMap = {};
     _numberedOrders.forEach(function(o,i){ _numMap[String(o.id)] = i+1; });
@@ -59,7 +65,11 @@ async function loadOrders() {
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
       cardHtml += '<div>';
-      var _orderNum = _numMap[String(order.id)]; var _numBadge = _orderNum ? '<span style="display:inline-block;background:#1a5c0f;color:#ffffff;font-size:11px;font-family:monospace;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:5px;letter-spacing:0.5px">#NB-' + String(_orderNum).padStart(3,'0') + '</span>' : ''; cardHtml += '<h3 class="font-bold text-brand-900" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">' + _numBadge + ' ' + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
+      var _orderNum = _numMap[String(order.id)]; var _numBadge = _orderNum ? '<span style="display:inline-block;background:#1a5c0f;color:#ffffff;font-size:11px;font-family:monospace;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:5px;letter-spacing:0.5px">#NB-' + String(_orderNum).padStart(3,'0') + '</span>' : '';
+      var _custPhone = (order.customer_phone||order.phone||'').trim();
+      var _isVip = _custPhone && (_phoneCount[_custPhone]||0) >= 3;
+      var _vipBadge = _isVip ? '<span style="display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:12px;margin-right:4px;">👑 VIP</span>' : '';
+      cardHtml += '<h3 class="font-bold text-brand-900" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">' + _numBadge + ' ' + escapeHTML(order.customer_name||order.name||'—') + _vipBadge + '</h3>';
       cardHtml += '<p style="color:#4a7c2d;font-size:13px;margin-top:2px;direction:ltr;text-align:right;">' + escapeHTML(order.customer_phone||order.phone||'') + '</p>';
       if (order.tracking_code) {
         cardHtml += '<p style="font-size:11px;font-weight:700;color:#92400e;margin-top:2px;">📱 ' + escapeHTML(order.tracking_code) + '</p>';
