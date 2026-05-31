@@ -2794,3 +2794,110 @@ img, .product-image-wrapper img {
     align-items: flex-start !important;
   }
 }
+
+
+/* ============================================================
+   PERFORMANCE OPTIMIZATIONS — perf.js companion styles
+   ============================================================ */
+
+/* 1. Grid fade transition for product re-renders */
+#productsGrid {
+  transition: opacity 0.18s ease;
+}
+#productsGrid.grid-fading-out {
+  opacity: 0;
+  pointer-events: none;
+}
+#productsGrid.grid-fading-in {
+  animation: gridFadeIn 0.35s ease both;
+}
+@keyframes gridFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 2. GPU compositing only for animated elements */
+.product-card-main,
+.prem-card,
+.scroll-animate,
+.scroll-animate-left,
+.scroll-animate-right,
+.scroll-animate-scale {
+  will-change: opacity, transform;
+}
+/* Release will-change after animation (done via JS in perf.js) */
+.product-card-main.visible,
+.prem-card.visible,
+.scroll-animate.visible,
+.scroll-animate-left.visible,
+.scroll-animate-right.visible,
+.scroll-animate-scale.visible {
+  will-change: auto;
+}
+
+/* 3. contain on heavy UI sections to reduce reflow scope */
+#products,
+#features,
+#testimonials,
+.cart-panel,
+.checkout-panel,
+.quick-view-modal {
+  contain: layout style;
+}
+
+/* 4. Image loading transitions */
+.product-img-animated {
+  transition: opacity 0.3s ease;
+}
+.img-loading {
+  opacity: 0;
+}
+.img-loaded {
+  opacity: 1;
+}
+
+/* 5. Low-end device — disable heavy animations */
+.low-end-device .scroll-animate,
+.low-end-device .scroll-animate-left,
+.low-end-device .scroll-animate-right,
+.low-end-device .scroll-animate-scale {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+.low-end-device .product-card-main {
+  animation-delay: 0s !important;
+}
+
+/* 6. Optimize hero section — promote to own layer */
+#hero {
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
+/* 7. Prevent layout shift from images */
+.product-image-wrapper img {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 8. Cart panel — isolate repaints */
+.cart-panel,
+.quick-view-overlay {
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+/* 9. Navbar — own compositing layer for scroll */
+#navbar {
+  will-change: background-color, box-shadow;
+  transform: translateZ(0);
+}
+
+/* 10. Font loading optimization */
+body {
+  font-synthesis: none;
+}
