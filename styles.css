@@ -109,7 +109,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .brand-emblem::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(170,191,137,.2);animation:pulseSoft 2s ease-out infinite}
 
 /* Navigation */
-.nav-scrolled{background-color:rgba(253,252,248,.97)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(45,80,22,.1)}
+.nav-scrolled{background-color:rgba(250,249,245,.98)!important;box-shadow:0 4px 30px rgba(45,80,22,.1)}
 
 /* Buttons */
 .btn-primary{transition:all .3s cubic-bezier(.4,0,.2,1)}
@@ -160,11 +160,11 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .cart-badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;background:#EF4444;color:#fff;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px}
 
 /* Glass Effect */
-.glass-effect{background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255, 255, 255, 0.3)}
+.glass-effect{background:rgba(255,255,255,0.95);border:1px solid rgba(255, 255, 255, 0.3)}
 
 /* Checkout Modal */
-.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
-.checkout-modal.active{opacity:1;visibility:visible}
+.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
+.checkout-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease}
 .checkout-modal.active .checkout-container{opacity:1;transform:translateY(0)}
 
@@ -177,8 +177,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .whatsapp-float .pulse-ring{position:absolute;inset:0;border-radius:50%;border:3px solid #25D366;animation:pulseRing 2s infinite;opacity:0}
 
 /* Search Modal */
-.search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:all .3s ease}
-.search-modal.active{opacity:1;visibility:visible}
+.search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:all .3s ease}
+.search-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .search-container{width:90%;max-width:600px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:translateY(-30px);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .search-modal.active .search-container{transform:translateY(0)}
 .search-input{width:100%;padding:1.5rem 2rem;font-size:1.25rem;border:none;outline:none;background:transparent;font-family:'Cairo',sans-serif}
@@ -215,8 +215,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .comment-input:focus{outline:none;border-color:#5C933B;box-shadow:0 0 0 4px rgba(92,147,59,.1)}
 
 /* Quick View Modal */
-.quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
-.quick-view-modal.active{opacity:1;visibility:visible}
+.quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
+.quick-view-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .quick-view-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow:hidden;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease;max-height:90vh;overflow-y:auto}
 .quick-view-modal.active .quick-view-container{opacity:1;transform:translateY(0)}
 
