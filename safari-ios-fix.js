@@ -34,14 +34,34 @@
     });
   }
 
-  /* ── 4. Fix stuck image blur (img-loading never resolved) ─ */
-  function fixStuckImageBlur() {
-    document.querySelectorAll('.img-loading').forEach(function (img) {
-      img.classList.remove('img-loading');
-      img.classList.add('img-loaded');
-      img.style.filter  = '';
-      img.style.opacity = '';
+  /* ── 4. Fix stuck image blur — comprehensive (img-loading/opacity/filter) */
+  function fixStuckImageBlur(root) {
+    var scope = root || document;
+    // Fix img-loading class stuck
+    scope.querySelectorAll('img.img-loading').forEach(function (img) {
+      if (img.complete || img.__imgResolved) {
+        img.classList.remove('img-loading','lazy-loading','lazy','loading','blur-loading');
+        img.classList.add('img-loaded');
+      }
     });
+    // Fix ALL imgs with inline opacity/filter stuck
+    scope.querySelectorAll('img').forEach(function (img) {
+      if (img.style.opacity === '0' || parseFloat(img.style.opacity) < 0.1) {
+        img.style.removeProperty('opacity');
+      }
+      if (img.style.filter && img.style.filter.includes('blur')) {
+        img.style.removeProperty('filter');
+        img.style.removeProperty('-webkit-filter');
+      }
+    });
+    // Force-resolve via global img-loader if available
+    if (window.__imgLoader) {
+      scope.querySelectorAll('img').forEach(function (img) {
+        if (img.complete && !img.__imgResolved) {
+          window.__imgLoader.resolveImg(img);
+        }
+      });
+    }
   }
 
   /* ── 5. Fix stuck grid opacity ──────────────────────────── */
@@ -261,6 +281,8 @@
     setTimeout(applyPatches, 200);
     setTimeout(disableHiddenBackdrops, 400);
     fixStuckImageBlur();
+    setTimeout(fixStuckImageBlur, 1500);
+    setTimeout(fixStuckImageBlur, 4000);
   });
 
 })();
