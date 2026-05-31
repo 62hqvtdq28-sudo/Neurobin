@@ -845,3 +845,120 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   background: var(--c-brand-200);
   color: var(--c-brand-900);
 }
+
+/* ══════════════════════════════════════════════════════════
+   🍎 SAFARI / iPad BLUR BUG FIX — ph.neurobin
+   Prevents backdrop-filter stacking, GPU layer explosion,
+   and overlay residue on iOS Safari
+══════════════════════════════════════════════════════════ */
+
+/* 1. Kill backdrop-filter when modal is NOT active
+      Safari keeps it alive even at opacity:0 / visibility:hidden */
+.checkout-modal:not(.active),
+.search-modal:not(.active),
+.quick-view-modal:not(.active) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  /* Also remove GPU layer promotion */
+  transform: none !important;
+  -webkit-transform: none !important;
+  will-change: auto !important;
+}
+
+/* 2. Contain compositing to each overlay — stop bleed-through */
+.cart-overlay,
+.checkout-modal,
+.search-modal,
+.quick-view-modal {
+  isolation: isolate;
+  contain: layout style;
+}
+
+/* 3. Remove -webkit-mask-image from cards — kills excess GPU layers
+      (already in styles.css as a Safari fix but override to be safe) */
+.product-card-main,
+[class*="rounded-xl"],
+[class*="rounded-2xl"],
+[class*="rounded-3xl"] {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+/* 4. Stop decorative blur divs from creating page-wide compositing layers */
+.blur-2xl,
+.blur-3xl {
+  will-change: auto !important;
+  isolation: isolate;
+  contain: strict;
+  /* On iOS Safari, remove filter entirely from decorative elements */
+}
+@supports (-webkit-touch-callout: none) {
+  .blur-2xl,
+  .blur-3xl {
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 0.08 !important;
+    background: radial-gradient(circle, currentColor 0%, transparent 70%) !important;
+  }
+}
+
+/* 5. Prevent img-loading blur from getting permanently stuck */
+.product-image-wrapper img:not(.img-loading) {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 6. Disabled cart-overlay GPU layer when hidden */
+.cart-overlay:not(.active) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  pointer-events: none;
+}
+
+/* 7. Isolate glass morphism to prevent page-wide blur leakage */
+.glass,
+.glass-dark,
+.nav-scrolled {
+  isolation: isolate;
+}
+
+/* 8. scroll-animate — release will-change after transition ends */
+.scroll-animate.visible,
+.scroll-animate-left.visible,
+.scroll-animate-right.visible,
+.scroll-animate-scale.visible {
+  will-change: auto !important;
+  contain: none !important;
+}
+
+/* 9. Product grid: no GPU promotion during normal state */
+#productsGrid:not(.grid-fading-out):not(.grid-fading-in) {
+  will-change: auto !important;
+  transform: none !important;
+}
+
+/* 10. Notif/Track/Request modals inline — ensure hidden state is clean */
+#notifyModal:not([class*="active"]),
+#orderTrackModal[style*="none"],
+#productRequestModal[style*="none"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* 11. iOS Safari: hero decorative blobs → use opacity instead of blur */
+@supports (-webkit-touch-callout: none) {
+  section .absolute.blur-2xl,
+  section .absolute.blur-3xl,
+  div .absolute.blur-2xl,
+  div .absolute.blur-3xl {
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+}
+
+/* 12. Prevent backdrop-filter on nav until scrolled (reduces GPU load) */
+nav:not(.nav-scrolled) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
