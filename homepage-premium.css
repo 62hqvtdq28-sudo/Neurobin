@@ -1650,13 +1650,15 @@
   box-shadow:
     0 24px 64px rgba(0,0,0,0.28),
     0 0 0 1px rgba(255,255,255,0.08) !important;
-  transform: scale(0.92) translateY(20px) !important;
-  transition: transform 0.4s cubic-bezier(0.34,1.4,0.64,1) !important;
+  opacity: 0 !important;
+  transform: translateY(28px) !important;
+  transition: opacity 0.35s ease, transform 0.35s ease !important;
   overflow: hidden !important;
   max-height: 92vh !important;
 }
 .quick-view-modal.active .quick-view-container {
-  transform: scale(1) translateY(0) !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
 }
 
 /* QV image section */
@@ -1778,12 +1780,12 @@
     0 28px 72px rgba(0,0,0,0.28),
     0 4px 16px rgba(0,0,0,0.12),
     0 0 0 1px rgba(255,255,255,0.6) inset !important;
-  transform: scale(0.93) translateY(-24px) !important;
+  opacity: 0 !important; transform: translateY(-20px) !important;
   transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) !important;
   overflow: hidden !important;
 }
 #searchModal.active .search-container {
-  transform: scale(1) translateY(0) !important;
+  opacity: 1 !important; transform: translateY(0) !important;
 }
 
 /* ── Search Input Area ───────────────────────── */
