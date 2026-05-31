@@ -757,17 +757,33 @@ function recordLoginEvent(type, status) {
   try {
     var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
     var info = _getDeviceInfo();
-    logs.unshift({
+    var logEntry = {
       id: Date.now(),
       time: new Date().toISOString(),
       type: type,
       status: status,
       device: info.device,
       browser: info.browser,
-      userAgent: navigator.userAgent.slice(0, 200)
-    });
+      userAgent: navigator.userAgent.slice(0, 200),
+      ip: null,
+      location: null
+    };
+    logs.unshift(logEntry);
     if (logs.length > 100) logs.splice(100);
     localStorage.setItem('adminLoginLogs', JSON.stringify(logs));
+    // Fetch IP + location in the background
+    fetch('https://api.ipapi.is/?q=')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        logEntry.ip = d.ip || '';
+        var city = (d.location && d.location.city) ? d.location.city : '';
+        var country = (d.location && d.location.country) ? d.location.country : (d.country_name || '');
+        logEntry.location = city ? city + '، ' + country : country;
+        var stored = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+        var idx = stored.findIndex ? stored.findIndex(function(x) { return x.id === logEntry.id; }) : -1;
+        if (idx > -1) { stored[idx] = logEntry; localStorage.setItem('adminLoginLogs', JSON.stringify(stored)); }
+      })
+      .catch(function() {});
   } catch(e) { console.warn('[LoginLog]', e.message); }
 }
 
