@@ -12,6 +12,12 @@
 <meta name="X-XSS-Protection" content="1; mode=block">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="theme-color" content="#2D5016">
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Neurobin">
+<link rel="apple-touch-icon" href="./logo.jpg">
 <title>ph.neurobin - صيدليتك الموثوقة | أدوية، العناية بالبشرة، مكياج</title>
 <meta name="description" content="صيدلية neurobin - صيدليتك الموثوقة في العراق. أدوية، منتجات العناية بالبشرة، ومكياج بأعلى معايير الجودة. توصيل سريع 24-48 ساعة.">
 
@@ -1433,6 +1439,9 @@ if('serviceWorker' in navigator){
       res.innerHTML = orders.map(function(o) {
         var age = Date.now() - new Date(o.created_at||0).getTime();
         var canCancel = age < 30*60*1000 && o.status==='new';
+        var reminderBtn = (o.status==='delivered')
+          ? '<button onclick="_setReorderReminder('+o.id+',\'' + (items.length && items[0] ? (items[0].name||items[0].product_name||'المنتج').replace(/'/g,'') : 'المنتج') + '\',30)" style="margin-top:8px;width:100%;padding:6px;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#1a5c0f;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;">🔔 ذكّرني بعد 30 يوم</button>'
+          : '';
         var cancelBtn = canCancel
           ? '<button onclick="cancelMyOrder('+o.id+',this)" style="margin-top:10px;width:100%;padding:8px;background:#fef2f2;border:1.5px solid #fca5a5;color:#dc2626;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">❌ إلغاء الطلب ('+(Math.round((30*60*1000-age)/60000))+' دقيقة متبقية)</button>'
           : (o.status==='new'?'<p style="font-size:11px;color:#94a3b8;margin-top:6px;">انتهت مهلة الإلغاء (30 دقيقة)</p>':'');
@@ -1553,6 +1562,305 @@ window.addEventListener('load', function() {
 <button onclick="openOrderTracker()" title="تتبع طلبي"
   style="position:fixed;bottom:90px;left:20px;z-index:998;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#1a5c0f,#2d8016);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;"
   aria-label="تتبع طلبي">📦</button>
+
+
+<script>
+// ── #170: Image CDN proxy — WebP + resize for faster loading ──────────────
+window._cdnImg = function(url, width) {
+  if (!url || url.startsWith('data:')) return url;
+  width = width || 400;
+  // Already a CDN or very short URL — skip
+  if (url.includes('weserv.nl') || url.includes('cdn.jsdelivr')) return url;
+  // Supabase storage or external URLs → proxy through images.weserv.nl
+  try {
+    return 'https://images.weserv.nl/?url=' + encodeURIComponent(url) + '&w=' + width + '&q=80&output=webp&il';
+  } catch(e) { return url; }
+};
+// Override loadProducts image rendering (runs before app.js processes images)
+window._rawCdnImg = window._cdnImg;
+</script>
+
+
+<script>
+// ── #166/#194: PWA Install Prompt ────────────────────────────────────────
+var _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _deferredInstall = e;
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', function() {
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  _deferredInstall = null;
+});
+window._installPWA = function() {
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.then(function(r) {
+    if (r.outcome === 'accepted') {
+      var btn = document.getElementById('pwaInstallBtn');
+      if (btn) btn.style.display = 'none';
+    }
+    _deferredInstall = null;
+  });
+};
+// Also handle #track shortcut from manifest
+window.addEventListener('DOMContentLoaded', function() {
+  if (location.hash === '#track') {
+    setTimeout(function() { if(typeof openOrderTracker==='function') openOrderTracker(); }, 600);
+  }
+});
+</script>
+
+
+<script>
+// ── #16: Bestseller & New badges ─────────────────────────────────────────
+var _bestsellerNames = new Set();
+var _newProductNames = new Set();
+var _badgesLoaded = false;
+
+async function _loadBadges() {
+  if (_badgesLoaded) return;
+  _badgesLoaded = true;
+  var SURL='https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H={'apikey':SKEY,'Authorization':'Bearer '+SKEY};
+  try {
+    // Top products from last 60 days
+    var since = new Date(); since.setDate(since.getDate()-60);
+    var r = await fetch(SURL+'/rest/v1/orders?status=eq.delivered&created_at=gte.'+since.toISOString()+'&select=items,order_items&limit=500',{headers:H});
+    if (!r.ok) return;
+    var orders = await r.json();
+    var qty = {};
+    orders.forEach(function(o) {
+      (o.items||o.order_items||[]).forEach(function(it) {
+        var n = (it.name||it.product_name||'').trim();
+        if (n) qty[n] = (qty[n]||0) + Number(it.quantity||1);
+      });
+    });
+    var sorted = Object.entries(qty).sort(function(a,b){return b[1]-a[1];});
+    sorted.slice(0, 5).forEach(function(e){ _bestsellerNames.add(e[0]); }); // top 5
+
+    // New products (added in last 14 days)
+    var prod2 = await fetch(SURL+'/rest/v1/products?created_at=gte.'+new Date(Date.now()-14*86400000).toISOString()+'&select=name_ar,name',{headers:H});
+    if (prod2.ok) {
+      var newProds = await prod2.json();
+      newProds.forEach(function(p){ _newProductNames.add(p.name_ar||p.name||''); });
+    }
+    // Apply badges to already-rendered products
+    _applyBadgesToDom();
+  } catch(e) {}
+}
+
+function _applyBadgesToDom() {
+  var cards = document.querySelectorAll('[data-product-name]');
+  cards.forEach(function(card) {
+    var name = card.dataset.productName || '';
+    if (!name) return;
+    if (_bestsellerNames.has(name) && !card.querySelector('.badge-bestseller')) {
+      var badge = document.createElement('div');
+      badge.className = 'badge-bestseller';
+      badge.style.cssText = 'position:absolute;top:8px;right:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.2);white-space:nowrap;';
+      badge.textContent = '🔥 الأكثر مبيعاً';
+      card.style.position = 'relative';
+      card.appendChild(badge);
+    }
+    if (_newProductNames.has(name) && !card.querySelector('.badge-new-prod')) {
+      var nb = document.createElement('div');
+      nb.className = 'badge-new-prod';
+      nb.style.cssText = 'position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.2);white-space:nowrap;';
+      nb.textContent = '✨ جديد';
+      card.style.position = 'relative';
+      card.appendChild(nb);
+    }
+  });
+}
+
+// Observe products grid and apply badges when cards load
+window.addEventListener('load', function() {
+  _loadBadges();
+  var grid = document.getElementById('productsGrid') || document.querySelector('.products-grid');
+  if (grid && typeof MutationObserver !== 'undefined') {
+    var mo = new MutationObserver(function() { setTimeout(_applyBadgesToDom, 100); });
+    mo.observe(grid, {childList:true, subtree:true});
+  }
+});
+</script>
+
+
+<script>
+// ── #36: Order Confirmation Overlay ──────────────────────────────────────
+window._showOrderConfirmation = function(orderData) {
+  var existing = document.getElementById('orderConfirmOverlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'orderConfirmOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.3s ease;';
+  var total = orderData && orderData.total ? Number(orderData.total).toLocaleString('en-US') : '—';
+  var name  = orderData && orderData.name ? orderData.name : '';
+  var tracking = orderData && orderData.tracking_code ? orderData.tracking_code : '';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:420px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.3);">' +
+    '<div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a5c0f,#4ade80);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:32px;">✅</div>' +
+    '<h2 style="font-weight:900;font-size:22px;color:#1a2e0d;margin:0 0 8px;">تم تأكيد طلبك!</h2>' +
+    (name ? '<p style="font-size:15px;color:#374151;margin:0 0 4px;">شكراً ' + name + '،</p>' : '') +
+    '<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">سيتم التواصل معك قريباً لتأكيد الطلب والتوصيل.</p>' +
+    (tracking ? '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:16px;">' +
+      '<p style="font-size:11px;color:#6b7280;margin:0 0 4px;">رمز تتبع طلبك</p>' +
+      '<p style="font-size:18px;font-weight:900;color:#1a5c0f;letter-spacing:2px;margin:0;">' + tracking + '</p>' +
+      '</div>' : '') +
+    '<div style="background:#f9fafb;border-radius:12px;padding:12px;margin-bottom:20px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+    '<span style="font-size:14px;color:#6b7280;">إجمالي الطلب</span>' +
+    '<span style="font-size:20px;font-weight:900;color:#1a5c0f;">' + total + ' <span style="font-size:13px;font-weight:600;">د.ع</span></span>' +
+    '</div></div>' +
+    '<div style="display:flex;gap:10px;">' +
+    '<button onclick="document.getElementById('orderConfirmOverlay').remove();" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">متابعة التسوق</button>' +
+    '<button onclick="openOrderTracker();document.getElementById('orderConfirmOverlay').remove();" style="flex:1;padding:12px;background:linear-gradient(135deg,#1a5c0f,#2d8016);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">📦 تتبع طلبي</button>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+};
+
+// Hook into existing order placement
+// The site fires a custom event or calls a function after order — we intercept
+// Monitor Supabase calls for order creation
+var _origFetch = window.fetch;
+window.fetch = function(url, opts) {
+  var result = _origFetch.apply(this, arguments);
+  // Detect order creation POST
+  if (opts && opts.method === 'POST' && String(url).includes('/rest/v1/orders')) {
+    result.then(function(res) {
+      if (res && (res.status === 201 || res.status === 200)) {
+        var cloned = res.clone();
+        cloned.json().then(function(data) {
+          var order = Array.isArray(data) ? data[0] : data;
+          if (order && order.id) {
+            setTimeout(function() { window._showOrderConfirmation(order); }, 800);
+          }
+        }).catch(function(){});
+      }
+      return res;
+    }).catch(function(){});
+  }
+  return result;
+};
+</script>
+
+
+<script>
+// ── #14: Reorder Reminder ────────────────────────────────────────────────
+window._setReorderReminder = function(orderId, itemName, days) {
+  days = days || 30;
+  var reminders = [];
+  try { reminders = JSON.parse(localStorage.getItem('nb_reorder_reminders') || '[]'); } catch(e) {}
+  reminders = reminders.filter(function(r){ return r.orderId !== orderId; }); // replace existing
+  var reminderDate = new Date(Date.now() + days * 86400000);
+  reminders.push({ orderId: orderId, itemName: itemName, remindAt: reminderDate.toISOString(), days: days });
+  try { localStorage.setItem('nb_reorder_reminders', JSON.stringify(reminders)); } catch(e) {}
+  alert('✅ سيتم تذكيرك بإعادة طلب "' + itemName + '" بعد ' + days + ' يوماً عند فتح الموقع.');
+};
+
+// Check reminders on page load
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var reminders = [];
+    try { reminders = JSON.parse(localStorage.getItem('nb_reorder_reminders') || '[]'); } catch(e) {}
+    var due = reminders.filter(function(r){ return new Date(r.remindAt) <= new Date(); });
+    if (!due.length) return;
+    var remaining = reminders.filter(function(r){ return new Date(r.remindAt) > new Date(); });
+    try { localStorage.setItem('nb_reorder_reminders', JSON.stringify(remaining)); } catch(e) {}
+    due.forEach(function(r) {
+      setTimeout(function() {
+        var banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;top:70px;right:16px;left:16px;max-width:380px;margin:0 auto;z-index:9999;background:#fff;border:2px solid #1a5c0f;border-radius:16px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.15);direction:rtl;';
+        banner.innerHTML =
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+          '<span style="font-size:20px;">🔔</span>' +
+          '<span style="font-weight:800;color:#1a2e0d;font-size:14px;">حان وقت إعادة الطلب!</span>' +
+          '<button onclick="this.closest('div').parentNode.remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;">✕</button>' +
+          '</div>' +
+          '<p style="font-size:13px;color:#374151;margin:0 0 10px;">طلبت "<strong>' + r.itemName + '</strong>" قبل ' + r.days + ' يوماً. هل تريد إعادة الطلب؟</p>' +
+          '<button onclick="openProductRequest('' + r.itemName.replace(/'/g,'') + '');this.closest('div').remove();" style="background:#1a5c0f;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;">🛒 اطلب الآن</button>';
+        document.body.appendChild(banner);
+      }, 2000);
+    });
+  }, 1500);
+});
+</script>
+
+
+<!-- ── #31: نموذج طلب منتج غير متوفر ────────────────────────────────── -->
+<div id="productRequestModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="font-weight:800;font-size:18px;color:#1a2e0d;">🔍 طلب منتج غير متوفر</h2>
+      <button onclick="document.getElementById('productRequestModal').style.display='none'" style="width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">أخبرنا بالمنتج الذي تبحث عنه وسنوفّره لك في أقرب وقت.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input type="text" id="reqProductName" placeholder="اسم المنتج..." maxlength="200"
+        style="padding:10px 14px;border:2px solid #d1fae5;border-radius:12px;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input type="tel" id="reqProductPhone" placeholder="رقم هاتفك (للتواصل معك)" maxlength="14" dir="ltr"
+        style="padding:10px 14px;border:2px solid #d1fae5;border-radius:12px;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <textarea id="reqProductNotes" placeholder="تفاصيل إضافية (الجرعة، العلامة التجارية...)" rows="2" maxlength="500"
+        style="padding:10px 14px;border:2px solid #d1fae5;border-radius:12px;font-size:14px;outline:none;resize:none;width:100%;box-sizing:border-box;"></textarea>
+      <div id="reqProductResult" style="min-height:4px;"></div>
+      <button onclick="submitProductRequest()" style="padding:12px;background:linear-gradient(135deg,#1a5c0f,#2d8016);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:15px;">
+        إرسال الطلب
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.openProductRequest = function(prefill) {
+  var m = document.getElementById('productRequestModal');
+  if (m) {
+    m.style.display = 'flex';
+    var inp = document.getElementById('reqProductName');
+    if (inp && prefill) inp.value = prefill;
+    if (inp) inp.focus();
+  }
+};
+window.submitProductRequest = async function() {
+  var name  = (document.getElementById('reqProductName').value||'').trim();
+  var phone = (document.getElementById('reqProductPhone').value||'').trim();
+  var notes = (document.getElementById('reqProductNotes').value||'').trim();
+  var res   = document.getElementById('reqProductResult');
+  if (!name) { res.innerHTML = '<p style="color:#dc2626;font-size:13px;">أدخل اسم المنتج</p>'; return; }
+  res.innerHTML = '<p style="color:#6b7280;font-size:13px;">جاري الإرسال...</p>';
+  var SURL='https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  try {
+    var r = await fetch(SURL+'/rest/v1/product_requests',{
+      method:'POST',
+      headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify({product_name:name, phone:phone, notes:notes, created_at:new Date().toISOString()})
+    });
+    if (r.ok || r.status===201 || r.status===204) {
+      res.innerHTML = '<p style="color:#059669;font-weight:700;font-size:14px;text-align:center;padding:8px;background:#f0fdf4;border-radius:10px;">✅ تم إرسال طلبك! سنتواصل معك قريباً.</p>';
+      setTimeout(function(){ document.getElementById('productRequestModal').style.display='none'; }, 2500);
+    } else {
+      res.innerHTML = '<p style="color:#dc2626;font-size:13px;">تعذّر الإرسال ('+r.status+')، أرسل طلبك عبر واتساب مباشرة</p>';
+    }
+  } catch(e) {
+    res.innerHTML = '<p style="color:#dc2626;font-size:13px;">خطأ في الاتصال، حاول مجدداً</p>';
+  }
+};
+</script>
+
+
+<button id="pwaInstallBtn" onclick="_installPWA()" title="تثبيت التطبيق"
+  style="display:none;position:fixed;bottom:150px;left:20px;z-index:997;align-items:center;gap:6px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:none;border-radius:24px;padding:10px 14px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.25);font-size:12px;font-weight:700;">
+  📲 تثبيت التطبيق
+</button>
+
+<button onclick="openProductRequest()" title="طلب منتج غير متوفر"
+  style="position:fixed;bottom:145px;left:20px;z-index:996;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;"
+  aria-label="طلب منتج">🔍</button>
 
 </body>
 </html>
