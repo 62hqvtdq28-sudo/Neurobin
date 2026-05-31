@@ -152,8 +152,25 @@
   const Testimonials = { list: () => all('testimonials'), save: (t,id) => id ? upd('testimonials',id,t) : ins('testimonials',t), delete: id => del('testimonials',id) };
 
   const Settings = {
-    async get() { const { data, error } = await _db.from('settings').select('*'); if (error) throw error; return Object.fromEntries((data||[]).map(r=>[r.key,r.value])); },
-    async setMultiple(obj) { const rows = Object.entries(obj).map(([key,value])=>({key,value})); const { error } = await _db.from('settings').upsert(rows,{onConflict:'key'}); if (error) throw error; }
+    async get(key) {
+      if (key) {
+        const { data, error } = await _db.from('settings').select('value').eq('key', key).maybeSingle();
+        if (error) throw error;
+        return data ? data.value : null;
+      }
+      const { data, error } = await _db.from('settings').select('*');
+      if (error) throw error;
+      return Object.fromEntries((data||[]).map(r=>[r.key,r.value]));
+    },
+    async set(key, value) {
+      const { error } = await _db.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      if (error) throw error;
+    },
+    async setMultiple(obj) {
+      const rows = Object.entries(obj).map(([key,value])=>({key,value}));
+      const { error } = await _db.from('settings').upsert(rows,{onConflict:'key'});
+      if (error) throw error;
+    }
   };
 
   // ── كودات الخصم
