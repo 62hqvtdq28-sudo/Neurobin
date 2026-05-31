@@ -1306,21 +1306,21 @@ function normalizeArabic(str) {
     .trim();
 }
 
+// Optimized levenshtein: 1D rolling array + early exit — O(m*n) but no 2D allocation
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
-  const dp = [];
-  for (let i = 0; i <= m; i++) { dp[i] = [i]; }
-  for (let j = 0; j <= n; j++) { dp[0][j] = j; }
+  if (Math.abs(m - n) > 4) return 99; // fast early-exit: strings too different
+  let prev = Array.from({length: n + 1}, function(_, i) { return i; });
   for (let i = 1; i <= m; i++) {
+    const curr = [i];
     for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i-1] === b[j-1]
-        ? dp[i-1][j-1]
-        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      curr[j] = a[i-1] === b[j-1] ? prev[j-1] : 1 + Math.min(prev[j], curr[j-1], prev[j-1]);
     }
+    prev = curr;
   }
-  return dp[m][n];
+  return prev[n];
 }
 
 function fuzzyMatchArabic(query, productName) {
@@ -1339,18 +1339,52 @@ function fuzzyMatchArabic(query, productName) {
   return queryWords.length > 0;
 }
 
+// ── Product search cache: normalize names ONCE when products load ──
+var _productSearchCache = null;
+function _invalidateProductCache() { _productSearchCache = null; }
+function _getProductCache() {
+  if (_productSearchCache && _productSearchCache.length) return _productSearchCache;
+  if (typeof products === 'undefined' || !products.length) return [];
+  _productSearchCache = products.map(function(p) {
+    return {
+      p: p,
+      nl:  (p.name     || '').toLowerCase(),
+      nn:  normalizeArabic(p.nameAr || ''),
+      cl:  (p.category || '').toLowerCase(),
+      eng: (p.name     || '').toLowerCase().replace(/s+/g, '')
+    };
+  });
+  return _productSearchCache;
+}
+
+// ── Cached DOM refs — avoids getElementById on every keystroke ──
+var _srInputRef = null, _srResultsRef = null;
+function _srInput()   { return _srInputRef   || (_srInputRef   = document.getElementById('searchInput')); }
+function _srResults() { return _srResultsRef || (_srResultsRef = document.getElementById('searchResults')); }
+
+// ── Pending rAF handle to avoid mid-frame DOM writes ──
+var _srRafHandle = 0;
+
 function performSearch() {
-  const rawQuery = document.getElementById('searchInput').value;
+  const inp = _srInput(), results = _srResults();
+  if (!inp || !results) return;
+  const rawQuery = inp.value;
   const query = rawQuery.toLowerCase().slice(0, 100);
-  const results = document.getElementById('searchResults');
   if (query.length < 2) { results.innerHTML = ''; return; }
-  // Step 1: Exact match
-  let matches = products.filter(p =>
-    p.name.toLowerCase().includes(query) ||
-    p.nameAr.includes(rawQuery) ||
-    normalizeArabic(p.nameAr).includes(normalizeArabic(rawQuery)) ||
-    p.category.includes(query)
-  );
+
+  var cache = _getProductCache();
+  if (!cache.length) { results.innerHTML = ''; return; }
+
+  const qNorm = normalizeArabic(rawQuery);
+
+  // Step 1: Exact/partial match using pre-normalised cache
+  let matches = [];
+  for (var i = 0; i < cache.length; i++) {
+    var c = cache[i];
+    if (c.nl.includes(query) || c.nn.includes(qNorm) || c.cl.includes(query) || (c.nn && c.nn.includes(normalizeArabic(rawQuery)))) {
+      matches.push(c.p);
+    }
+  }
   // Step 2: Fuzzy match if no results (handles typos like عسول → غسول)
   let isFuzzy = false;
   if (matches.length === 0 && rawQuery.length >= 2) {
@@ -1361,24 +1395,26 @@ function performSearch() {
   if (matches.length === 0 && rawQuery.length >= 3) {
     const phonetic = arabicToPhonetic(rawQuery).replace(/s+/g,'');
     if (phonetic.length >= 3) {
-      matches = products.filter(function(p) {
-        const eng = (p.name || '').toLowerCase().replace(/s+/g,'');
+      matches = cache.filter(function(c) {
+        const eng = c.eng;
         if (!eng) return false;
         if (eng.includes(phonetic) || phonetic.includes(eng.substring(0, phonetic.length))) return true;
         const maxD = phonetic.length <= 4 ? 1 : phonetic.length <= 6 ? 2 : 3;
-        const engSlice = eng.substring(0, phonetic.length + 2);
-        return levenshtein(phonetic, engSlice) <= maxD;
-      });
+        return levenshtein(phonetic, eng.substring(0, phonetic.length + 2)) <= maxD;
+      }).map(function(c) { return c.p; });
       if (matches.length > 0) isFuzzy = true;
     }
   }
   if (matches.length === 0) {
     results.innerHTML = '<div class="p-6 text-center text-brand-400"><p>لم يتم العثور على نتائج</p></div>';
     if (_aiSearchTimer) clearTimeout(_aiSearchTimer);
-    if (rawQuery.length >= 3) { _aiSearchTimer = setTimeout(function() { _aiSearchSuggest(rawQuery); }, 700); }
+    if (rawQuery.length >= 4) { _aiSearchTimer = setTimeout(function() { _aiSearchSuggest(rawQuery); }, 700); }
   } else {
     _saveRecentSearch(rawQuery.trim());
     const fuzzyNotice = isFuzzy ? `<div class="px-4 pt-3 pb-1" style="font-size:11px;color:#AABF89;font-weight:700;">🔍 نتائج مقاربة لـ &quot;${SecurityValidator.escapeHtml(rawQuery)}&quot;</div>` : '';
+    // Defer DOM write to next frame — prevents jank during keystroke handling
+    cancelAnimationFrame(_srRafHandle);
+    _srRafHandle = requestAnimationFrame(function() {
     results.innerHTML = fuzzyNotice + matches.slice(0, 12).map(p => {
       const safeId   = SecurityValidator.escapeHtml(p.id);
       const safeName = SecurityValidator.escapeHtml(p.nameAr);
@@ -1416,6 +1452,7 @@ function performSearch() {
         <svg style="flex-shrink:0;width:14px;height:14px;color:#AABF89;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
       </div>`;
     }).join('');
+    }); // end requestAnimationFrame
   }
 }
 
