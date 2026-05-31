@@ -357,3 +357,153 @@ button[title="السلة"]:hover {
     display: block !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   Performance & UX Upgrades (v5)
+   ═══════════════════════════════════════════════════════════ */
+
+/* GPU acceleration for key animated elements */
+.product-card-main,
+.cart-sidebar,
+.checkout-modal,
+.checkout-container,
+.search-modal,
+.quick-view-modal,
+.float-animation,
+.scroll-animate {
+  will-change: transform;
+}
+
+/* Remove will-change after animation ends (memory) */
+.scroll-animate.visible,
+.product-card-main:not(:hover) {
+  will-change: auto;
+}
+
+/* Better touch on ALL interactive elements */
+button, a, [role="button"], label,
+.filter-btn, .cat-icon-btn,
+.product-card-main, .search-result-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Skeleton Loading (shimmer) ─────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    #f0f2ee 25%, #e4e8de 50%, #f0f2ee 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 10px;
+}
+.skeleton-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid #E8EAD8;
+  animation: fadeInPage 0.3s ease-out;
+}
+.skeleton-img  { height: 185px; width: 100%; border-radius: 0; }
+.skeleton-body { padding: 10px 12px 12px; }
+.skeleton-tag  { height: 18px; width: 45%; margin-bottom: 8px; }
+.skeleton-title{ height: 14px; width: 85%; margin-bottom: 6px; }
+.skeleton-sub  { height: 12px; width: 60%; margin-bottom: 12px; }
+.skeleton-row  { display: flex; align-items: center; justify-content: space-between; }
+.skeleton-price{ height: 20px; width: 38%; }
+.skeleton-btn  { height: 30px; width: 36%; border-radius: 9999px; }
+@media (max-width: 767px) {
+  .skeleton-img { height: 145px; }
+}
+
+/* ── Product image fade-in on load ─────────────────────── */
+@keyframes imgFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.product-img-animated { animation: imgFadeIn 0.35s ease-in-out; }
+
+/* ── Smooth grid appear on render ───────────────────────── */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#productsGrid > * { animation: fadeInPage 0.28s ease-out both; }
+#productsGrid > *:nth-child(1)  { animation-delay: 0ms; }
+#productsGrid > *:nth-child(2)  { animation-delay: 30ms; }
+#productsGrid > *:nth-child(3)  { animation-delay: 60ms; }
+#productsGrid > *:nth-child(4)  { animation-delay: 90ms; }
+#productsGrid > *:nth-child(5)  { animation-delay: 120ms; }
+#productsGrid > *:nth-child(6)  { animation-delay: 150ms; }
+#productsGrid > *:nth-child(n+7){ animation-delay: 180ms; }
+
+/* ── iOS Safari-specific fixes ──────────────────────────── */
+@supports (-webkit-touch-callout: none) {
+  /* Fix 100vh on iOS (address bar bug) */
+  .cart-sidebar        { height: -webkit-fill-available; }
+  .checkout-container  { max-height: -webkit-fill-available; }
+
+  /* Disable hover lift on touch devices (prevents sticky hover) */
+  .product-card-main:hover { transform: none; box-shadow: none; }
+  .product-card-main:hover::before { transform: scaleX(0); }
+  .product-card-main:hover .product-overlay { opacity: 0; }
+  .product-card-main:active { transform: scale(0.98); }
+
+  /* Smooth momentum scrolling */
+  .search-results,
+  .cart-sidebar,
+  .checkout-container,
+  .quick-view-container { -webkit-overflow-scrolling: touch; }
+
+  /* Fix button active state on iOS */
+  .btn-primary:active { transform: scale(0.96) !important; }
+}
+
+/* ── Scrollbar styling ───────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #F6F7F4; }
+::-webkit-scrollbar-thumb { background: #AABF89; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2D5016; }
+
+/* ── Reduced motion (accessibility) ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1     !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior:           auto  !important;
+  }
+  .skeleton { animation: none; background: #e8eae0; }
+}
+
+/* ── Better focus rings (accessibility) ─────────────────── */
+:focus-visible {
+  outline: 2.5px solid #2D5016;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) { outline: none; }
+
+/* ── Image loading state placeholder ────────────────────── */
+.product-image-wrapper img[src=""],
+.product-image-wrapper img:not([src]) {
+  opacity: 0;
+}
+
+/* ── Quick view overlay button improved ─────────────────── */
+.product-overlay button {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  font-family: 'Cairo', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* ── Card hover: more subtle on small screens ───────────── */
+@media (max-width: 767px) {
+  .product-card-main:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(45,80,22,.12);
+  }
+}
