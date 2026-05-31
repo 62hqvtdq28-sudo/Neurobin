@@ -820,15 +820,14 @@ function _buildLoginMsg(status) {
 
 async function sendTelegramAlert(msg) {
   try {
-    var s = JSON.parse(localStorage.getItem('phSettings') || '{}');
-    if (!s.telegramBotToken || !s.telegramChatId) return;
-    var resp = await fetch('https://api.telegram.org/bot' + s.telegramBotToken + '/sendMessage', {
+    // المفاتيح مخزّنة بأمان في متغيرات البيئة على الخادم (Replit Secrets)
+    var resp = await fetch('https://a5860b81-115f-4231-89ff-03cf4642abcf-00-npz9yu0ydb1d.pike.replit.dev/api/telegram/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: s.telegramChatId, text: msg, parse_mode: 'HTML' })
+      body: JSON.stringify({ message: msg })
     });
     var data = await resp.json();
-    if (!data.ok) console.warn('[Telegram] Error:', data.description);
+    if (!data.ok) console.warn('[Telegram] Error:', data.error);
   } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
 
