@@ -133,7 +133,7 @@
             entry.target.style.willChange = 'auto';
           }, 650);
         });
-      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      }, { threshold: 0, rootMargin: '150px 0px 150px 0px' });
       return _globalObserver;
     }
 
@@ -297,21 +297,10 @@
       only approach that breaks on Safari cached images)              */
   // Stub: img-loader.js takes over completely
 
-  /* ── 9. content-visibility for off-screen sections ─────────── */
-  (function applyContentVisibility() {
-    // Apply after initial paint to avoid layout thrash
-    requestIdleCallback ? requestIdleCallback(apply) : setTimeout(apply, 2000);
-    function apply() {
-      var belowFold = ['#features', '#about', '#testimonials', '#comments'];
-      belowFold.forEach(function (sel) {
-        var el = document.querySelector(sel);
-        if (el && !el.style.contentVisibility) {
-          el.style.contentVisibility = 'auto';
-          el.style.containIntrinsicSize = '0 600px';
-        }
-      });
-    }
-  })();
+  /* ── 9. content-visibility DISABLED ──────────────────────────
+     content-visibility:auto creates containment that BREAKS Safari's
+     IntersectionObserver — scroll-animate elements inside never trigger.
+     Removed permanently. Sections reveal normally via scroll animations. */
 
   /* ── 10. Admin panel — throttle table re-renders ────────────── */
   (function patchAdminTable() {
@@ -332,8 +321,11 @@
     window.loadProducts.__perfPatched = true;
   })();
 
-  /* ── 11. Repaint reduction — batch classList ops ─────────────── */
-  // Wrap renderProducts to use DocumentFragment pattern via transition
+  /* ── 11. Render dedup — skip if same data (NO grid fade) ────────
+     REMOVED the grid fade animation (opacity:0→1 on the grid while cards
+     are also at opacity:0 from scroll-animate-scale → Safari IntersectionObserver
+     fires during the double-opacity-0 state and misses elements).
+     Only keeping the duplicate-render skip optimization.               */
   (function patchRenderProducts() {
     window.addEventListener('load', function () {
       setTimeout(function () {
@@ -344,23 +336,15 @@
           var grid = document.getElementById('productsGrid');
           if (!grid) return;
 
-          // Skip render if same product set (by length + first/last id)
+          // Skip render if exact same product set
           var key = (productsToRender.length || 0) + '|' +
                     (productsToRender[0] && productsToRender[0].id || '') + '|' +
                     (productsToRender[productsToRender.length - 1] && productsToRender[productsToRender.length - 1].id || '');
           if (grid.__lastRenderKey === key) return;
           grid.__lastRenderKey = key;
 
-          // Apply fade-out, then swap content, then fade-in
-          grid.classList.add('grid-fading-out');
-          setTimeout(function () {
-            _orig(productsToRender);
-            grid.classList.remove('grid-fading-out');
-            grid.classList.add('grid-fading-in');
-            setTimeout(function () {
-              grid.classList.remove('grid-fading-in');
-            }, 350);
-          }, 180);
+          // Call original directly — NO fade animation to avoid opacity conflict
+          _orig(productsToRender);
         };
         window.renderProducts.__perfPatched = true;
       }, 800);
