@@ -433,6 +433,12 @@ async function saveManualOrder() {
 
   if (!name)  { showToast('يرجى إدخال اسم العميل', 'error');  return; }
   if (!phone) { showToast('يرجى إدخال رقم الهاتف', 'error'); return; }
+  // Security: sanitize and length-check inputs
+  name    = String(name).replace(/<[^>]*>/g, '').trim().slice(0, 150);
+  phone   = String(phone).replace(/[^0-9+-s]/g, '').trim().slice(0, 20);
+  address = address ? String(address).replace(/<[^>]*>/g, '').trim().slice(0, 300) : '';
+  notes   = notes   ? String(notes).replace(/<[^>]*>/g, '').trim().slice(0, 500) : '';
+  if (phone.length < 7) { showToast('رقم الهاتف يجب أن يكون 7 أرقام على الأقل', 'error'); return; }
 
   var itemsTotal  = _moItems.reduce(function(sum, i) { return sum + (i.price || 0) * i.qty; }, 0);
   var totalAmount = itemsTotal + delivery;
@@ -446,7 +452,15 @@ async function saveManualOrder() {
 
   try {
     if (!_moItems.length) { showToast('يرجى إضافة منتج واحد على الأقل', 'error'); if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب';if(typeof lucide!=='undefined')lucide.createIcons();} return; }
-    var result = await SupaDB._db.from('orders').insert({
+    var result = // Rate limit: prevent rapid order creation
+  var _adminOrderRl = sessionStorage.getItem('nb_admin_order_rl');
+  if (_adminOrderRl && Date.now() - parseInt(_adminOrderRl) < 5000) {
+    showToast && showToast('يرجى الانتظار قبل إنشاء طلب جديد', 'warning');
+    if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="save" class="w-5 h-5"></i><span>حفظ الطلب</span>';}
+    return;
+  }
+  sessionStorage.setItem('nb_admin_order_rl', String(Date.now()));
+  await SupaDB._db.from('orders').insert({
       customer_name:    name,
       customer_phone:   phone,
       customer_address: address  || null,

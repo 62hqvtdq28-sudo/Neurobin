@@ -620,6 +620,11 @@ function updateManualTotal() {
 }
 
 async function saveManualOrder() {
+  // Security: sanitize all input fields
+  ['moName','moPhone','moAddress','moNotes'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el.value) el.value=el.value.replace(/<[^>]*>/g,'').trim().slice(0,id==='moNotes'?500:300);
+  });
   var nameEl    = document.getElementById('moName');
   var phoneEl   = document.getElementById('moPhone');
   var addrEl    = document.getElementById('moAddress');
@@ -841,7 +846,8 @@ async function uploadCatImage(catFilter, fileInput) {
 
     var _phSettings = {};
     try { _phSettings = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(_e) {}
-    var _imgbbKey = (_phSettings.imgbbApiKey || '').trim() || '405daedac0e1e717cde2106b81d225b9';
+    var _imgbbKey = (_phSettings.imgbbApiKey || '').trim();
+  if (!_imgbbKey) { showToast && showToast('يرجى إضافة مفتاح ImgBB في الإعدادات لرفع الصور', 'warning'); return null; }
     var response = await fetch('https://api.imgbb.com/1/upload?key=' + _imgbbKey, {
       method: 'POST',
       body: formData
@@ -1202,3 +1208,18 @@ window.startRealtimeNotifications = function() {
     console.warn('[Realtime]', e.message);
   }
 };
+
+/* ── Security: clear sensitive data on logout ── */
+(function(){
+  var _origSignOut = window.supabaseClient && window.supabaseClient.auth && window.supabaseClient.auth.signOut;
+  if (_origSignOut) {
+    var _orig = _origSignOut.bind(window.supabaseClient.auth);
+    window.supabaseClient.auth.signOut = function() {
+      ['adminRememberToken','adminRememberExpiry','adminPasswordHash','adminPasswordSalt',
+       'adminPasswordIterations','adminLoginLogs','phSettings','SecureSession_admin',
+       'adminSession','admin_csrf_token'].forEach(function(k){ localStorage.removeItem(k); });
+      sessionStorage.clear();
+      return _orig.apply(this, arguments);
+    };
+  }
+})();

@@ -466,6 +466,13 @@ async function checkAuth() {
   }
 
   const rememberToken = localStorage.getItem('adminRememberToken');
+  const rememberExpiry = localStorage.getItem('adminRememberExpiry');
+  // Security: enforce 30-day expiry on remember token
+  if (rememberToken && rememberExpiry && Date.now() > parseInt(rememberExpiry)) {
+    localStorage.removeItem('adminRememberToken');
+    localStorage.removeItem('adminRememberExpiry');
+    console.warn('[Security] Remember token expired, cleared');
+  }
   const storedPasswordHash = localStorage.getItem('adminPasswordHash');
   const storedSalt = localStorage.getItem('adminPasswordSalt');
 
@@ -506,6 +513,8 @@ async function checkAuth() {
           // Update remember token with new session token
           tokenData.sessionToken = newSessionToken;
           localStorage.setItem('adminRememberToken', JSON.stringify(tokenData));
+  // Security: set 30-day expiry for remember token
+  localStorage.setItem('adminRememberExpiry', String(Date.now() + 30*24*60*60*1000));
           showDashboard();
           return;
         }
@@ -745,7 +754,7 @@ async function showDashboard() {
     if (typeof window.startRealtimeNotifications === 'function') window.startRealtimeNotifications();
     // Show Telegram setup hint if not configured
     var _s = {};
-    try { _s = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) {}
+    try { var _raw = localStorage.getItem('phSettings') || '{}'; _s = JSON.parse(_raw); if(_s && typeof _s === 'object') Object.keys(_s).forEach(function(k){ if(k.startsWith('__proto__')||k==='constructor'||k==='prototype') delete _s[k]; }); } catch(e) { _s = {}; }
     if (!_s.telegramBotToken) {
       setTimeout(function() {
         if (typeof showToast === 'function') showToast('💡 لتفعيل إشعارات تيليجرام اذهب إلى الإعدادات', 'info');
@@ -774,7 +783,7 @@ function _getDeviceInfo() {
 
 function recordLoginEvent(type, status) {
   try {
-    var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+    var logs; try { logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]'); if(!Array.isArray(logs)) logs = []; } catch(e) { logs = []; }
     var info = _getDeviceInfo();
     var entry = {
       id: Date.now(),

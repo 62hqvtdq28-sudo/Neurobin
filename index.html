@@ -6,7 +6,7 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; connect-src 'self' https://hczsskviliuqyayylutv.supabase.co https://api.emailjs.com; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; connect-src 'self' https://hczsskviliuqyayylutv.supabase.co https://api.emailjs.com https://a5860b81-115f-4231-89ff-03cf4642abcf-00-npz9yu0ydb1d.pike.replit.dev; frame-ancestors 'none';">
 <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes">
 <meta name="X-XSS-Protection" content="1; mode=block">
@@ -262,7 +262,7 @@ section, div { max-width: 100%; }
   <div class="search-container">
     <div class="flex items-center gap-4 p-4 border-b border-brand-100 bg-gradient-to-r from-brand-50 to-white">
       <i data-lucide="search" class="w-6 h-6 text-brand-400"></i>
-      <input type="text" id="searchInput" class="search-input" placeholder="ابحث عن منتج..." oninput="performSearch()" onkeydown="handleSearchKeydown(event)" aria-label="مربع البحث">
+      <input type="text" id="searchInput" class="search-input" placeholder="ابحث عن منتج..." oninput="performSearch()" onkeydown="handleSearchKeydown(event)" aria-label="مربع البحث" maxlength="150">
       <button onclick="closeSearch()" class="p-2 hover:bg-brand-100 rounded-full transition-colors" aria-label="إغلاق البحث">
         <i data-lucide="x" class="w-5 h-5 text-brand-600"></i>
       </button>
@@ -1529,7 +1529,7 @@ window.addEventListener('load', function() {
       searchInput.addEventListener('input', function() {
         clearTimeout(_debTimer);
         _debTimer = setTimeout(function() {
-          try { eval(_existingHandler); } catch(e) {}
+          try { searchInput.dispatchEvent(new Event('input')); } catch(e) {}
         }, 200);
       });
     }
@@ -1878,6 +1878,125 @@ window.submitProductRequest = async function() {
       });
     }
   }).catch(function(){});
+})();
+</script>
+
+<script>
+/* ── حفظ عنوان التوصيل ─────────────────────────────────────────────── */
+(function() {
+  var ADDR_KEY  = 'nb_saved_address';
+  var NAME_KEY  = 'nb_saved_name';
+  var PHONE_KEY = 'nb_saved_phone';
+
+  // Save address after successful order placement
+  var _origOrder = null;
+  function _patchOrderSubmit() {
+    // Try to hook into the order success flow
+    var _orig = window.closeOrderModal || window.submitOrderSuccess;
+    if (_orig && !_orig._addressSavePatch) {
+      // We'll save on actual form submission confirmation
+    }
+  }
+
+  // Auto-fill when order modal opens
+  function _autoFillOrderForm() {
+    var savedAddr  = localStorage.getItem(ADDR_KEY)  || '';
+    var savedName  = localStorage.getItem(NAME_KEY)  || '';
+    var savedPhone = localStorage.getItem(PHONE_KEY) || '';
+    if (!savedAddr && !savedName) return;
+
+    var fields = [
+      { ids: ['customerAddress','orderAddress','address','addressInput'], val: savedAddr },
+      { ids: ['customerName','orderName','fullName','nameInput'],         val: savedName },
+      { ids: ['customerPhone','orderPhone','phone','phoneInput'],         val: savedPhone },
+    ];
+    var filled = 0;
+    fields.forEach(function(f) {
+      f.ids.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.value && f.val) { el.value = f.val; filled++; }
+      });
+    });
+    if (filled > 0) {
+      // Show "تم استعادة بياناتك السابقة" chip
+      var existing = document.getElementById('_nb_saved_addr_chip');
+      if (existing) return;
+      var chip = document.createElement('div');
+      chip.id = '_nb_saved_addr_chip';
+      chip.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:9999;background:#2D5016;color:#fff;padding:10px 16px;border-radius:12px;font-family:Cairo,sans-serif;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;direction:rtl;display:flex;align-items:center;gap:8px;';
+      chip.innerHTML = '<span>📍</span><span>تم استعادة عنوانك السابق</span>';
+      chip.onclick = function() { chip.remove(); };
+      setTimeout(function() { if(chip.parentNode) chip.remove(); }, 4000);
+      document.body.appendChild(chip);
+    }
+  }
+
+  // Save fields when order is placed successfully
+  function _saveOrderData() {
+    var addrFields  = ['customerAddress','orderAddress','address','addressInput'];
+    var nameFields  = ['customerName','orderName','fullName','nameInput'];
+    var phoneFields = ['customerPhone','orderPhone','phone','phoneInput'];
+    var findVal = function(ids) {
+      for (var i=0; i<ids.length; i++) {
+        var el = document.getElementById(ids[i]);
+        if (el && el.value.trim()) return el.value.trim();
+      }
+      return '';
+    };
+    var addr  = findVal(addrFields);
+    var name  = findVal(nameFields);
+    var phone = findVal(phoneFields);
+    if (addr)  localStorage.setItem(ADDR_KEY,  addr.slice(0,300));
+    if (name)  localStorage.setItem(NAME_KEY,  name.slice(0,150));
+    if (phone) localStorage.setItem(PHONE_KEY, phone.slice(0,20));
+  }
+
+  // Hook: watch for order modal to open
+  var _observer = new MutationObserver(function(muts) {
+    muts.forEach(function(m) {
+      m.addedNodes.forEach(function(n) {
+        if (n.nodeType === 1) {
+          var isModal = n.id && (n.id.includes('orderModal') || n.id.includes('Order') || n.id.includes('checkout'));
+          var hasAddr = n.querySelector && n.querySelector('[id*="address"],[id*="Address"]');
+          if (isModal || hasAddr) {
+            setTimeout(_autoFillOrderForm, 100);
+          }
+        }
+      });
+    });
+  });
+  _observer.observe(document.body, { childList: true, subtree: true });
+
+  // Also try on DOMContentLoaded (for pages that pre-render the form)
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(_autoFillOrderForm, 500);
+    // Patch showOrderModal
+    var orig = window.showOrderModal;
+    if (typeof orig === 'function' && !orig._addrPatch) {
+      window.showOrderModal = function() {
+        var r = orig.apply(this, arguments);
+        setTimeout(_autoFillOrderForm, 150);
+        return r;
+      };
+      window.showOrderModal._addrPatch = true;
+    }
+    // Patch order success / closeOrderModal
+    ['confirmOrder','placeOrder','submitOrder'].forEach(function(fn) {
+      var origFn = window[fn];
+      if (typeof origFn === 'function' && !origFn._addrSave) {
+        window[fn] = async function() {
+          var result = await origFn.apply(this, arguments);
+          _saveOrderData();
+          return result;
+        };
+        window[fn]._addrSave = true;
+      }
+    });
+  });
+
+  // Expose for manual call
+  window._nbSaveAddress  = _saveOrderData;
+  window._nbFillAddress  = _autoFillOrderForm;
 })();
 </script>
 </body>
