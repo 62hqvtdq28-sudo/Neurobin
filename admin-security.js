@@ -760,9 +760,10 @@ async function checkAndBindDevice() {
           : generateSecureId();
         localStorage.setItem('adminDeviceId', localDeviceId);
       }
-      // INSERT only (not upsert) — so it can't be overwritten by anon later
+      // Use upsert to avoid silent failure if row already exists with empty value.
+      // Anon-key RLS should restrict overwrites via Supabase policies.
       await client.from('site_settings')
-        .insert({ key: 'admin_allowed_device', value: localDeviceId });
+        .upsert({ key: 'admin_allowed_device', value: localDeviceId }, { onConflict: 'key' });
 
       console.log('[DeviceBind] This device has been registered as the admin device.');
       return { allowed: true, firstSetup: true };

@@ -148,7 +148,9 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .badge-replied { background: #10B981; color: white; }
 
 /* Chart Container */
-.chart-container { position: relative; height: 280px; width: 100%; }
+.chart-container { position: relative; height: 280px; width: 100%; background: white; border-radius: 0.75rem; }
+/* Prevent Chart.js canvas from showing a black background in some browsers */
+.chart-container canvas { background: white; }
 
 /* Date Buttons */
 .date-btn { transition: all 0.2s ease; padding: 0.5rem 1rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.875rem; }

@@ -88,8 +88,11 @@ function _filterPageViewsHourly(pageViews, dateKey) {
   var byHour = {};
   for (var h = 0; h < 24; h++) byHour[h] = 0;
   pageViews.forEach(function(v) {
-    if (v.created_at.slice(0, 10) === dateKey) {
-      var hour = new Date(v.created_at).getHours();
+    // Convert to Baghdad time (UTC+3) for accurate local date/hour
+    var baghdadMs = new Date(v.created_at).getTime() + 3 * 3600000;
+    var baghdadDate = new Date(baghdadMs).toISOString().slice(0, 10);
+    if (baghdadDate === dateKey) {
+      var hour = new Date(baghdadMs).getUTCHours();
       byHour[hour] = (byHour[hour] || 0) + 1;
     }
   });
@@ -245,15 +248,16 @@ async function initVisitorsChart() {
   var labels, currentValues, previousValues;
   if (isHourly) {
     var curDate = getDateRangeDates();
-    var curKey = curDate.startDate.toISOString().slice(0, 10);
-    var prevKey = new Date(curDate.startDate.getTime() - 86400000).toISOString().slice(0, 10);
+    // Use Baghdad time (UTC+3) for date keys so visits around midnight are bucketed correctly
+    var curKey  = new Date(curDate.startDate.getTime() + 3 * 3600000).toISOString().slice(0, 10);
+    var prevKey = new Date(curDate.startDate.getTime() - 86400000 + 3 * 3600000).toISOString().slice(0, 10);
     var curHourly = _filterPageViewsHourly(data.pageViews, curKey);
     var prevHourly = _filterPageViewsHourly(data.pageViews, prevKey);
     labels = curHourly.hourlyData.map(function(h) {
       var hr = h.hour;
-      var suffix = hr < 12 ? 'ص' : 'م';
+      var suffix = hr < 12 ? 'AM' : 'PM';
       var disp = hr === 0 ? 12 : (hr > 12 ? hr - 12 : hr);
-      return disp + suffix;
+      return disp + ' ' + suffix;
     });
     currentValues  = curHourly.hourlyData.map(function(h) { return h.visitors; });
     previousValues = prevHourly.hourlyData.map(function(h) { return h.visitors; });

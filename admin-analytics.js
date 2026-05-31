@@ -368,8 +368,10 @@ async function _loadProfitBreakdown() {
     var rows = products
       .filter(function(p){ return Number(costMap[String(p.id)]||0) > 0 || Number(p.price||0) > 0; })
       .map(function(p) {
-        // calc profit first for sort
-        p._sortProfit = Number(p.price||0) - Number(costMap[String(p.id)]||0);
+        var unitProfit = Number(p.price||0) - Number(costMap[String(p.id)]||0);
+        var soldQty = _productQtyCache[p.name_ar || p.name || ''] || 0;
+        // Sort by TOTAL profit (unit profit × qty sold); fall back to unit profit if no sales data
+        p._sortProfit = soldQty > 0 ? unitProfit * soldQty : unitProfit;
         return p;
       })
       .sort(function(a,b){ return b._sortProfit - a._sortProfit; })
@@ -414,14 +416,24 @@ function deleteAnalyticsView() {
   var cards=document.getElementById('analyticsCards');
   var products=document.getElementById('topProductsList');
   var status=document.getElementById('analyticsStatusSummary');
-  var monthly=document.getElementById('analyticsMonthlyChart');
   if (!_lastAnalyticsSnapshot) { if(typeof showToast==='function') showToast('لا توجد بيانات لحذفها','error'); return; }
   if (!confirm('هل تريد مسح عرض الإحصائيات الحالية؟ يمكنك التراجع لاحقاً')) return;
   if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-10 text-brand-400"><p>تم مسح العرض — اضغط "تراجع" لاستعادته أو "تحديث" لإعادة التحميل</p></div>';
-  // توزيع المنتجات (products) يبقى — لا يُحذف
+  // Clear products distribution
+  if (products) products.innerHTML='';
   if (status) status.innerHTML='';
   if (_analyticsChartMonthly) { _analyticsChartMonthly.destroy(); _analyticsChartMonthly=null; }
   var summaryEl=document.getElementById('analyticsSalesSummary'); if(summaryEl) summaryEl.innerHTML='';
+  // Clear profit details panel
+  var profitPanel=document.getElementById('profitDetailsPanel');
+  if (profitPanel) { profitPanel.classList.add('hidden'); var pList=document.getElementById('profitDetailsList'); if(pList) pList.innerHTML=''; }
+  _profitBreakdownCache=null;
+  // Clear profit cards
+  var profitBtn=document.getElementById('profitDetailsBtn');
+  if (profitBtn) { var sp=profitBtn.querySelector('span'); if(sp) sp.textContent='تفاصيل الربح'; }
+  // Remove the visitor stats section injected by loadVisitorStats
+  var visStats=document.getElementById('visitorStatsSection');
+  if (visStats) visStats.remove();
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) { undoBtn.classList.remove('hidden'); }
   if(typeof showToast==='function') showToast('تم مسح العرض — يمكنك التراجع','info');

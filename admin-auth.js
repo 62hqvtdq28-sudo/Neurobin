@@ -449,8 +449,11 @@ async function checkAuth() {
           sessionStorage.setItem('adminLastActivity', Date.now().toString());
           sessionStorage.setItem('adminSessionToken', generateSecureId());
         }
-        if (!sessionStorage.getItem('_loginSessionRecorded')) {
-          sessionStorage.setItem('_loginSessionRecorded', '1');
+        // Record session-restore at most once every 30 minutes (localStorage-based,
+        // so it survives navigation within the same tab unlike sessionStorage)
+        var _lastRestore = parseInt(localStorage.getItem('_lastSessionRestoreLog') || '0', 10);
+        if (Date.now() - _lastRestore > 30 * 60 * 1000) {
+          localStorage.setItem('_lastSessionRestoreLog', String(Date.now()));
           recordLoginEvent('session-restore', 'success');
         }
         showDashboard();
