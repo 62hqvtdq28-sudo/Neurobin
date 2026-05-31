@@ -2227,16 +2227,15 @@ mark, .search-result-item mark {
 
 /* ── Products Grid: NO fade (removed — conflicts with scroll-animate-scale on Safari) */
 #productsGrid.grid-loading { opacity: 0.7 !important; pointer-events: none !important; }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 /* ── Image loading: opacity-only (no blur — causes page-wide stuck blur on iPad Safari) */
 .product-image-wrapper img {
   transition: opacity 0.3s ease !important;
 }
 .product-image-wrapper img.img-loading {
-  opacity: 0.4 !important;
-  /* blur removed for iOS Safari compatibility */
+  opacity: 1 !important;
+  /* opacity kept at 1 — img-loader.js handles load state via img-loaded class */
+  /* 0.4 was causing stuck semi-transparent images on iPad Safari */
 }
 .product-image-wrapper img.img-loaded {
   opacity: 1 !important;
