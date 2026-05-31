@@ -5,6 +5,12 @@ var _lastAnalyticsSnapshot = null; // for undo
 var _profitBreakdownCache = null;
 var _productQtyCache = {};
 
+// ── Helper to avoid single-quote inside string issues ──────────────────────
+window._reloadAnalytics = function() {
+  sessionStorage.removeItem('analyticsHidden');
+  if (typeof loadAnalytics === 'function') loadAnalytics();
+};
+
 async function loadAnalytics() {
   // ← إذا أخفى المستخدم الإحصائيات يدوياً، لا تعيد التحميل التلقائي
   if (sessionStorage.getItem('analyticsHidden') === '1') {
@@ -12,7 +18,7 @@ async function loadAnalytics() {
     if (_cardsElCheck) _cardsElCheck.innerHTML =
       '<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400">' +
       '<p class="mb-4">تم مسح الإحصائيات</p>' +
-      '<button onclick="sessionStorage.removeItem('analyticsHidden');loadAnalytics();" ' +
+      '<button onclick="window._reloadAnalytics()" ' +
       'class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button>' +
       '</div>';
     var _undoBtn=document.getElementById('analyticsUndoBtn');
@@ -437,7 +443,7 @@ function deleteAnalyticsView() {
   var status=document.getElementById('analyticsStatusSummary');
   if (!_lastAnalyticsSnapshot) { if(typeof showToast==='function') showToast('لا توجد بيانات لحذفها','error'); return; }
   if (!confirm('هل تريد مسح عرض الإحصائيات الحالية؟ يمكنك التراجع لاحقاً')) return;
-  if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400"><p class="mb-4">تم مسح الإحصائيات</p><button onclick="sessionStorage.removeItem('analyticsHidden');loadAnalytics();" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button></div>';
+  if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400"><p class="mb-4">تم مسح الإحصائيات</p><button onclick="window._reloadAnalytics()" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button></div>';
   // Clear products, status, chart
   if (products) products.innerHTML='';
   if (status) status.innerHTML='';
