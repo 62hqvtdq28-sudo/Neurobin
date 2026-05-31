@@ -3295,6 +3295,256 @@ setTimeout(_bootLate, 1200);
 })();
 </script>
 
+<script>
+/* ── iOS · Safari · iPad UX Fixes — ph.neurobin ── */
+(function(){
+'use strict';
+
+/* ─── 1. True dynamic viewport height ────────────
+   iOS Safari: 100vh includes the address bar.
+   We compute the actual visual viewport height.  */
+function _setDvh(){
+  var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--dvh', h + 'px');
+}
+_setDvh();
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', _setDvh, {passive:true});
+} else {
+  window.addEventListener('resize', _setDvh, {passive:true});
+}
+
+/* ─── 2. Virtual keyboard — push fixed elements ──
+   When keyboard opens, `visualViewport.height` shrinks.
+   Adjust fixed bottom elements so they stay visible. */
+var _kbdOffset = 0;
+function _handleKeyboard(){
+  if(!window.visualViewport) return;
+  var vvH = window.visualViewport.height;
+  var wH  = window.innerHeight;
+  _kbdOffset = Math.max(0, wH - vvH);
+  /* Adjust toast and floating buttons */
+  var fixedEls = [
+    document.querySelector('.whatsapp-float'),
+    document.querySelector('.back-to-top'),
+    document.getElementById('toast')
+  ];
+  fixedEls.forEach(function(el){
+    if(el) el.style.transform = _kbdOffset > 50
+      ? 'translateY(-' + (_kbdOffset - 20) + 'px)'
+      : '';
+  });
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', _handleKeyboard, {passive:true});
+  window.visualViewport.addEventListener('scroll', _handleKeyboard, {passive:true});
+}
+
+/* ─── 3. Body scroll lock — true iOS fix ─────────
+   iOS doesn't respect `overflow:hidden` on body.
+   Store scroll position, fix body with `top` offset. */
+var _scrollPos = 0;
+var _originalOverflow = '';
+function _lockScroll(){
+  _scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+  _originalOverflow = document.body.style.overflow;
+  document.body.style.top = '-' + _scrollPos + 'px';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+  document.body.style.overflow = 'hidden';
+}
+function _unlockScroll(){
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  document.body.style.overflow = _originalOverflow || '';
+  window.scrollTo(0, _scrollPos);
+}
+/* Expose globally so modals can use it */
+window._lockScroll   = _lockScroll;
+window._unlockScroll = _unlockScroll;
+
+/* Patch body.style.overflow = 'hidden' calls via openCart / openCheckout */
+function _patchModalScrollLock(){
+  var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if(!_isIOS) return;
+
+  /* Patch all open* functions that set overflow hidden */
+  ['openCart','openCheckout','openQuickView','openSearch'].forEach(function(fn){
+    if(typeof window[fn] !== 'function' || window[fn].__iosPatch) return;
+    var _orig = window[fn];
+    window[fn] = function(){
+      _lockScroll();
+      return _orig.apply(this, arguments);
+    };
+    window[fn].__iosPatch = true;
+  });
+  ['closeCart','closeCheckout','closeQuickView','closeSearch',
+   'closeMobileDrawer'].forEach(function(fn){
+    if(typeof window[fn] !== 'function' || window[fn].__iosPatch) return;
+    var _orig = window[fn];
+    window[fn] = function(){
+      _unlockScroll();
+      return _orig.apply(this, arguments);
+    };
+    window[fn].__iosPatch = true;
+  });
+}
+
+/* ─── 4. Orientation change — recompute layout ── */
+window.addEventListener('orientationchange', function(){
+  /* Give iOS 300ms to settle before measuring */
+  setTimeout(function(){
+    _setDvh();
+    _handleKeyboard();
+    /* Re-init scroll animations if visible */
+    if(typeof initScrollAnimations === 'function') initScrollAnimations();
+  }, 350);
+}, {passive:true});
+
+/* ─── 5. Passive touch events — prevent scroll jank ─ */
+/* Ensure ALL touchstart/touchmove listeners are passive
+   to prevent scroll jank. Override any that aren't. */
+var _nativeAEL = EventTarget.prototype.addEventListener;
+/* Only wrap on iOS Safari where it matters */
+if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+  EventTarget.prototype.addEventListener = function(type, fn, opts){
+    if(type === 'touchstart' || type === 'touchmove'){
+      if(opts === undefined || opts === false) opts = {passive:true};
+      else if(opts === true) opts = {capture:true, passive:true};
+      else if(typeof opts === 'object' && opts.passive === undefined) opts.passive = true;
+    }
+    return _nativeAEL.call(this, type, fn, opts);
+  };
+}
+
+/* ─── 6. Fast tap — prevent 300ms click delay ─── */
+/* Modern: touch-action:manipulation handles this in CSS.
+   Belt-and-suspenders: prevent ghost clicks on iOS. */
+var _lastTouchEnd = 0;
+document.addEventListener('touchend', function(e){
+  var now = Date.now();
+  if(now - _lastTouchEnd < 300){
+    e.preventDefault(); /* prevent double-fire */
+  }
+  _lastTouchEnd = now;
+}, {passive:false});
+
+/* ─── 7. Input zoom fix — dynamic font-size check ─ */
+function _fixInputZoom(){
+  document.querySelectorAll('input, select, textarea').forEach(function(el){
+    var cs = window.getComputedStyle(el);
+    var fs = parseFloat(cs.fontSize);
+    if(fs < 16){
+      el.style.fontSize = '16px';
+    }
+  });
+}
+
+/* ─── 8. Horizontal overflow audit on load ───── */
+function _fixHorizontalOverflow(){
+  /* Find elements wider than viewport and clip them */
+  var vw = document.documentElement.clientWidth;
+  document.querySelectorAll('section, .premium-products-section, header, footer').forEach(function(el){
+    if(el.scrollWidth > vw + 5){
+      el.style.overflowX = 'hidden';
+      el.style.maxWidth = '100vw';
+    }
+  });
+}
+
+/* ─── 9. Snap scroll polyfill for horizontal carousels ─ */
+function _initSnapScroll(){
+  var scrollers = document.querySelectorAll('.premium-products-scroll, #topSellingGrid');
+  scrollers.forEach(function(el){
+    el.style.scrollSnapType = 'x mandatory';
+    el.style.webkitOverflowScrolling = 'touch';
+    el.style.overscrollBehaviorX = 'contain';
+  });
+}
+
+/* ─── 10. iPad: adjust modal widths on orientation ─ */
+function _adjustIPadModals(){
+  var isIPad = /iPad/.test(navigator.userAgent) || 
+    (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  if(!isIPad) return;
+  var vw = window.innerWidth;
+  var cart = document.querySelector('.cart-sidebar');
+  if(cart){
+    cart.style.maxWidth = vw >= 1024 ? '420px' : vw >= 768 ? '380px' : '100%';
+  }
+}
+
+/* ─── 11. Autocorrect / autocomplete on forms ─── */
+function _fixFormAttributes(){
+  /* Checkout form */
+  var nameInp = document.getElementById('customerName');
+  if(nameInp){
+    nameInp.setAttribute('autocorrect','off');
+    nameInp.setAttribute('spellcheck','false');
+  }
+  var addrInp = document.getElementById('customerAddress');
+  if(addrInp){
+    addrInp.setAttribute('autocorrect','off');
+    addrInp.setAttribute('spellcheck','false');
+  }
+  /* Search input */
+  var srch = document.getElementById('searchInput');
+  if(srch){
+    srch.setAttribute('autocorrect','off');
+    srch.setAttribute('autocomplete','off');
+    srch.setAttribute('spellcheck','false');
+    srch.setAttribute('autocapitalize','none');
+  }
+  var dSrch = document.getElementById('drawerSearchInput');
+  if(dSrch){
+    dSrch.setAttribute('autocorrect','off');
+    dSrch.setAttribute('autocomplete','off');
+    dSrch.setAttribute('spellcheck','false');
+    dSrch.setAttribute('autocapitalize','none');
+  }
+  /* Discount code */
+  var disc = document.getElementById('discountCodeInput');
+  if(disc){
+    disc.setAttribute('autocorrect','off');
+    disc.setAttribute('autocapitalize','characters');
+  }
+}
+
+/* ─── 12. Offer slider — touch snap fix ─────── */
+function _fixOfferSlider(){
+  var track = document.getElementById('offersTrack');
+  if(!track) return;
+  track.style.willChange = 'transform';
+  track.style.webkitTransform = track.style.webkitTransform || 'translate3d(0,0,0)';
+}
+
+/* ─── Boot ────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  _fixInputZoom();
+  _fixFormAttributes();
+  _fixHorizontalOverflow();
+  _initSnapScroll();
+  _fixOfferSlider();
+  _adjustIPadModals();
+  /* Delay scroll lock patching until app.js is loaded */
+  setTimeout(_patchModalScrollLock, 800);
+});
+
+window.addEventListener('load', function(){
+  _fixHorizontalOverflow();
+  _patchModalScrollLock();
+  _adjustIPadModals();
+});
+
+window.addEventListener('resize', function(){
+  _adjustIPadModals();
+  _setDvh();
+}, {passive:true});
+
+})();
+</script>
+
 </body>
 </html>
 
