@@ -268,6 +268,12 @@ section, div { max-width: 100%; }
   ]
 }
 </script>
+<style id="img-opacity-safeguard">
+/* Safeguard: never let product images become permanently invisible */
+.product-image-wrapper img:not(.img-loading) { opacity: 1 !important; }
+img.img-loading { opacity: 1 !important; filter: none !important; -webkit-filter: none !important; }
+img.img-loaded  { opacity: 1 !important; }
+</style>
 </head>
 <body>
 <!-- Loading Screen -->
@@ -3736,6 +3742,7 @@ window.addEventListener('resize', function(){
 </script>
 
 <script src="./perf.js" defer></script>
+<script src="./img-loader.js" defer></script>
 <script src="./seo.js" defer></script>
 <script src="./pwa-install.js"></script>
 <script src="./safari-ios-fix.js"></script>
