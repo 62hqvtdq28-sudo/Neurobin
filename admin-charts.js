@@ -84,6 +84,24 @@ function _filterPageViews(pageViews, startDate, endDate) {
   return { total: total, dailyData: dailyData };
 }
 
+function _filterPageViewsHourly(pageViews, dateKey) {
+  var byHour = {};
+  for (var h = 0; h < 24; h++) byHour[h] = 0;
+  pageViews.forEach(function(v) {
+    if (v.created_at.slice(0, 10) === dateKey) {
+      var hour = new Date(v.created_at).getHours();
+      byHour[hour] = (byHour[hour] || 0) + 1;
+    }
+  });
+  var total = 0;
+  var hourlyData = [];
+  for (var h2 = 0; h2 < 24; h2++) {
+    hourlyData.push({ hour: h2, visitors: byHour[h2] });
+    total += byHour[h2];
+  }
+  return { total: total, hourlyData: hourlyData };
+}
+
 function _filterOrders(orders, startDate, endDate) {
   return orders.filter(function(o) {
     var d = new Date(o.created_at || o.date);
@@ -223,9 +241,27 @@ async function initVisitorsChart() {
     ctx = document.getElementById('visitorsChart');
   }
 
-  var labels         = currentViews.dailyData.map(function(d){ return d.date.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' }); });
-  var currentValues  = currentViews.dailyData.map(function(d){ return d.visitors; });
-  var previousValues = previousViews.dailyData.map(function(d){ return d.visitors; });
+  var isHourly = (currentDateRange === 'today' || currentDateRange === 'yesterday');
+  var labels, currentValues, previousValues;
+  if (isHourly) {
+    var curDate = getDateRangeDates();
+    var curKey = curDate.startDate.toISOString().slice(0, 10);
+    var prevKey = new Date(curDate.startDate.getTime() - 86400000).toISOString().slice(0, 10);
+    var curHourly = _filterPageViewsHourly(data.pageViews, curKey);
+    var prevHourly = _filterPageViewsHourly(data.pageViews, prevKey);
+    labels = curHourly.hourlyData.map(function(h) {
+      var hr = h.hour;
+      var suffix = hr < 12 ? 'ص' : 'م';
+      var disp = hr === 0 ? 12 : (hr > 12 ? hr - 12 : hr);
+      return disp + suffix;
+    });
+    currentValues  = curHourly.hourlyData.map(function(h) { return h.visitors; });
+    previousValues = prevHourly.hourlyData.map(function(h) { return h.visitors; });
+  } else {
+    labels         = currentViews.dailyData.map(function(d){ return d.date.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' }); });
+    currentValues  = currentViews.dailyData.map(function(d){ return d.visitors; });
+    previousValues = previousViews.dailyData.map(function(d){ return d.visitors; });
+  }
 
   if (visitorsChart) { try { visitorsChart.destroy(); } catch(e){} }
   visitorsChart = new Chart(ctx.getContext('2d'), {
