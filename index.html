@@ -704,7 +704,7 @@ img.img-loaded{opacity:1!important}
 
   <div class="max-w-5xl mx-auto px-6 text-center relative z-10">
     <div class="scale-in mb-8">
-      <div class="inline-flex items-center gap-3 bg-white/95 backdrop-blur-sm text-brand-700 px-6 py-3 rounded-full mb-8 shadow-xl border border-brand-100 text-animated">
+      <div class="inline-flex items-center gap-3 bg-white/95 text-brand-700 px-6 py-3 rounded-full mb-8 shadow-xl border border-brand-100 text-animated">
         <div class="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center">
           <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -728,26 +728,26 @@ img.img-loaded{opacity:1!important}
         <i data-lucide="shopping-bag" class="w-5 h-5"></i>
         <span>تسوق الآن على إنستغرام</span>
       </a>
-      <a href="#products" class="btn-animated border-2 border-white text-white px-10 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 hover:bg-white hover:text-brand-800 transition-all duration-300 w-full sm:w-auto backdrop-blur-sm">
+      <a href="#products" class="btn-animated border-2 border-white text-white px-10 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 hover:bg-white hover:text-brand-800 transition-all duration-300 w-full sm:w-auto">
         <span>اكتشف منتجاتنا</span>
         <i data-lucide="arrow-down" class="w-5 h-5"></i>
       </a>
-      <a href="#track-order" class="btn-animated border-2 border-gold text-gold px-10 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 hover:bg-gold hover:text-brand-900 transition-all duration-300 w-full sm:w-auto backdrop-blur-sm">
+      <a href="#track-order" class="btn-animated border-2 border-gold text-gold px-10 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 hover:bg-gold hover:text-brand-900 transition-all duration-300 w-full sm:w-auto">
         <i data-lucide="map-pin" class="w-5 h-5"></i>
         <span>تتبع طلبك</span>
       </a>
     </div>
 
     <div class="fade-in mt-16 md:mt-20 grid grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto" role="list" aria-label="إحصائيات الموقع">
-      <div class="stat-card-animated bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
+      <div class="stat-card-animated bg-white/10 rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
         <div class="stat-number text-white"><span class="counter" data-target="500">0</span><span class="text-xl md:text-2xl">+</span></div>
         <p class="text-white/70 text-xs md:text-sm mt-1">منتج متوفر</p>
       </div>
-      <div class="stat-card-animated bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
+      <div class="stat-card-animated bg-white/10 rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
         <div class="stat-number text-white"><span class="counter" data-target="1000">0</span><span class="text-xl md:text-2xl">+</span></div>
         <p class="text-white/70 text-xs md:text-sm mt-1">عميل سعيد</p>
       </div>
-      <div class="stat-card-animated bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
+      <div class="stat-card-animated bg-white/10 rounded-2xl p-4 md:p-6 border border-white/20" role="listitem">
         <div class="flex items-center justify-center gap-1 stat-number text-white text-2xl md:text-3xl">
           <span class="counter" data-target="4.9">0</span><span class="text-lg">/5</span>
         </div>
@@ -1755,7 +1755,7 @@ img.img-loaded{opacity:1!important}
 <script src="app.js" charset="utf-8" defer></script>
 
 <!-- Notify Modal -->
-<div id="notifyModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeNotifyModal()">
+<div id="notifyModal" class="modal fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeNotifyModal()">
   <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <h2 class="font-heading font-bold text-lg text-brand-900">&#128276; أخبرني عند التوفر</h2>
@@ -2103,7 +2103,7 @@ if('serviceWorker' in navigator){
 </script>
 
 <!-- ✅ Feature #15: Customer Order Tracking & Cancel (within 30 mins) -->
-<div id="orderTrackModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+<div id="orderTrackModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <h2 style="font-weight:800;font-size:18px;color:#1a2e0d;">📦 تتبع طلبي</h2>
@@ -2418,7 +2418,7 @@ window._showOrderConfirmation = function(orderData) {
   if (existing) existing.remove();
   var overlay = document.createElement('div');
   overlay.id = 'orderConfirmOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.3s ease;';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.3s ease;';
   var total = orderData && orderData.total ? Number(orderData.total).toLocaleString('en-US') : '—';
   var name  = orderData && orderData.name ? orderData.name : '';
   var tracking = orderData && orderData.tracking_code ? orderData.tracking_code : '';
@@ -2514,7 +2514,7 @@ window.addEventListener('load', function() {
 
 
 <!-- ── #31: نموذج طلب منتج غير متوفر ────────────────────────────────── -->
-<div id="productRequestModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+<div id="productRequestModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <h2 style="font-weight:800;font-size:18px;color:#1a2e0d;">🔍 طلب منتج غير متوفر</h2>
@@ -2977,7 +2977,7 @@ window.submitProductRequest = async function() {
             hint.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);'+
               'background:rgba(0,0,0,0.4);color:#fff;font-size:10px;padding:2px 8px;'+
               'border-radius:100px;font-family:Cairo,sans-serif;pointer-events:none;'+
-              'white-space:nowrap;backdrop-filter:blur(4px);';
+              'white-space:nowrap;';
             hint.textContent = '🔍 مرّر للتكبير';
             imgBox.style.position = 'relative';
             imgBox.appendChild(hint);
