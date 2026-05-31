@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Main page -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://62hqvtdq28-sudo.github.io/Neurobin/"/>
+  </url>
+
+  <!-- Products section -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/#products</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Medicines category -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/?category=medicines</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Skincare category -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/?category=skincare</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Makeup category -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/?category=makeup</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Perfumes category -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/?category=perfumes</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Devices category -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/?category=devices</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Track order section -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/#track-order</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Contact / About section -->
+  <url>
+    <loc>https://62hqvtdq28-sudo.github.io/Neurobin/#contact</loc>
+    <lastmod>2025-05-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>
