@@ -48,6 +48,798 @@
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta name="color-scheme" content="light dark">
+
+<style id="pmAdminCSS">
+/* ══════════════════════════════════════════════
+   PREMIUM ADMIN DASHBOARD — ph.neurobin
+   Tables · Order Cards · Filters · Toast · UX
+══════════════════════════════════════════════ */
+
+/* ─── 1. Premium Toast Stack ────────────────── */
+#pmToastStack {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+}
+.pm-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px 14px 14px;
+  border-radius: 16px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+  min-width: 280px;
+  max-width: 360px;
+  pointer-events: all;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  animation: pmToastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+  cursor: pointer;
+}
+.pm-toast.pm-hiding {
+  animation: pmToastOut 0.28s ease forwards;
+}
+@keyframes pmToastIn {
+  from { opacity:0; transform: translateX(-32px) scale(0.92); }
+  to   { opacity:1; transform: translateX(0) scale(1); }
+}
+@keyframes pmToastOut {
+  from { opacity:1; transform: translateX(0) scale(1); }
+  to   { opacity:0; transform: translateX(-24px) scale(0.9); }
+}
+.pm-toast-success { background: linear-gradient(135deg, #059669, #10b981); }
+.pm-toast-error   { background: linear-gradient(135deg, #dc2626, #ef4444); }
+.pm-toast-warning { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.pm-toast-info    { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+.pm-toast-icon {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.22);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+.pm-toast-body { flex: 1; line-height: 1.4; }
+.pm-toast-title { font-size: 0.78rem; opacity: 0.85; margin-bottom: 1px; }
+.pm-toast-msg   { font-size: 0.92rem; }
+.pm-toast-close {
+  background: rgba(255,255,255,0.2);
+  border: none; color: #fff;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.pm-toast-close:hover { background: rgba(255,255,255,0.35); }
+.pm-toast-progress {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.35);
+  border-radius: 0 0 16px 16px;
+  transform-origin: left;
+  animation: pmProgress linear forwards;
+}
+@keyframes pmProgress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ─── 2. Premium Order Cards ─────────────────── */
+.pm-order-card {
+  background: #fff;
+  border-radius: 18px;
+  border: 1.5px solid #eef2e8;
+  box-shadow: 0 2px 12px rgba(45,80,22,0.06);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  position: relative;
+  animation: pmCardIn 0.3s ease both;
+}
+@keyframes pmCardIn {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.pm-order-card:hover {
+  box-shadow: 0 8px 32px rgba(45,80,22,0.13);
+  transform: translateY(-2px);
+}
+/* Status border strip (right side — RTL) */
+.pm-order-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 5px; height: 100%;
+  border-radius: 0 18px 18px 0;
+  transition: background 0.3s;
+}
+.pm-order-card[data-status="new"]::before        { background: linear-gradient(to bottom, #f59e0b, #fbbf24); }
+.pm-order-card[data-status="preparing"]::before  { background: linear-gradient(to bottom, #3b82f6, #60a5fa); }
+.pm-order-card[data-status="shipped"]::before    { background: linear-gradient(to bottom, #8b5cf6, #a78bfa); }
+.pm-order-card[data-status="on_the_way"]::before { background: linear-gradient(to bottom, #06b6d4, #22d3ee); }
+.pm-order-card[data-status="delivered"]::before  { background: linear-gradient(to bottom, #10b981, #34d399); }
+.pm-order-card[data-status="cancelled"]::before  { background: linear-gradient(to bottom, #ef4444, #f87171); }
+.pm-order-card[data-status="deleted"]::before    { background: linear-gradient(to bottom, #9ca3af, #d1d5db); }
+/* Card header */
+.pm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #f4f7f0;
+  gap: 10px;
+}
+.pm-card-id {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a9a5e;
+  background: #f0f7e8;
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+.pm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pm-sb-new        { background:#fef3c7; color:#92400e; }
+.pm-sb-preparing  { background:#dbeafe; color:#1e40af; }
+.pm-sb-shipped    { background:#ede9fe; color:#5b21b6; }
+.pm-sb-on_the_way { background:#cffafe; color:#0e7490; }
+.pm-sb-delivered  { background:#d1fae5; color:#065f46; }
+.pm-sb-cancelled  { background:#fee2e2; color:#991b1b; }
+.pm-sb-deleted    { background:#f3f4f6; color:#6b7280; }
+/* Card body */
+.pm-card-body { padding: 14px 18px; }
+.pm-customer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.pm-customer-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2D5016, #5C933B);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.pm-customer-name { font-weight: 800; font-size: 1rem; color: #1a3a0a; }
+.pm-customer-phone {
+  font-size: 0.82rem;
+  color: #5a8a3a;
+  direction: ltr;
+  display: flex; align-items: center; gap: 4px;
+}
+.pm-info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.82rem;
+  color: #5a7a45;
+  margin-bottom: 10px;
+}
+.pm-info-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fdf4;
+  border: 1px solid #e0ecd6;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.pm-items-list {
+  background: #f8fdf4;
+  border: 1px solid #e8f0dc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  color: #3a5a1a;
+  max-height: 80px;
+  overflow-y: auto;
+}
+.pm-item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px dashed #dcecd0;
+}
+.pm-item-row:last-child { border-bottom: none; }
+/* Card footer */
+.pm-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px 14px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pm-total-badge {
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #2D5016;
+  background: linear-gradient(135deg, #f0f7e8, #e0f0d0);
+  padding: 6px 16px;
+  border-radius: 12px;
+  border: 1px solid #c8e0b0;
+}
+.pm-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pm-action-btn {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+}
+.pm-action-btn:hover { filter: brightness(1.08); transform: scale(1.04); }
+.pm-action-btn:active { transform: scale(0.96); }
+.pm-btn-primary  { background: linear-gradient(135deg, #2D5016, #4a7c23); color: #fff; }
+.pm-btn-success  { background: linear-gradient(135deg, #059669, #10b981); color: #fff; }
+.pm-btn-warning  { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; }
+.pm-btn-danger   { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; }
+.pm-btn-ghost    { background: #f0f7e8; color: #2D5016; border: 1.5px solid #c8e0b0; }
+.pm-btn-whatsapp { background: linear-gradient(135deg, #128C7E, #25D366); color: #fff; }
+.pm-btn-icon { width: 34px; height: 34px; padding: 0; border-radius: 10px; justify-content: center; }
+
+/* ─── 3. Premium Filter Tabs ─────────────────── */
+.pm-filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.pm-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  background: #f0f7e8;
+  color: #2D5016;
+  min-height: 38px;
+}
+.pm-filter-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45,80,22,0.12);
+}
+.pm-filter-tab.active {
+  background: linear-gradient(135deg, #2D5016, #4a7c23);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(45,80,22,0.3);
+}
+.pm-filter-count {
+  font-size: 0.72rem;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-weight: 800;
+  min-width: 20px;
+  text-align: center;
+}
+.pm-filter-tab.active .pm-filter-count { background: rgba(255,255,255,0.25); color: #fff; }
+.pm-filter-tab:not(.active) .pm-filter-count { background: rgba(45,80,22,0.12); color: #2D5016; }
+
+/* Status-colored tab accents */
+.pm-tab-all.active      { background: linear-gradient(135deg, #374151, #4b5563); }
+.pm-tab-new.active      { background: linear-gradient(135deg, #92400e, #f59e0b); }
+.pm-tab-preparing.active{ background: linear-gradient(135deg, #1e40af, #3b82f6); }
+.pm-tab-shipped.active  { background: linear-gradient(135deg, #5b21b6, #8b5cf6); }
+.pm-tab-onway.active    { background: linear-gradient(135deg, #0e7490, #06b6d4); }
+.pm-tab-delivered.active{ background: linear-gradient(135deg, #065f46, #10b981); }
+.pm-tab-cancelled.active{ background: linear-gradient(135deg, #991b1b, #ef4444); }
+.pm-tab-deleted.active  { background: linear-gradient(135deg, #374151, #6b7280); }
+
+/* ─── 4. Premium Search Bar ──────────────────── */
+.pm-search-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+.pm-search-input {
+  width: 100%;
+  padding: 12px 46px 12px 46px;
+  border: 2px solid #e0ecd6;
+  border-radius: 14px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #1a3a0a;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.pm-search-input:focus {
+  border-color: #4a7c23;
+  box-shadow: 0 0 0 3px rgba(45,80,22,0.12);
+}
+.pm-search-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7a9a5e;
+  pointer-events: none;
+}
+.pm-search-clear {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #f0f7e8;
+  border: none;
+  color: #7a9a5e;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.pm-search-clear:hover { background: #dc2626; color: #fff; }
+.pm-search-results-count {
+  font-size: 0.8rem;
+  color: #7a9a5e;
+  font-weight: 600;
+  text-align: left;
+  padding: 4px 6px 8px;
+  display: none;
+}
+
+/* ─── 5. Premium Pagination ──────────────────── */
+.pm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 4px 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pm-page-info {
+  font-size: 0.82rem;
+  color: #7a9a5e;
+  font-weight: 600;
+}
+.pm-page-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pm-page-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid #e0ecd6;
+  background: #fff;
+  color: #2D5016;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s ease;
+}
+.pm-page-btn:hover { background: #f0f7e8; border-color: #4a7c23; }
+.pm-page-btn.active { background: linear-gradient(135deg, #2D5016, #4a7c23); color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(45,80,22,0.25); }
+.pm-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pm-per-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #5a7a45;
+  font-weight: 600;
+}
+.pm-per-page select {
+  border: 1.5px solid #e0ecd6;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  background: #fff;
+  color: #2D5016;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ─── 6. Premium Empty States ────────────────── */
+.pm-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border-radius: 20px;
+  border: 2px dashed #e0ecd6;
+  margin: 8px 0;
+}
+.pm-empty-icon {
+  width: 80px; height: 80px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, #f0f7e8, #e0f0d0);
+  border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+}
+.pm-empty-title { font-size: 1.1rem; font-weight: 800; color: #2D5016; margin-bottom: 6px; }
+.pm-empty-sub   { font-size: 0.88rem; color: #7a9a5e; margin-bottom: 18px; line-height: 1.5; }
+.pm-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  background: linear-gradient(135deg, #2D5016, #4a7c23);
+  color: #fff;
+  border-radius: 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.pm-empty-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(45,80,22,0.3); }
+
+/* ─── 7. Premium Tables ───────────────────────── */
+.pm-table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1.5px solid #eef2e8;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(45,80,22,0.05);
+}
+.pm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+}
+.pm-table thead th {
+  background: linear-gradient(135deg, #2D5016, #3d6b1c);
+  color: #fff;
+  padding: 13px 16px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  white-space: nowrap;
+}
+.pm-table thead th:first-child  { border-radius: 0 14px 0 0; }
+.pm-table thead th:last-child   { border-radius: 14px 0 0 0; }
+.pm-table tbody tr {
+  border-bottom: 1px solid #f4f7f0;
+  transition: background 0.15s ease;
+}
+.pm-table tbody tr:hover { background: #f8fdf4; }
+.pm-table tbody tr:nth-child(even) { background: #fafdf6; }
+.pm-table tbody tr:nth-child(even):hover { background: #f4faf0; }
+.pm-table tbody td { padding: 12px 16px; color: #1a3a0a; vertical-align: middle; }
+.pm-table .pm-td-mono { font-family: monospace; direction: ltr; }
+.pm-table .pm-td-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+/* ─── 8. Premium Stat Cards ──────────────────── */
+.pm-stat-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1.5px solid #eef2e8;
+  box-shadow: 0 2px 12px rgba(45,80,22,0.07);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+}
+.pm-stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(45,80,22,0.06), transparent);
+  pointer-events: none;
+}
+.pm-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(45,80,22,0.13);
+  border-color: #c8e0b0;
+}
+.pm-stat-icon-wrap {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 14px;
+}
+.pm-stat-value {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #1a3a0a;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.pm-stat-label {
+  font-size: 0.82rem;
+  color: #7a9a5e;
+  font-weight: 600;
+}
+.pm-stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 6px;
+}
+.pm-trend-up   { background: #d1fae5; color: #065f46; }
+.pm-trend-down { background: #fee2e2; color: #991b1b; }
+.pm-trend-flat { background: #f3f4f6; color: #6b7280; }
+
+/* ─── 9. Advanced Filter Panel ───────────────── */
+.pm-filter-panel {
+  background: #fff;
+  border: 1.5px solid #e0ecd6;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.pm-filter-panel label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #5a7a45;
+}
+.pm-filter-date {
+  border: 1.5px solid #e0ecd6;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  color: #1a3a0a;
+  background: #f8fdf4;
+  outline: none;
+  min-width: 120px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pm-filter-date:focus { border-color: #4a7c23; box-shadow: 0 0 0 2px rgba(45,80,22,0.1); }
+.pm-filter-text {
+  border: 1.5px solid #e0ecd6;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  background: #f8fdf4;
+  color: #1a3a0a;
+  outline: none;
+  min-width: 110px;
+  transition: border-color 0.2s;
+}
+.pm-filter-text:focus { border-color: #4a7c23; }
+.pm-filter-reset {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px;
+  border: 1.5px solid #fca5a5;
+  background: #fff5f5;
+  color: #dc2626;
+  border-radius: 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.pm-filter-reset:hover { background: #fee2e2; }
+.pm-excel-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px;
+  border: 1.5px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+  border-radius: 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.pm-excel-btn:hover { background: #dcfce7; }
+
+/* ─── 10. Premium Modal ──────────────────────── */
+.modal-content {
+  border-radius: 20px !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18) !important;
+}
+.pm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1.5px solid #f0f7e8;
+}
+.pm-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1a3a0a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pm-modal-close {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: #f0f7e8;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #5a7a45;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+.pm-modal-close:hover { background: #fee2e2; color: #dc2626; }
+
+/* ─── 11. Responsive Dashboard ───────────────── */
+@media (max-width: 640px) {
+  .pm-order-card { border-radius: 14px; }
+  .pm-card-header, .pm-card-body, .pm-card-footer { padding: 12px 14px; }
+  .pm-actions { flex-wrap: wrap; }
+  .pm-filter-strip { gap: 4px; }
+  .pm-filter-tab { padding: 6px 10px; font-size: 0.78rem; min-height: 34px; }
+  .pm-pagination { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .pm-toast { min-width: calc(100vw - 48px); max-width: calc(100vw - 48px); }
+  #pmToastStack { left: 12px; right: 12px; bottom: 16px; }
+  .pm-table { font-size: 0.78rem; }
+  .pm-table tbody td, .pm-table thead th { padding: 8px 10px; }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+  .pm-filter-tab { padding: 7px 12px; }
+  .pm-per-page { display: none; }
+}
+
+/* ─── 12. Button ripple ───────────────────────── */
+.pm-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.pm-ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  width: 0; height: 0;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.pm-ripple.rippling::after {
+  animation: pmRipple 0.5s ease-out forwards;
+  width: 200px; height: 200px;
+}
+@keyframes pmRipple {
+  from { width: 0; height: 0; opacity: 0.6; }
+  to   { width: 200px; height: 200px; opacity: 0; }
+}
+
+/* ─── 13. Order count badge on status tabs ─── */
+.tab-btn { position: relative; }
+.tab-count-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 1.4;
+  border: 2px solid #fff;
+}
+
+/* ─── 14. Smooth section transitions ─────────── */
+.section-content {
+  transition: opacity 0.25s ease !important;
+}
+.section-transitioning {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ─── 15. Quick-status select overlay ─────────── */
+.pm-status-select {
+  border: 2px solid #e0ecd6;
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #f8fdf4;
+  color: #1a3a0a;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 34px;
+}
+.pm-status-select:focus { border-color: #4a7c23; box-shadow: 0 0 0 2px rgba(45,80,22,0.12); }
+
+/* ─── 16. Loading shimmer on order list ─────── */
+.pm-order-sk {
+  background: #fff;
+  border-radius: 18px;
+  border: 1.5px solid #eef2e8;
+  overflow: hidden;
+  height: 180px;
+  animation: pmCardIn 0.3s ease both;
+}
+.pm-sk-bar {
+  background: linear-gradient(90deg,#eef2e8 0%,#d4e0c8 40%,#eef2e8 80%);
+  background-size: 200% 100%;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+
+</style>
 </head>
 <body style="overflow-x:hidden" class="min-h-screen bg-cream">
 
@@ -4330,6 +5122,413 @@ if (typeof window !== 'undefined') {
     _showTableSkeleton('loginLogsTable', 3, 4);
   });
   window.addEventListener('load', _patchShowSection);
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════
+   PREMIUM ADMIN DASHBOARD JS — ph.neurobin
+   Toast · Pagination · Filters · UX
+══════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ─── 1. Premium Toast System ────────────────── */
+var _toastQ = [];
+var _toastMax = 4;
+
+function _makeToastStack(){
+  var el = document.getElementById('pmToastStack');
+  if(!el){ el = document.createElement('div'); el.id='pmToastStack'; document.body.appendChild(el); }
+  return el;
+}
+
+function pmToast(msg, type, opts){
+  if(!msg) return;
+  type = type || 'info';
+  opts = opts || {};
+  var duration = opts.duration !== undefined ? opts.duration : 3800;
+  var title = opts.title || {
+    success:'نجاح ✓', error:'خطأ ✗', warning:'تنبيه ⚠', info:'معلومة ℹ'
+  }[type] || '';
+  var icons = { success:'✓', error:'✗', warning:'!', info:'ℹ' };
+
+  var stack = _makeToastStack();
+  if(stack.children.length >= _toastMax){
+    var oldest = stack.children[stack.children.length-1];
+    if(oldest) _dismissToast(oldest, true);
+  }
+  var toast = document.createElement('div');
+  toast.className = 'pm-toast pm-toast-'+type;
+  toast.innerHTML =
+    '<div class="pm-toast-icon">'+(icons[type]||'•')+'</div>'+
+    '<div class="pm-toast-body">'+
+      (title ? '<div class="pm-toast-title">'+title+'</div>' : '')+
+      '<div class="pm-toast-msg">'+_escH(msg)+'</div>'+
+    '</div>'+
+    '<button class="pm-toast-close" aria-label="إغلاق">×</button>'+
+    (duration > 0 ? '<div class="pm-toast-progress" style="animation-duration:'+duration+'ms"></div>' : '');
+  stack.insertBefore(toast, stack.firstChild);
+  toast.querySelector('.pm-toast-close').onclick = function(){ _dismissToast(toast); };
+  toast.onclick = function(e){ if(!e.target.classList.contains('pm-toast-close')) _dismissToast(toast); };
+  if(duration > 0){
+    toast._timer = setTimeout(function(){ _dismissToast(toast); }, duration);
+  }
+  _toastQ.push(toast);
+}
+
+function _dismissToast(toast, instant){
+  if(toast._timer) clearTimeout(toast._timer);
+  if(instant){ toast.remove(); return; }
+  toast.classList.add('pm-hiding');
+  setTimeout(function(){ toast.remove(); }, 320);
+}
+
+function _escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* Override existing showToast globally */
+window.showToast = function(msg, type){
+  /* Keep legacy call signature */
+  var t = type || 'info';
+  /* Map legacy types */
+  if(t === 'success' || t === 'error' || t === 'warning' || t === 'info') {
+    pmToast(msg, t);
+  } else {
+    pmToast(msg, 'info');
+  }
+  /* Also update old #toast for compatibility */
+  var old = document.getElementById('toast');
+  if(old && old.id === 'toast' && !old.classList.contains('pm-toast')){
+    /* hide old toast silently */
+    old.style.display = 'none';
+  }
+};
+window.pmToast = pmToast;
+
+/* ─── 2. Premium Order Search ────────────────── */
+function _initOrderSearch(){
+  var orig = document.getElementById('orderSearch');
+  if(!orig || orig.dataset.pmUpgraded) return;
+  orig.dataset.pmUpgraded = '1';
+
+  /* Inject wrapper */
+  var wrap = document.createElement('div');
+  wrap.className = 'pm-search-wrap';
+  orig.parentNode.insertBefore(wrap, orig);
+  wrap.appendChild(orig);
+  orig.className = 'pm-search-input';
+  orig.placeholder = 'ابحث بالاسم أو الهاتف أو العنوان أو المنتج...';
+
+  /* Search icon */
+  var icon = document.createElement('div');
+  icon.className = 'pm-search-icon';
+  icon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+  wrap.appendChild(icon);
+
+  /* Clear button */
+  var clr = document.createElement('button');
+  clr.className = 'pm-search-clear';
+  clr.innerHTML = '×';
+  clr.title = 'مسح';
+  wrap.appendChild(clr);
+
+  /* Results count */
+  var cnt = document.createElement('div');
+  cnt.className = 'pm-search-results-count';
+  cnt.id = 'pmSearchCount';
+  wrap.parentNode.insertBefore(cnt, wrap.nextSibling);
+
+  /* Debounce */
+  var _t;
+  orig.addEventListener('input', function(){
+    clearTimeout(_t);
+    _t = setTimeout(function(){
+      if(typeof searchOrders === 'function') searchOrders();
+      _updateSearchUI();
+    }, 180);
+  });
+  clr.addEventListener('click', function(){
+    orig.value = '';
+    orig.dispatchEvent(new Event('input'));
+    orig.focus();
+  });
+  function _updateSearchUI(){
+    var v = orig.value.trim();
+    clr.style.display = v ? 'flex' : 'none';
+    var cards = document.querySelectorAll('#ordersList .pm-order-card, #ordersList > div[class*="order"]');
+    var visible = 0;
+    cards.forEach(function(c){ if(c.style.display !== 'none') visible++; });
+    if(v){
+      cnt.style.display = 'block';
+      cnt.textContent = 'تم العثور على ' + visible + ' نتيجة';
+    } else {
+      cnt.style.display = 'none';
+    }
+  }
+}
+
+/* ─── 3. Premium Filter Tab Upgrades ─────────── */
+function _upgradeFilterTabs(){
+  var tabs = document.querySelectorAll('.tab-btn');
+  if(!tabs.length || document.querySelector('.pm-filter-tab')) return;
+  /* We keep the existing tab-btn classes but upgrade their styles visually via CSS */
+  /* Just ensure they have smooth transitions */
+  tabs.forEach(function(tab){
+    tab.style.transition = 'all 0.2s ease';
+  });
+}
+
+/* ─── 4. Pagination System ───────────────────── */
+var _pmPage = 1;
+var _pmPerPage = 15;
+var _pmTotalOrders = 0;
+
+function _initPagination(){
+  var list = document.getElementById('ordersList');
+  if(!list) return;
+  if(document.getElementById('pmPagination')) return;
+
+  var pag = document.createElement('div');
+  pag.id = 'pmPagination';
+  pag.className = 'pm-pagination';
+  pag.style.display = 'none';
+  list.parentNode.insertBefore(pag, list.nextSibling);
+}
+
+function _renderPagination(total, perPage, page){
+  var pag = document.getElementById('pmPagination');
+  if(!pag) return;
+  _pmTotalOrders = total;
+  _pmPerPage = perPage || _pmPerPage;
+  _pmPage = page || _pmPage;
+
+  if(total <= _pmPerPage){ pag.style.display = 'none'; return; }
+  pag.style.display = 'flex';
+
+  var totalPages = Math.ceil(total / _pmPerPage);
+  var start = (_pmPage - 1) * _pmPerPage + 1;
+  var end = Math.min(_pmPage * _pmPerPage, total);
+
+  var pages = [];
+  for(var i = 1; i <= totalPages; i++){
+    if(i === 1 || i === totalPages || (i >= _pmPage - 1 && i <= _pmPage + 1)) pages.push(i);
+    else if(i === _pmPage - 2 || i === _pmPage + 2) pages.push('…');
+  }
+  pages = pages.filter(function(v,i,a){ return v !== a[i-1]; });
+
+  var btnHtml = '';
+  pages.forEach(function(p){
+    if(p === '…'){
+      btnHtml += '<span style="padding:0 4px;color:#9ca3af">…</span>';
+    } else {
+      btnHtml += '<button class="pm-page-btn'+(p===_pmPage?' active':'')
+        +'" onclick="pmGoPage('+p+')" '+(p===_pmPage?'aria-current="page"':'')+'>'
+        +p+'</button>';
+    }
+  });
+
+  pag.innerHTML =
+    '<div class="pm-page-info">'+start+'–'+end+' من '+total+'</div>'+
+    '<div class="pm-page-btns">'+
+      '<button class="pm-page-btn" onclick="pmGoPage('+(_pmPage-1)+')" '+(_pmPage<=1?'disabled':'')+'">‹</button>'+
+      btnHtml+
+      '<button class="pm-page-btn" onclick="pmGoPage('+(_pmPage+1)+')" '+(_pmPage>=totalPages?'disabled':'')+'">›</button>'+
+    '</div>'+
+    '<div class="pm-per-page">'+
+      '<label>لكل صفحة</label>'+
+      '<select onchange="pmSetPerPage(this.value)">'+
+        [10,15,20,30,50].map(function(n){
+          return '<option value="'+n+'"'+(n===_pmPerPage?' selected':'')+'>'+n+'</option>';
+        }).join('')+
+      '</select>'+
+    '</div>';
+}
+
+window.pmGoPage = function(p){
+  var totalPages = Math.ceil(_pmTotalOrders / _pmPerPage);
+  if(p < 1 || p > totalPages) return;
+  _pmPage = p;
+  if(typeof loadOrders === 'function') loadOrders();
+  document.getElementById('section-orders').scrollIntoView({behavior:'smooth'});
+};
+window.pmSetPerPage = function(n){
+  _pmPerPage = parseInt(n);
+  _pmPage = 1;
+  if(typeof loadOrders === 'function') loadOrders();
+};
+
+/* ─── 5. Order Empty State Enhancement ──────── */
+function _upgradeEmptyState(){
+  var empty = document.getElementById('noOrders');
+  if(!empty || empty.dataset.pmUpgraded) return;
+  empty.dataset.pmUpgraded = '1';
+  empty.className = 'pm-empty-state';
+  empty.innerHTML =
+    '<div class="pm-empty-icon">📋</div>'+
+    '<div class="pm-empty-title">لا توجد طلبات</div>'+
+    '<div class="pm-empty-sub">لم يتم إيجاد طلبات تطابق الفلتر الحالي.<br>جرّب تغيير الفلتر أو إضافة طلب يدوي.</div>'+
+    '<button class="pm-empty-cta" onclick="filterOrders(\'all\')">'+
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M12 3l9 9-9 9"/></svg>'+
+      'عرض كل الطلبات'+
+    '</button>';
+}
+
+/* ─── 6. Button Ripple Effect ────────────────── */
+function _initRipple(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('button, .pm-action-btn');
+    if(!btn) return;
+    btn.classList.add('pm-ripple');
+    void btn.offsetWidth; /* force reflow */
+    btn.classList.add('rippling');
+    setTimeout(function(){ btn.classList.remove('rippling'); }, 520);
+  });
+}
+
+/* ─── 7. Status Filter Counts ────────────────── */
+function _updateTabCounts(orders){
+  if(!orders || !orders.length) return;
+  var counts = {};
+  orders.forEach(function(o){ counts[o.status] = (counts[o.status]||0) + 1; });
+  document.querySelectorAll('.tab-btn').forEach(function(tab){
+    var f = tab.dataset.filter;
+    if(!f) return;
+    var old = tab.querySelector('.tab-count-badge');
+    if(old) old.remove();
+    var n = f === 'all' ? orders.length : (counts[f] || 0);
+    if(n > 0 && f !== 'all'){
+      var badge = document.createElement('span');
+      badge.className = 'tab-count-badge';
+      badge.textContent = n > 99 ? '99+' : n;
+      tab.style.position = 'relative';
+      tab.appendChild(badge);
+    }
+  });
+}
+
+/* ─── 8. Table Row Hover & Stripe ────────────── */
+function _upgradeLoginLogsTable(){
+  var tb = document.getElementById('loginLogsTable');
+  if(!tb || tb.dataset.pmUpgraded) return;
+  var table = tb.closest('table');
+  if(table){ table.className = 'pm-table'; var wrap = document.createElement('div'); wrap.className='pm-table-wrap'; table.parentNode.insertBefore(wrap,table); wrap.appendChild(table); }
+  tb.dataset.pmUpgraded = '1';
+}
+
+/* ─── 9. Keyboard shortcuts ──────────────────── */
+function _initKbShortcuts(){
+  document.addEventListener('keydown', function(e){
+    if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    /* Alt+O → Orders, Alt+S → Stats, Alt+P → Products */
+    if(e.altKey){
+      if(e.key==='o'){ e.preventDefault(); if(typeof showSection==='function') showSection('orders'); }
+      if(e.key==='s'){ e.preventDefault(); if(typeof showSection==='function') showSection('stats'); }
+      if(e.key==='p'){ e.preventDefault(); if(typeof showSection==='function') showSection('products'); }
+    }
+    /* / → focus search */
+    if(e.key==='/' && !e.ctrlKey && !e.metaKey){
+      var sr = document.getElementById('orderSearch');
+      if(sr){ e.preventDefault(); sr.focus(); sr.select(); }
+    }
+    /* Escape → close any open modal */
+    if(e.key==='Escape'){
+      document.querySelectorAll('.modal.active').forEach(function(m){
+        var cls = m.id;
+        if(cls && typeof window['close'+cls.charAt(0).toUpperCase()+cls.slice(1)] === 'function'){
+          window['close'+cls.charAt(0).toUpperCase()+cls.slice(1)]();
+        } else {
+          m.classList.remove('active');
+        }
+      });
+    }
+  });
+}
+
+/* ─── 10. Advanced Filter Panel Upgrade ──────── */
+function _upgradeAdvancedFilters(){
+  var panel = document.querySelector('#section-orders .bg-brand-50.border.border-brand-100');
+  if(!panel || panel.dataset.pmUpgraded) return;
+  panel.dataset.pmUpgraded = '1';
+  panel.className = 'pm-filter-panel';
+  /* Upgrade date inputs */
+  panel.querySelectorAll('input[type="date"]').forEach(function(inp){ inp.className='pm-filter-date'; });
+  panel.querySelectorAll('input[type="text"]').forEach(function(inp){ inp.className='pm-filter-text'; });
+  /* Upgrade reset button */
+  var resetBtn = panel.querySelector('button:first-of-type');
+  if(resetBtn) resetBtn.className = 'pm-filter-reset';
+  /* Upgrade excel button */
+  var xlBtn = panel.querySelectorAll('button')[1];
+  if(xlBtn) xlBtn.className = 'pm-excel-btn';
+}
+
+/* ─── 11. Hook into orders rendering ─────────── */
+function _patchOrdersRender(){
+  if(typeof window._ordersRenderPatched !== 'undefined') return;
+  window._ordersRenderPatched = true;
+
+  /* Watch #ordersList changes to apply upgrades */
+  var list = document.getElementById('ordersList');
+  if(!list) return;
+  var obs = new MutationObserver(function(){
+    _upgradeOrderCards();
+    _upgradeEmptyState();
+  });
+  obs.observe(list, {childList:true, subtree:false});
+}
+
+/* ─── 12. Upgrade existing order cards ──────── */
+function _upgradeOrderCards(){
+  document.querySelectorAll('#ordersList > div:not(.pm-order-card):not(.pm-empty-state)').forEach(function(card){
+    /* Add status data attribute for border styling */
+    var statusBadge = card.querySelector('[class*="order-new"],[class*="order-progress"],[class*="order-delivered"],[class*="order-cancelled"]');
+    if(statusBadge){
+      var cls = statusBadge.className;
+      var status = cls.includes('order-new') ? 'new'
+        : cls.includes('order-delivered') ? 'delivered'
+        : cls.includes('order-cancelled') ? 'cancelled'
+        : cls.includes('order-progress') ? 'preparing' : '';
+      if(status) card.setAttribute('data-status', status);
+    }
+    card.classList.add('pm-order-card');
+  });
+}
+
+/* ─── Boot ───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  _initRipple();
+  _initKbShortcuts();
+  _initOrderSearch();
+  _initPagination();
+  _upgradeFilterTabs();
+  _upgradeEmptyState();
+  _upgradeAdvancedFilters();
+  _upgradeLoginLogsTable();
+  _patchOrdersRender();
+  /* Hook showSection for per-section upgrades */
+  setTimeout(function(){
+    var _origSS = window.showSection;
+    if(_origSS && !_origSS.__pmPatched){
+      window.showSection = function(s){
+        _origSS(s);
+        if(s==='orders'){
+          setTimeout(function(){
+            _initOrderSearch();
+            _upgradeAdvancedFilters();
+            _upgradeEmptyState();
+            _upgradeFilterTabs();
+          }, 100);
+        }
+        if(s==='loginlogs') setTimeout(_upgradeLoginLogsTable, 300);
+      };
+      window.showSection.__pmPatched = true;
+    }
+  }, 600);
+});
+
+/* Expose for external call */
+window._pmUpdateTabCounts = _updateTabCounts;
+window._pmRenderPagination = _renderPagination;
+
 })();
 </script>
 
