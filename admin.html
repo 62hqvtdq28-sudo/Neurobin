@@ -4238,6 +4238,101 @@ if (typeof window !== 'undefined') {
 })();
 </script>
 
+<script>
+/* ── Admin Skeleton Loading ── */
+(function(){
+  /* Stat cards skeleton (4 cards) */
+  function _showStatsSkeleton(){
+    var c = document.getElementById('statsCardsContainer');
+    if(!c || c.children.length > 0) return;
+    var h = '';
+    for(var i=0;i<4;i++){
+      h += '<div class="sk-stat-card" style="animation-delay:'+(i*0.1)+'s">'+
+        '<div class="sk-stat-icon"></div>'+
+        '<div class="sk-stat-num"></div>'+
+        '<div class="sk-stat-lbl"></div>'+
+      '</div>';
+    }
+    c.innerHTML = h;
+  }
+
+  /* Table skeleton rows */
+  function _showTableSkeleton(tbodyId, cols, rows){
+    var tb = document.getElementById(tbodyId);
+    if(!tb) return;
+    var h = '';
+    var widths = [['40%'],['30%','20%'],['25%','35%','15%'],['20%','30%','20%','15%'],
+                  ['15%','25%','30%','15%','10%'],['12%','20%','25%','18%','12%','8%']];
+    var ws = widths[Math.min(cols-1, widths.length-1)] || ['30%'];
+    for(var r=0;r<(rows||5);r++){
+      h += '<tr class="sk-table-row">';
+      for(var c2=0;c2<cols;c2++){
+        h += '<td><div class="sk-table-cell" style="width:'+(ws[c2%ws.length]||'30%')+';animation-delay:'+(r*0.08+c2*0.03)+'s"></div></td>';
+      }
+      h += '</tr>';
+    }
+    tb.innerHTML = h;
+  }
+
+  /* Add premium skeleton CSS to admin page */
+  function _addAdminSkeletonCSS(){
+    if(document.getElementById('adminSkCSS')) return;
+    var s = document.createElement('style');
+    s.id = 'adminSkCSS';
+    s.textContent =
+      '@keyframes skShimmerA{0%{background-position:200% center}100%{background-position:-200% center}}'+
+      '.sk-stat-card{background:#fff;border-radius:16px;border:1px solid #eef2e8;padding:20px;min-height:110px;display:flex;flex-direction:column;gap:12px;animation:skCardInA .3s ease both;box-shadow:0 2px 8px rgba(45,80,22,.06)}'+
+      '@keyframes skCardInA{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'+
+      '.sk-stat-icon{width:44px;height:44px;border-radius:12px;animation:skShimmerA 1.6s ease-in-out infinite;background:linear-gradient(90deg,#eef2e8 0%,#d4e0c8 40%,#eef2e8 80%);background-size:200% 100%}'+
+      '.sk-stat-num{height:28px;width:55%;border-radius:8px;animation:skShimmerA 1.6s .1s ease-in-out infinite;background:linear-gradient(90deg,#eef2e8 0%,#d4e0c8 40%,#eef2e8 80%);background-size:200% 100%}'+
+      '.sk-stat-lbl{height:12px;width:70%;border-radius:6px;animation:skShimmerA 1.6s .2s ease-in-out infinite;background:linear-gradient(90deg,#eef2e8 0%,#d4e0c8 40%,#eef2e8 80%);background-size:200% 100%}'+
+      '.sk-table-row td{padding:14px 16px!important;border-bottom:1px solid #f4f7f0!important}'+
+      '.sk-table-cell{height:14px;border-radius:7px;animation:skShimmerA 1.6s ease-in-out infinite;background:linear-gradient(90deg,#eef2e8 0%,#d4e0c8 40%,#eef2e8 80%);background-size:200% 100%;display:block}'+
+      /* Fade overlay on section change */
+      '.section-content{transition:opacity .25s ease!important}'+
+      '.section-fading{opacity:0!important}';
+    document.head.appendChild(s);
+  }
+
+  /* Patch showSection to add fade + skeleton */
+  function _patchShowSection(){
+    if(typeof window.showSection !== 'function' || window.showSection.__skelPatched) return;
+    var _orig = window.showSection;
+    window.showSection = function(name){
+      /* Fade out current */
+      document.querySelectorAll('.section-content:not(.hidden)').forEach(function(el){
+        el.classList.add('section-fading');
+      });
+      setTimeout(function(){
+        _orig(name);
+        document.querySelectorAll('.section-content').forEach(function(el){
+          el.classList.remove('section-fading');
+        });
+        /* Skeleton for stats if empty */
+        if(name === 'stats') _showStatsSkeleton();
+        /* Skeleton for orders table */
+        if(name === 'orders'){
+          setTimeout(function(){
+            var tb = document.querySelector('#section-orders tbody');
+            if(tb && tb.children.length === 0) _showTableSkeleton(tb.id || '__dummy', 6, 5);
+          }, 60);
+        }
+      }, 200);
+    };
+    window.showSection.__skelPatched = true;
+  }
+
+  _addAdminSkeletonCSS();
+  document.addEventListener('DOMContentLoaded', function(){
+    _showStatsSkeleton();
+    _patchShowSection();
+    /* Pre-fill login logs table skeleton */
+    _showTableSkeleton('loginLogsTable', 3, 4);
+  });
+  window.addEventListener('load', _patchShowSection);
+})();
+</script>
+
 </body>
 </html>
 
