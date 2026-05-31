@@ -922,7 +922,7 @@ function loadLoginLogs() {
   }
 
   if (logs.length === 0) {
-    container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
+    container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
     return;
   }
 
@@ -934,16 +934,19 @@ function loadLoginLogs() {
       var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
       var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
       var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
+      var ipText = log.ip ? '<span class="font-mono text-xs">' + _esc(log.ip) + '</span>' : '<span class="text-brand-300 text-xs">—</span>';
+      var locText = log.location ? '<br><span class="text-xs text-brand-400">📍 ' + _esc(log.location) + '</span>' : '';
       return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(dateStr) + '<br><span class="text-xs text-brand-400">' + _esc(timeStr) + '</span></td>' +
         '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.device || 'غير معروف') + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.browser || 'غير معروف') + '</td>' +
+        '<td class="px-4 py-3 text-sm">' + ipText + locText + '</td>' +
         '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
         '</tr>';
     }).join('');
   } catch(e) {
-    container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
+    container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
   }
 }
 
