@@ -207,4 +207,117 @@
   // Expose globally for safari-ios-fix.js and other scripts
   window.__imgLoader = { watchImg: watchImg, watchAll: watchAll, resolveImg: resolveImg };
 
+/* ============================================================
+   SCROLL ANIMATION FORCE-REVEAL (added to img-loader.js)
+   Handles the case where IntersectionObserver fails to add
+   'visible' class to scroll-animate-scale product cards.
+   Uses MutationObserver (not function patching) so it works
+   regardless of how many times renderProducts is wrapped.
+   ============================================================ */
+(function forceRevealSystem() {
+  'use strict';
+
+  var SEL = '.scroll-animate-scale,.scroll-animate,.scroll-animate-left,.scroll-animate-right';
+
+  /* ── Reveal all cards currently in (or near) the viewport ── */
+  function forceRevealVisible(root) {
+    var scope  = root || document;
+    var vh     = window.innerHeight || document.documentElement.clientHeight;
+    var vw     = window.innerWidth  || document.documentElement.clientWidth;
+    var margin = 300; // generous — cards 300px outside viewport also revealed
+
+    scope.querySelectorAll(SEL).forEach(function (el) {
+      if (el.classList.contains('visible')) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < (vh + margin) && r.bottom > -margin) {
+        el.classList.add('visible');
+      }
+    });
+  }
+
+  /* ── Better IntersectionObserver (replaces app.js & perf.js ones) */
+  var _revObs   = null;
+  var _revSeen  = new WeakSet();
+
+  function getRevealObserver() {
+    if (_revObs) return _revObs;
+    _revObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          _revObs.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold:   0,
+      rootMargin: '200px 0px 200px 0px' // large margin — early trigger
+    });
+    return _revObs;
+  }
+
+  function observeCards(root) {
+    var obs = getRevealObserver();
+    (root || document).querySelectorAll(SEL).forEach(function (el) {
+      if (!_revSeen.has(el)) {
+        _revSeen.add(el);
+        obs.observe(el);
+      }
+    });
+  }
+
+  /* ── MutationObserver on productsGrid ─────────────────────── */
+  // Fires after EVERY renderProducts() call, regardless of patching.
+  // This is the core — no function wrapping needed.
+  function watchGrid() {
+    var grid = document.getElementById('productsGrid');
+    if (!grid || grid.__revealMOAttached) return;
+    grid.__revealMOAttached = true;
+
+    var _mo = new MutationObserver(function (mutations) {
+      var hadAdds = mutations.some(function (m) { return m.addedNodes.length > 0; });
+      if (!hadAdds) return;
+      // Immediately after DOM insert: observe new cards
+      observeCards(grid);
+      // Short delay: force-reveal cards in viewport (IO may fire too late)
+      setTimeout(function () { forceRevealVisible(grid); }, 80);
+      // Longer delay: catch slow Safari IO
+      setTimeout(function () { forceRevealVisible(grid); }, 600);
+      // Extra pass for modal-close/scroll edge cases
+      setTimeout(function () { forceRevealVisible(grid); }, 1500);
+    });
+
+    _mo.observe(grid, { childList: true });
+  }
+
+  /* ── Interval sweep ────────────────────────────────────────── */
+  // Emergency: every 2s check for stuck scroll-animate elements
+  setInterval(function () {
+    var grid = document.getElementById('productsGrid');
+    if (grid) forceRevealVisible(grid);
+  }, 2000);
+
+  /* ── Init ──────────────────────────────────────────────────── */
+  function init() {
+    forceRevealVisible(document);
+    observeCards(document);
+    watchGrid();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.addEventListener('load', function () {
+    init(); // re-run after Supabase products load
+    setTimeout(function () { forceRevealVisible(document); }, 500);
+    setTimeout(function () { forceRevealVisible(document); }, 2000);
+  });
+
+  // Expose globally for other scripts
+  window.__revealFix = { forceReveal: forceRevealVisible, observe: observeCards };
+
+})();
+
 })();
