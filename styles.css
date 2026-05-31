@@ -178,7 +178,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 
 /* Search Modal */
 .search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:all .3s ease}
-.search-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.search-modal.active{opacity:1;visibility:visible;backdrop-filter:none;-webkit-backdrop-filter:none;}
 .search-container{width:90%;max-width:600px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:translateY(-30px);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .search-modal.active .search-container{transform:translateY(0)}
 .search-input{width:100%;padding:1.5rem 2rem;font-size:1.25rem;border:none;outline:none;background:transparent;font-family:'Cairo',sans-serif}
@@ -649,11 +649,12 @@ a:focus:not(:focus-visible) { outline: none; }
    🔍 SEARCH — Premium modal + recent searches
    ───────────────────────────────────────────────────────── */
 
-/* Search modal glassmorphism backdrop */
+/* Search modal glassmorphism — NOTE: blur REMOVED, expensive GPU op on Safari/iPad */
 #searchModal {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(30,53,15,.35);
+  /* backdrop-filter: blur(12px) — removed, triggers full-viewport GPU compositing */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(8,22,4,0.80);
   transition: opacity var(--t-normal);
 }
 #searchModal:not(.active) { pointer-events: none; }
@@ -738,7 +739,7 @@ mark.search-hl {
   font-weight: 800;
   border-radius: 3px;
   padding: 0 2px;
-  box-shadow: 0 1px 4px rgba(245,158,11,.3);
+  /* box-shadow removed from mark — compositing layer per highlighted char */
 }
 
 /* ─────────────────────────────────────────────────────────
