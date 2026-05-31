@@ -554,6 +554,105 @@ section, div { max-width: 100%; }
 
 
 
+<!-- ✅ Feature #16: الأكثر مبيعاً Section -->
+<section id="topSelling" class="py-14 bg-gradient-to-b from-white to-brand-50/40" style="border-bottom:1px solid #e8f5e9;">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center justify-between mb-7">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🔥</span>
+        <div>
+          <h2 class="font-heading font-bold text-2xl md:text-3xl text-brand-900">الأكثر مبيعاً</h2>
+          <p class="text-brand-500 text-sm mt-0.5">المنتجات التي يختارها عملاؤنا أكثر</p>
+        </div>
+      </div>
+      <span id="topSellingBadge" class="hidden bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">محدّث يومياً</span>
+    </div>
+    <div id="topSellingGrid" class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style="-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+      <div class="flex-shrink-0 w-full text-center py-8 text-brand-400">
+        <div style="display:inline-block;width:32px;height:32px;border:3px solid #d1fae5;border-top-color:#059669;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:8px;"></div>
+        <p class="text-sm">جاري تحميل الأكثر مبيعاً...</p>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+// ── Feature #16: Top Selling Products ─────────────────────────────────────
+(function() {
+  var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H = {'apikey':SKEY,'Authorization':'Bearer '+SKEY};
+
+  function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  async function loadTopSelling() {
+    var grid = document.getElementById('topSellingGrid');
+    var badge = document.getElementById('topSellingBadge');
+    if (!grid) return;
+    try {
+      // Load delivered orders
+      var ordRes = await fetch(SURL+'/rest/v1/orders?select=items,order_items,cart_items&status=eq.delivered', {headers:H});
+      var orders = ordRes.ok ? await ordRes.json() : [];
+      // Count product names
+      var countMap = {};
+      (orders||[]).forEach(function(o) {
+        var items = (Array.isArray(o.items)&&o.items.length)?o.items:(Array.isArray(o.order_items)&&o.order_items.length)?o.order_items:(Array.isArray(o.cart_items)?o.cart_items:[]);
+        items.forEach(function(it) {
+          var n = (it.name||it.product_name||'').trim();
+          if (n) countMap[n] = (countMap[n]||0)+(Number(it.quantity)||1);
+        });
+      });
+      var topNames = Object.entries(countMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
+      if (!topNames.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد بيانات مبيعات بعد</p>'; return; }
+
+      // Load product details
+      var prodRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category&order=name_ar.asc', {headers:H});
+      var prods = prodRes.ok ? await prodRes.json() : [];
+      var prodMap = {};
+      (prods||[]).forEach(function(p){ prodMap[(p.name_ar||p.name||'').trim()] = p; });
+
+      var topProds = topNames.map(function(n,i){ return {rank:i+1, name:n, count:countMap[n], product:prodMap[n]||null}; })
+        .filter(function(x){ return x.product; });
+
+      if (!topProds.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد بيانات</p>'; return; }
+
+      var medals = ['🥇','🥈','🥉'];
+      grid.innerHTML = topProds.map(function(tp, i) {
+        var p = tp.product;
+        var img = p.image && p.image.startsWith('http')
+          ? '<img src="'+escH(p.image)+'" alt="'+escH(p.name_ar||p.name)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentNode.innerHTML='<div style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;\">📦</div>'">'
+          : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">📦</div>';
+        var inStock = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
+        var stockBadge = inStock
+          ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">متوفر</span>'
+          : '<span style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">نفذ</span>';
+        var rank = medals[i] || ('#'+(i+1));
+        return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="window.location.hash='#products'">' +
+          '<div style="position:relative;height:150px;background:#f0fdf4;">' + img + stockBadge +
+          '<span style="position:absolute;top:8px;right:8px;font-size:18px;" title="'+(medals[i]?'الأكثر مبيعاً':'')+'">'+rank+'</span>' +
+          '</div>' +
+          '<div style="padding:10px 10px 12px;">' +
+            '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+escH(p.name_ar||p.name)+'">' + escH(p.name_ar||p.name) + '</p>' +
+            '<p style="font-size:12px;color:#64748b;margin:0 0 4px;">🛍️ ' + tp.count + ' قطعة مباعة</p>' +
+            '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">' + Number(p.price||0).toLocaleString('en-US') + ' د.ع</p>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      if (badge) badge.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    } catch(e) {
+      if (grid) grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">تعذر التحميل</p>';
+    }
+  }
+
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadTopSelling, 1000); });
+  } else {
+    setTimeout(loadTopSelling, 1000);
+  }
+})();
+</script>
+
 <!-- Products Section -->
 <section id="products" class="py-24 md:py-32 bg-cream" aria-labelledby="products-title">
   <div class="max-w-7xl mx-auto px-6">
@@ -617,6 +716,93 @@ section, div { max-width: 100%; }
 
     <!-- نوع البشرة sub-filter — يظهر عند اختيار "عناية بالبشرة" -->
     <div id="skinTypeSubFilterContainer_main" class="text-center px-4"></div>
+
+    <!-- ✅ Feature #5: Advanced Price & Availability Filter -->
+    <div id="advFilterBar" style="margin:0 0 20px;padding:12px 16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:16px;border:1.5px solid #bbf7d0;display:none;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+        <span style="font-weight:700;font-size:14px;color:#14532d;white-space:nowrap;">🔍 فلترة متقدمة</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <label style="font-size:13px;color:#166534;font-weight:600;">السعر:</label>
+          <input type="number" id="advPriceMin" placeholder="من" min="0" inputmode="numeric"
+            style="width:90px;padding:6px 10px;border:1.5px solid #86efac;border-radius:10px;font-size:13px;text-align:center;background:#fff;outline:none;"
+            oninput="applyAdvFilters()">
+          <span style="color:#166534;">—</span>
+          <input type="number" id="advPriceMax" placeholder="إلى" min="0" inputmode="numeric"
+            style="width:90px;padding:6px 10px;border:1.5px solid #86efac;border-radius:10px;font-size:13px;text-align:center;background:#fff;outline:none;"
+            oninput="applyAdvFilters()">
+          <span style="font-size:12px;color:#166534;">د.ع</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="setAdvAvail('all')" id="advAvailAll" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#16a34a;color:#fff;transition:all 0.2s;">الكل</button>
+          <button onclick="setAdvAvail('in')" id="advAvailIn" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#166534;transition:all 0.2s;">✅ متوفر</button>
+          <button onclick="setAdvAvail('out')" id="advAvailOut" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#166534;transition:all 0.2s;">❌ نفذ</button>
+        </div>
+        <button onclick="resetAdvFilters()" style="padding:6px 14px;border-radius:20px;border:1.5px solid #fca5a5;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#dc2626;margin-right:auto;">↺ إعادة ضبط</button>
+      </div>
+    </div>
+    <script>
+    // ── Advanced Filter Engine ──────────────────────────────────────────────
+    var _advPriceMin = 0, _advPriceMax = Infinity, _advAvail = 'all';
+    var _advOrigRender = null;
+
+    function _patchAdvFilters() {
+      if (_advOrigRender) return; // already patched
+      if (typeof window.renderProducts !== 'function') return;
+      _advOrigRender = window.renderProducts;
+      window.renderProducts = function(products) {
+        var filtered = (products||[]).filter(function(p) {
+          var price = Number(p.price || p.price2 || 0);
+          var inStock = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
+          if (_advPriceMin > 0 && price < _advPriceMin) return false;
+          if (_advPriceMax < Infinity && price > _advPriceMax) return false;
+          if (_advAvail === 'in' && !inStock) return false;
+          if (_advAvail === 'out' && inStock) return false;
+          return true;
+        });
+        _advOrigRender(filtered);
+      };
+    }
+
+    function applyAdvFilters() {
+      _patchAdvFilters();
+      _advPriceMin = Number(document.getElementById('advPriceMin').value)||0;
+      var maxVal = document.getElementById('advPriceMax').value;
+      _advPriceMax = maxVal ? Number(maxVal) : Infinity;
+      // Re-trigger current category filter
+      var activeBtn = document.querySelector('.cat-icon-btn.active');
+      if (activeBtn && typeof filterProducts === 'function') {
+        filterProducts(null, activeBtn.dataset.filter||'all');
+      }
+    }
+
+    function setAdvAvail(val) {
+      _advAvail = val;
+      ['all','in','out'].forEach(function(v) {
+        var btn = document.getElementById('advAvail'+v.charAt(0).toUpperCase()+v.slice(1));
+        if (!btn) return;
+        btn.style.background = (v===val) ? '#16a34a' : '#fff';
+        btn.style.color = (v===val) ? '#fff' : '#166534';
+      });
+      applyAdvFilters();
+    }
+
+    function resetAdvFilters() {
+      document.getElementById('advPriceMin').value='';
+      document.getElementById('advPriceMax').value='';
+      _advPriceMin=0; _advPriceMax=Infinity; _advAvail='all';
+      setAdvAvail('all');
+    }
+
+    // Show filter bar + patch after app loads
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        var bar = document.getElementById('advFilterBar');
+        if (bar) bar.style.display='block';
+        _patchAdvFilters();
+      }, 1500);
+    });
+    </script>
+
 
     <div id="productsGrid" class="products-grid" role="list" aria-label="قائمة المنتجات">
       <!-- Products will be dynamically inserted -->
@@ -995,6 +1181,10 @@ function toggleFollowMenu(e) {
     return s;
   }
 
+  // ← Security fix: escapeHTML to prevent XSS in testimonials
+  function _escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+  }
   function renderTestimonials(list) {
     var grid = document.getElementById('testimonialsGrid');
     if (!grid) return;
@@ -1005,9 +1195,9 @@ function toggleFollowMenu(e) {
     grid.innerHTML = list.map(function(t, i) {
       var color   = CARD_COLORS[i % CARD_COLORS.length];
       var delay   = DELAY_CLASSES[i % DELAY_CLASSES.length];
-      var name    = t.name || '';
-      var text    = t.text || '';
-      var initial = name.charAt(0) || '؟';
+      var name    = _escHtml(t.name || '');
+      var text    = _escHtml(t.text || '');
+      var initial = _escHtml((t.name || '؟').charAt(0));
       return (
         '<div class="testimonial-card scroll-animate ' + delay + '">' +
           '<div class="flex items-center gap-1 mb-4 stars">' + buildStars(t.rating) + '</div>' +
