@@ -27,7 +27,17 @@
     },
     async signOut()    { await _db.auth.signOut(); },
     async getSession() { const { data: { session } } = await _db.auth.getSession(); return session; },
-    async isAuthenticated() { const s = await this.getSession(); return !!(s && s.expires_at * 1000 > Date.now()); },
+    async isAuthenticated() {
+      let s = await this.getSession();
+      // إذا كانت الجلسة منتهية أو غير موجودة — حاول التجديد تلقائياً
+      if (!s || s.expires_at * 1000 <= Date.now()) {
+        try {
+          const { data, error } = await _db.auth.refreshSession();
+          if (!error && data && data.session) s = data.session;
+        } catch(e) { /* refresh failed */ }
+      }
+      return !!(s && s.expires_at * 1000 > Date.now());
+    },
     onStateChange(cb)  { return _db.auth.onAuthStateChange((_e, s) => cb(s)); }
   };
 
