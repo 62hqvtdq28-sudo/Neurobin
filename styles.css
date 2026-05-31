@@ -28,6 +28,24 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .scroll-animate-right.visible{opacity:1;transform:translateX(0)}
 .scroll-animate-scale{opacity:0;transform:scale(.9);transition:opacity .6s ease-out,transform .6s ease-out}
 .scroll-animate-scale.visible{opacity:1;transform:scale(1)}
+/* ── PERMANENT SAFARI FIX: auto-reveal fallback ─────────────────────────
+   If IntersectionObserver NEVER fires 'visible' class (Safari/iPad bug),
+   CSS animation auto-reveals the element after a delay.
+   When .visible IS added normally → animation:none cancels the fallback.
+   This is the permanent safety net — works even if ALL JS fails.       */
+.scroll-animate-scale{animation:safariFbScale .55s ease-out .75s forwards}
+.scroll-animate{animation:safariFbUp .55s ease-out 1.0s forwards}
+.scroll-animate-left{animation:safariFbLeft .55s ease-out 1.1s forwards}
+.scroll-animate-right{animation:safariFbRight .55s ease-out 1.1s forwards}
+@keyframes safariFbScale{to{opacity:1;transform:scale(1)}}
+@keyframes safariFbUp{to{opacity:1;transform:translateY(0)}}
+@keyframes safariFbLeft{to{opacity:1;transform:translateX(0)}}
+@keyframes safariFbRight{to{opacity:1;transform:translateX(0)}}
+/* Cancel fallback animation the moment .visible is properly applied */
+.scroll-animate.visible,.scroll-animate-left.visible,
+.scroll-animate-right.visible,.scroll-animate-scale.visible{
+  animation:none!important}
+
 
 .delay-100{transition-delay:100ms!important}
 .delay-200{transition-delay:200ms!important}
