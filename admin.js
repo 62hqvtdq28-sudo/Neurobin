@@ -11,6 +11,7 @@ function saveSettings() {
 
   var telegramBotToken = ((document.getElementById('telegramBotToken') || {}).value || '').trim();
   var telegramChatId = ((document.getElementById('telegramChatId') || {}).value || '').trim();
+  var imgbbApiKey = ((document.getElementById('imgbbApiKey') || {}).value || '').trim();
 
   var prev = {};
   try { prev = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) {}
@@ -19,7 +20,8 @@ function saveSettings() {
     instagramUrl: instagramUrl,
     whatsappNumber: whatsappNumber,
     telegramBotToken: telegramBotToken,
-    telegramChatId: telegramChatId
+    telegramChatId: telegramChatId,
+    imgbbApiKey: imgbbApiKey
   });
   localStorage.setItem('phSettings', JSON.stringify(settings));
   if (typeof showToast === 'function') showToast('تم حفظ الإعدادات بنجاح ✓', 'success');
@@ -132,6 +134,8 @@ function loadSettings() {
     document.getElementById('telegramBotToken').value = settings.telegramBotToken || '';
   if (document.getElementById('telegramChatId'))
     document.getElementById('telegramChatId').value = settings.telegramChatId || '';
+  if (document.getElementById('imgbbApiKey'))
+    document.getElementById('imgbbApiKey').value = settings.imgbbApiKey || '';
 }
 
 
@@ -835,7 +839,10 @@ async function uploadCatImage(catFilter, fileInput) {
     var formData = new FormData();
     formData.append('image', base64);
 
-    var response = await fetch('https://api.imgbb.com/1/upload?key=405daedac0e1e717cde2106b81d225b9', {
+    var _phSettings = {};
+    try { _phSettings = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(_e) {}
+    var _imgbbKey = (_phSettings.imgbbApiKey || '').trim() || '405daedac0e1e717cde2106b81d225b9';
+    var response = await fetch('https://api.imgbb.com/1/upload?key=' + _imgbbKey, {
       method: 'POST',
       body: formData
     });
@@ -1098,3 +1105,100 @@ async function testTelegramAlert() {
     else showToast('خطأ: ' + (data.description || 'تأكد من البيانات'), 'error');
   } catch(e) { showToast('تعذر الاتصال بتيليجرام', 'error'); }
 }
+
+// ═══════════════════════════════════════════════════════════
+// الشريط اليومي المثبت — Daily Summary Bar
+// ═══════════════════════════════════════════════════════════
+(function() {
+  var _SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var _SKEY = (function(){
+    try { return window.supabaseClient && window.supabaseClient.supabaseKey ? window.supabaseClient.supabaseKey : null; } catch(e) { return null; }
+  })() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var _interval = null;
+
+  window.loadDailySummary = async function() {
+    var bar = document.getElementById('dailySummaryBar');
+    if (!bar) return;
+    bar.classList.remove('hidden');
+    var icon = document.getElementById('summaryRefreshIcon');
+    if (icon) icon.style.cssText = 'animation:spin 1s linear infinite;display:inline-block;';
+    try {
+      // Baghdad midnight today UTC+3
+      var baghdadNow = new Date(Date.now() + 3 * 3600000);
+      var todayStr = baghdadNow.toISOString().slice(0, 10);
+      var baghdadMidnight = new Date(todayStr + 'T00:00:00+03:00').toISOString();
+
+      var H = { 'apikey': _SKEY, 'Authorization': 'Bearer ' + _SKEY };
+
+      var results = await Promise.allSettled([
+        fetch(_SURL + '/rest/v1/orders?select=id,total_amount,total&created_at=gte.' + baghdadMidnight + '&deleted_at=is.null', { headers: H }),
+        fetch(_SURL + '/rest/v1/page_views?select=id&created_at=gte.' + baghdadMidnight, { headers: Object.assign({}, H, { 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0' }) })
+      ]);
+
+      var orders = [];
+      if (results[0].status === 'fulfilled' && results[0].value.ok) {
+        try { var j = await results[0].value.json(); if (Array.isArray(j)) orders = j; } catch(e2) {}
+      }
+      var visitorCount = 0;
+      if (results[1].status === 'fulfilled') {
+        var cr = results[1].value.headers.get('content-range') || '';
+        if (cr.indexOf('/') !== -1) visitorCount = parseInt(cr.split('/')[1]) || 0;
+      }
+
+      var totalSales = orders.reduce(function(s, o) { return s + Number(o.total_amount || o.total || 0); }, 0);
+      var dateLabel = baghdadNow.toLocaleDateString('ar-IQ', { weekday: 'long', day: 'numeric', month: 'long' });
+
+      var el = function(id) { return document.getElementById(id); };
+      if (el('summaryDate')) el('summaryDate').textContent = dateLabel;
+      if (el('summaryOrders')) el('summaryOrders').textContent = orders.length;
+      if (el('summarySales')) el('summarySales').textContent = (totalSales > 0 ? totalSales.toLocaleString('en-US') : '٠') + ' د.ع';
+      if (el('summaryVisitors')) el('summaryVisitors').textContent = visitorCount;
+      if (el('summaryLastUpdate')) {
+        el('summaryLastUpdate').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Baghdad' });
+      }
+    } catch(e) {
+      console.warn('[DailySummary]', e.message);
+    } finally {
+      if (icon) icon.style.cssText = '';
+    }
+  };
+
+  window.refreshDailySummary = function() { window.loadDailySummary(); };
+
+  window._startSummaryAutoRefresh = function() {
+    if (_interval) clearInterval(_interval);
+    window.loadDailySummary();
+    _interval = setInterval(window.loadDailySummary, 3 * 60 * 1000);
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════
+// إشعارات فورية للطلبات الجديدة — Realtime Order Alerts
+// ═══════════════════════════════════════════════════════════
+window.startRealtimeNotifications = function() {
+  if (window._realtimeOrderChannel) return;
+  var client = window.supabaseClient;
+  if (!client || typeof client.channel !== 'function') return;
+  try {
+    window._realtimeOrderChannel = client
+      .channel('rt-new-orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, function(payload) {
+        var o = payload.new || {};
+        var phone = o.phone || o.customer_phone || '';
+        var total = Number(o.total_amount || o.total || 0);
+        var totalStr = total > 0 ? ' — ' + total.toLocaleString('en-US') + ' د.ع' : '';
+        var msg = '🛍️ طلب جديد!' + (phone ? ' ' + phone : '') + totalStr;
+        if (typeof showToast === 'function') showToast(msg, 'success');
+        if (window.Notification && Notification.permission === 'granted') {
+          try { new Notification('طلب جديد — ph.neurobin', { body: msg }); } catch(ne) {}
+        }
+        if (typeof window.loadDailySummary === 'function') window.loadDailySummary();
+        if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+      })
+      .subscribe(function(status) {
+        if (status === 'CHANNEL_ERROR') { window._realtimeOrderChannel = null; }
+      });
+  } catch(e) {
+    console.warn('[Realtime]', e.message);
+  }
+};

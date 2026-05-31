@@ -693,6 +693,19 @@ button[disabled] {
 .ml-4{margin-left:1rem}.ml-6{margin-left:1.5rem}
 @media (min-width:768px){.md\:mr-72{margin-right:18rem}}
 
+/* ═══════════════════════════════════════════════════════
+   Daily Summary Bar
+   ═══════════════════════════════════════════════════════ */
+#dailySummaryBar {
+  background: rgba(255,255,255,0.97);
+  border-bottom: 1.5px solid #e8f0e2;
+  box-shadow: 0 2px 8px rgba(45,80,22,0.07);
+}
+.summary-scroll::-webkit-scrollbar { display: none; }
+.summary-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* Sidebar dark green override */
 #sidebar {
   background: linear-gradient(to bottom, #1E350F, #254012) !important;

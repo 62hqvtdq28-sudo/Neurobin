@@ -734,6 +734,24 @@ async function showDashboard() {
       if (typeof startStatsAutoRefresh === 'function') startStatsAutoRefresh();
     } catch(e) { console.warn('[Dashboard] chart init:', e.message); }
   }, 300); // 300ms gives the DOM time to paint after adminDashboard becomes visible
+
+  // Load sticky daily summary bar
+  setTimeout(function() {
+    if (typeof window._startSummaryAutoRefresh === 'function') window._startSummaryAutoRefresh();
+  }, 600);
+
+  // Start realtime order notifications (Supabase Realtime)
+  setTimeout(function() {
+    if (typeof window.startRealtimeNotifications === 'function') window.startRealtimeNotifications();
+    // Show Telegram setup hint if not configured
+    var _s = {};
+    try { _s = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) {}
+    if (!_s.telegramBotToken) {
+      setTimeout(function() {
+        if (typeof showToast === 'function') showToast('💡 لتفعيل إشعارات تيليجرام اذهب إلى الإعدادات', 'info');
+      }, 4000);
+    }
+  }, 1200);
 }
 // ─── Login Log & Telegram Helpers ────────────────────────────────────────────
 
