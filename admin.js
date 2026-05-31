@@ -928,27 +928,12 @@ var _deviceCheckInterval = null;
 // توليد توكن فريد وتسجيله في Supabase
 // ─── Login Logs ───────────────────────────────────────────────────────────────
 
-function loadLoginLogs() {
-  var container = document.getElementById('loginLogsTable');
-  if (!container) return;
-
+function _renderLoginLogs(container, logs, summaryEl) {
   function _esc(str) {
     if (str == null) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
-  var logs = [];
-  try {
-    var raw = localStorage.getItem('adminLoginLogs');
-    logs = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(logs)) logs = [];
-  } catch(e) {
-    localStorage.removeItem('adminLoginLogs');
-    logs = [];
-  }
-
   // ── بطاقات الملخص ────────────────────────────────────────────────
-  var summaryEl = document.getElementById('loginLogSummary');
   if (summaryEl) {
     if (logs.length === 0) {
       summaryEl.innerHTML = '';
@@ -1093,9 +1078,43 @@ window.sendDirectMessageToCustomer = async function() {
   }
 };
 
+function loadLoginLogs() {
+  var container = document.getElementById('loginLogsTable');
+  if (!container) return;
+  var logs = [];
+  try {
+    var raw = localStorage.getItem('adminLoginLogs');
+    logs = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(logs)) logs = [];
+  } catch(e) { localStorage.removeItem('adminLoginLogs'); logs = []; }
+  // عرض فوري من localStorage
+  _renderLoginLogs(container, logs, document.getElementById('loginLogSummary'));
+  // جلب من Supabase ودمج للحصول على السجل الكامل عبر الأجهزة
+  if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Settings) {
+    window.SupaDB.Settings.get('admin_login_events').then(function(raw2) {
+      try {
+        var supa = raw2 ? JSON.parse(raw2) : [];
+        if (!Array.isArray(supa) || supa.length === 0) return;
+        var seen = {}; var merged = [];
+        logs.concat(supa).forEach(function(l) {
+          if (l && l.id && !seen[l.id]) { seen[l.id] = true; merged.push(l); }
+        });
+        merged.sort(function(a, b) { return b.id - a.id; });
+        if (merged.length > logs.length) {
+          localStorage.setItem('adminLoginLogs', JSON.stringify(merged.slice(0, 100)));
+          _renderLoginLogs(container, merged, document.getElementById('loginLogSummary'));
+        }
+      } catch(_) {}
+    }).catch(function() {});
+  }
+}
+
 function clearLoginLogs() {
   if (!confirm('هل أنت متأكد من حذف سجل الدخول كاملاً؟')) return;
   localStorage.removeItem('adminLoginLogs');
+  if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Settings) {
+    window.SupaDB.Settings.set('admin_login_events', '[]').catch(function() {});
+  }
   loadLoginLogs();
   showToast('تم مسح سجل الدخول', 'success');
 }
