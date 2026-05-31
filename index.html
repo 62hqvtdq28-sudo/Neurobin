@@ -1089,7 +1089,10 @@ section, div { max-width: 100%; }
       </button>
     </div>
     <p id="notifyProductTitle" class="text-brand-700 font-semibold text-sm mb-3"></p>
-    <p class="text-brand-500 text-sm mb-4">أدخل رقم هاتفك وسنُبلّغك فور توفر المنتج.</p>
+    <p class="text-brand-500 text-sm mb-4">سيتم توفير طلبك خلال 30 دقيقة — أدخل اسمك ورقم هاتفك.</p>
+    <input type="text" id="notifyName"
+      class="w-full px-4 py-3 border-2 border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all mb-3"
+      placeholder="اسمك الكريم" maxlength="80" autocomplete="name" dir="rtl">
     <input type="tel" id="notifyPhone"
       class="w-full px-4 py-3 border-2 border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all mb-4"
       placeholder="07XX XXX XXXX" maxlength="14" autocomplete="tel"
@@ -1097,7 +1100,7 @@ section, div { max-width: 100%; }
     <button id="notifySubmitBtn" onclick="submitNotifyRequest()"
       class="w-full bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white py-3 rounded-xl font-semibold transition-all shadow-md flex items-center justify-center gap-2">
       <i data-lucide="bell" class="w-4 h-4"></i>
-      <span>أرسل طلب الإشعار</span>
+      <span>إرسال الطلب</span>
     </button>
   </div>
 </div>
@@ -1360,28 +1363,55 @@ window.addEventListener('resize', function() {
     });
   }
 
-  /* Override submitNotifyRequest → Supabase */
+  /* Override submitNotifyRequest → Supabase orders */
   window.submitNotifyRequest = async function() {
-    var phone   = (document.getElementById('notifyPhone') ? document.getElementById('notifyPhone').value : '').trim();
+    var nameEl  = document.getElementById('notifyName');
+    var phoneEl = document.getElementById('notifyPhone');
+    var name    = nameEl  ? nameEl.value.trim()  : '';
+    var phone   = phoneEl ? phoneEl.value.trim() : '';
     var product = document.getElementById('notifyProductTitle') ? document.getElementById('notifyProductTitle').textContent.trim() : 'منتج';
-    if (!phone || phone.replace(/\D/g,'').length < 10) { alert('يرجى إدخال رقم هاتف صحيح'); return; }
+    function _toast(msg, type) {
+      var t = document.createElement('div');
+      var bg = type === 'error' ? '#dc2626' : '#166534';
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+bg+';color:#fff;padding:12px 24px;border-radius:14px;font-weight:700;z-index:10000;font-family:Cairo,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.25);direction:rtl;white-space:nowrap;';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(function() { t.remove(); }, 4000);
+    }
+    if (!name) { _toast('أدخل اسمك الكريم', 'error'); if(nameEl) nameEl.focus(); return; }
+    if (!phone || phone.replace(/\D/g,'').length < 10) { _toast('أدخل رقم هاتف صحيح', 'error'); if(phoneEl) phoneEl.focus(); return; }
     var btn = document.getElementById('notifySubmitBtn');
     if (btn) btn.disabled = true;
     try {
-      var r = await fetch(_SB_URL + '/rest/v1/contact_messages', {
+      var orderBody = {
+        name: name,
+        customer_name: name,
+        phone: phone,
+        customer_phone: phone,
+        customer_address: null,
+        status: 'new',
+        notes: 'أخبرني عند توفر: ' + product,
+        total: 0,
+        total_amount: 0,
+        items: JSON.stringify([{name: product, quantity: 1, price: 0}])
+      };
+      var r = await fetch(_SB_URL + '/rest/v1/orders', {
         method: 'POST', headers: _HDR,
-        body: JSON.stringify({ name: 'إشعار عند التوفر', contact_info: phone, message: 'أريد الإشعار عند توفر: ' + product })
+        body: JSON.stringify(orderBody)
       });
-      if (r.ok || r.status === 201) {
+      if (r.ok || r.status === 201 || r.status === 204) {
         if (typeof closeNotifyModal === 'function') closeNotifyModal();
-        var ok = document.createElement('div');
-        ok.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 24px;border-radius:14px;font-weight:700;z-index:9999;font-family:Cairo,sans-serif;';
-        ok.textContent = '✅ تم تسجيل طلبك! سنُبلّغك عند توفر المنتج.';
-        document.body.appendChild(ok);
-        setTimeout(function() { ok.remove(); }, 4000);
-      } else { alert('حدث خطأ. يرجى المحاولة مجدداً.'); }
-    } catch(err) { alert('خطأ: ' + err.message); }
-    finally { if (btn) btn.disabled = false; }
+        if (nameEl) nameEl.value = '';
+        if (phoneEl) phoneEl.value = '';
+        _toast('✅ تم إرسال طلبك! سيتم التواصل معك خلال 30 دقيقة.', 'success');
+      } else {
+        _toast('حدث خطأ، يرجى المحاولة مجدداً.', 'error');
+      }
+    } catch(err) {
+      _toast('خطأ في الاتصال، تأكد من الإنترنت.', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _hookContactForm);
@@ -1815,7 +1845,7 @@ window.addEventListener('load', function() {
       <h2 style="font-weight:800;font-size:18px;color:#1a2e0d;">🔍 طلب منتج غير متوفر</h2>
       <button onclick="document.getElementById('productRequestModal').style.display='none'" style="width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;cursor:pointer;font-size:16px;">✕</button>
     </div>
-    <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">أخبرنا بالمنتج الذي تبحث عنه وسنوفّره لك في أقرب وقت.</p>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">أخبرنا بالمنتج الذي تبحث عنه وسيتم توفير طلبك خلال 30 دقيقة.</p>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <input type="text" id="reqProductName" placeholder="اسم المنتج..." maxlength="200"
         style="padding:10px 14px;border:2px solid #d1fae5;border-radius:12px;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
@@ -1846,24 +1876,43 @@ window.submitProductRequest = async function() {
   var phone = (document.getElementById('reqProductPhone').value||'').trim();
   var notes = (document.getElementById('reqProductNotes').value||'').trim();
   var res   = document.getElementById('reqProductResult');
-  if (!name) { res.innerHTML = '<p style="color:#dc2626;font-size:13px;">أدخل اسم المنتج</p>'; return; }
-  res.innerHTML = '<p style="color:#6b7280;font-size:13px;">جاري الإرسال...</p>';
+  if (!name) { res.innerHTML = '<p style="color:#dc2626;font-size:13px;">أدخل اسم المنتج المطلوب</p>'; return; }
+  if (!phone || phone.replace(/\D/g,'').length < 10) { res.innerHTML = '<p style="color:#dc2626;font-size:13px;">أدخل رقم هاتف صحيح للتواصل معك</p>'; return; }
+  res.innerHTML = '<p style="color:#6b7280;font-size:13px;">جاري إرسال الطلب...</p>';
   var SURL='https://hczsskviliuqyayylutv.supabase.co';
   var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var HDR = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=minimal'};
   try {
-    var r = await fetch(SURL+'/rest/v1/product_requests',{
-      method:'POST',
-      headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify({product_name:name, phone:phone, notes:notes, created_at:new Date().toISOString()})
+    // حفظ كطلب في جدول orders ليظهر مباشرة في لوحة التحكم
+    var orderBody = {
+      name: name,
+      customer_name: name,
+      phone: phone,
+      customer_phone: phone,
+      customer_address: null,
+      status: 'new',
+      notes: 'طلب منتج: ' + name + (notes ? ' — ' + notes : ''),
+      total: 0,
+      total_amount: 0,
+      items: JSON.stringify([{name: name, quantity: 1, price: 0, notes: notes}])
+    };
+    var r = await fetch(SURL+'/rest/v1/orders',{
+      method:'POST', headers: HDR,
+      body: JSON.stringify(orderBody)
     });
     if (r.ok || r.status===201 || r.status===204) {
-      res.innerHTML = '<p style="color:#059669;font-weight:700;font-size:14px;text-align:center;padding:8px;background:#f0fdf4;border-radius:10px;">✅ تم إرسال طلبك! سنتواصل معك قريباً.</p>';
-      setTimeout(function(){ document.getElementById('productRequestModal').style.display='none'; }, 2500);
+      res.innerHTML = '<p style="color:#059669;font-weight:700;font-size:14px;text-align:center;padding:10px;background:#f0fdf4;border-radius:10px;">✅ تم إرسال طلبك! سيتم التواصل معك خلال 30 دقيقة.</p>';
+      document.getElementById('reqProductName').value='';
+      document.getElementById('reqProductPhone').value='';
+      document.getElementById('reqProductNotes').value='';
+      setTimeout(function(){ document.getElementById('productRequestModal').style.display='none'; res.innerHTML=''; }, 3000);
     } else {
-      res.innerHTML = '<p style="color:#dc2626;font-size:13px;">تعذّر الإرسال ('+r.status+')، أرسل طلبك عبر واتساب مباشرة</p>';
+      var errData = {};
+      try { errData = await r.clone().json(); } catch(_) {}
+      res.innerHTML = '<p style="color:#dc2626;font-size:13px;">حدث خطأ، يرجى المحاولة مجدداً.</p>';
     }
   } catch(e) {
-    res.innerHTML = '<p style="color:#dc2626;font-size:13px;">خطأ في الاتصال، حاول مجدداً</p>';
+    res.innerHTML = '<p style="color:#dc2626;font-size:13px;">خطأ في الاتصال، تأكد من الإنترنت وحاول مجدداً.</p>';
   }
 };
 </script>
