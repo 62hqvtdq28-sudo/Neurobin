@@ -495,6 +495,35 @@ async function loadVisitorStats() {
         '</div>';
     }).join('');
 
+    // Hourly breakdown for today (Baghdad time = UTC+3)
+    var hourlyBaghdad = {};
+    var todayBaghdadStr = new Date(new Date().getTime() + 3*3600*1000).toISOString().slice(0, 10);
+    if (Array.isArray(monthData)) {
+      monthData.forEach(function(v) {
+        var utcHour = new Date(v.created_at).getTime();
+        var baghdadDate = new Date(utcHour + 3*3600*1000).toISOString();
+        if (baghdadDate.slice(0, 10) === todayBaghdadStr) {
+          var h = parseInt(baghdadDate.slice(11, 13));
+          hourlyBaghdad[h] = (hourlyBaghdad[h] || 0) + 1;
+        }
+      });
+    }
+    var maxHour = Math.max.apply(Math, Object.values(hourlyBaghdad).concat([1]));
+    var hourlyHtml = '';
+    var peakHour = -1, peakCount = 0;
+    for (var h = 0; h < 24; h++) {
+      var cnt = hourlyBaghdad[h] || 0;
+      if (cnt > peakCount) { peakCount = cnt; peakHour = h; }
+      var pct = Math.max(2, Math.round((cnt / maxHour) * 60));
+      var hLabel = String(h).padStart(2,'0') + ':00';
+      hourlyHtml += '<div class="flex-1 flex flex-col items-center gap-0.5" title="' + hLabel + ': ' + cnt + ' زيارة">' +
+        (cnt > 0 ? '<span class="text-[8px] text-brand-400 font-semibold leading-none">' + cnt + '</span>' : '<span class="text-[8px] leading-none opacity-0">0</span>') +
+        '<div class="w-full rounded-t bg-gradient-to-t ' + (h === peakHour && cnt > 0 ? 'from-amber-500 to-amber-300' : 'from-brand-500 to-brand-300') + '" style="height:' + pct + 'px"></div>' +
+        '<span class="text-[8px] text-brand-300 leading-none">' + (h % 6 === 0 ? hLabel : '') + '</span>' +
+        '</div>';
+    }
+    var peakLabel = peakHour >= 0 && peakCount > 0 ? 'ذروة: ' + String(peakHour).padStart(2,'0') + ':00 — ' + peakCount + ' زيارة' : 'لا توجد زيارات اليوم';
+
     var html = '<div id="visitorStatsSection" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">' +
       '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('en-US') + '</p></div>' +
       '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700"><i data-lucide="calendar-check" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('en-US') + '</p></div>' +
@@ -505,6 +534,7 @@ async function loadVisitorStats() {
         '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>🖥️ كمبيوتر</span><span>' + desktopPercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-blue-400 rounded-full" style="width:' + desktopPercent + '%"></div></div></div>' +
         '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📲 تابلت</span><span>' + tabletPercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-purple-400 rounded-full" style="width:' + tabletPercent + '%"></div></div></div>' +
       '</div></div>' +
+      '<div class="sm:col-span-3 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-brand-700">الزيارات بالساعة — اليوم</h4><span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">' + peakLabel + '</span></div><div class="flex items-end gap-0.5" style="height:72px;">' + hourlyHtml + '</div><div class="flex justify-between mt-1 text-[9px] text-brand-300"><span>12:00 ص</span><span>06:00 ص</span><span>12:00 ظ</span><span>06:00 م</span><span>11:00 م</span></div></div>' +
     '</div>';
 
     analyticsSection.insertAdjacentHTML('afterend', html);
