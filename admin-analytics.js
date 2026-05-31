@@ -243,6 +243,14 @@ async function loadAnalytics() {
     // ═══ رسم المبيعات الشهرية / الأسبوعية ═══
     _renderSalesChart(allOrders, delivered);
 
+    // ── New analytics panels ───────────────────────────────────────────────
+    setTimeout(function() {
+      _renderDayOfWeekChart(allOrders);
+      _renderBestCustomer(allOrders);
+      _renderDeliveryRate(allOrders);
+      if (typeof loadVisitorStats === 'function') loadVisitorStats();
+    }, 100);
+
   } catch(e) {
     if (cardsEl) cardsEl.innerHTML =
       '<div class="col-span-2 sm:col-span-4 text-center py-8 text-red-500">خطأ في التحليل: '+e.message+'</div>';
@@ -487,6 +495,137 @@ function undoDeleteAnalytics() {
 // ════════════════════════════════════════════════════════════
 // قسم إحصائيات الزوار
 // ════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// #113: تحليل مبيعات أيام الأسبوع
+// ══════════════════════════════════════════════════════════════════
+function _renderDayOfWeekChart(allOrders) {
+  var container = document.getElementById('dayOfWeekSection');
+  if (!container) return;
+  var arDays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  var counts = [0,0,0,0,0,0,0];
+  var revenue = [0,0,0,0,0,0,0];
+  allOrders.filter(function(o){ return o.status!=='cancelled'; }).forEach(function(o) {
+    var d = new Date(o.created_at||0).getDay();
+    counts[d]++;
+    revenue[d] += Number(o.total_amount||o.total||0);
+  });
+  var maxC = Math.max.apply(Math, counts.concat([1]));
+  var bestDay = counts.indexOf(Math.max.apply(Math, counts));
+  container.innerHTML =
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4">' +
+    '<div class="flex items-center justify-between mb-4">' +
+    '<h3 class="font-bold text-brand-900 text-sm">📅 مبيعات أيام الأسبوع</h3>' +
+    '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-lg font-semibold">أفضل يوم: ' + arDays[bestDay] + '</span>' +
+    '</div>' +
+    '<div class="flex items-end gap-1 sm:gap-2 h-28">' +
+    counts.map(function(c, i) {
+      var pct = maxC > 0 ? Math.round((c / maxC) * 100) : 0;
+      var isBest = i === bestDay;
+      return '<div class="flex-1 flex flex-col items-center gap-1">' +
+        '<span class="text-xs font-bold text-brand-700" style="font-size:10px;">' + c + '</span>' +
+        '<div style="height:' + Math.max(pct, 4) + '%;width:100%;border-radius:6px 6px 0 0;background:' +
+        (isBest ? 'linear-gradient(to top,#1a5c0f,#4ade80)' : '#d1fae5') + ';min-height:4px;transition:height 0.5s;"></div>' +
+        '<span style="font-size:9px;color:#6b7280;text-align:center;white-space:nowrap;">' + arDays[i].slice(0,3) + '</span>' +
+        '</div>';
+    }).join('') +
+    '</div>' +
+    '<div class="mt-3 pt-3 border-t border-brand-50 grid grid-cols-7 gap-1">' +
+    revenue.map(function(r, i) {
+      return '<div class="text-center">' +
+        '<p style="font-size:9px;color:#94a3b8;">' + (r > 0 ? (r/1000).toFixed(0)+'K' : '—') + '</p>' +
+        '</div>';
+    }).join('') +
+    '</div></div>';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// #117: أفضل عميل الشهر
+// ══════════════════════════════════════════════════════════════════
+function _renderBestCustomer(allOrders) {
+  var container = document.getElementById('bestCustomerSection');
+  if (!container) return;
+  var now = new Date();
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  var monthOrders = allOrders.filter(function(o) {
+    return new Date(o.created_at||0) >= monthStart && o.status !== 'cancelled';
+  });
+  var custMap = {};
+  monthOrders.forEach(function(o) {
+    var ph = (o.customer_phone||o.phone||'').trim();
+    var nm = (o.customer_name||o.name||'—').trim();
+    if (!ph) return;
+    if (!custMap[ph]) custMap[ph] = { name: nm, phone: ph, count: 0, spend: 0 };
+    custMap[ph].count++;
+    custMap[ph].spend += Number(o.total_amount||o.total||0);
+  });
+  var ranked = Object.values(custMap).sort(function(a,b){ return b.spend - a.spend; }).slice(0, 3);
+  if (!ranked.length) {
+    container.innerHTML = '';
+    return;
+  }
+  var medals = ['🥇','🥈','🥉'];
+  var arMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  container.innerHTML =
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-amber-100 shadow-sm mb-4">' +
+    '<h3 class="font-bold text-brand-900 text-sm mb-3">🏆 أفضل عملاء ' + arMonths[now.getMonth()] + '</h3>' +
+    '<div class="space-y-2">' +
+    ranked.map(function(c, i) {
+      return '<div class="flex items-center justify-between p-2 rounded-xl ' + (i===0?'bg-amber-50 border border-amber-200':'bg-brand-50') + '">' +
+        '<div class="flex items-center gap-2">' +
+        '<span style="font-size:20px;">' + medals[i] + '</span>' +
+        '<div><p class="font-bold text-brand-900 text-sm">' + c.name + '</p>' +
+        '<p class="text-brand-500 text-xs" dir="ltr">' + c.phone + '</p></div>' +
+        '</div>' +
+        '<div class="text-left">' +
+        '<p class="font-bold text-brand-900 text-sm">' + c.spend.toLocaleString('en-US') + ' <span class="text-xs font-normal text-brand-400">د.ع</span></p>' +
+        '<p class="text-brand-400 text-xs">' + c.count + ' طلب</p>' +
+        '</div></div>';
+    }).join('') +
+    '</div></div>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// #119: معدل نجاح التوصيل
+// ══════════════════════════════════════════════════════════════════
+function _renderDeliveryRate(allOrders) {
+  var container = document.getElementById('deliveryRateSection');
+  if (!container) return;
+  var total = allOrders.filter(function(o){ return o.status !== 'new' && o.status !== 'pending'; }).length || 1;
+  var delivered = allOrders.filter(function(o){ return o.status === 'delivered'; }).length;
+  var cancelled = allOrders.filter(function(o){ return o.status === 'cancelled'; }).length;
+  var rate = Math.round((delivered / total) * 100);
+  var cancelRate = Math.round((cancelled / allOrders.length) * 100);
+  var color = rate >= 85 ? '#059669' : rate >= 70 ? '#d97706' : '#dc2626';
+  // Avg delivery time (delivered orders only)
+  var deliveredOrders = allOrders.filter(function(o){ return o.status==='delivered' && o.created_at && o.updated_at; });
+  var avgHours = 0;
+  if (deliveredOrders.length) {
+    var totalMs = deliveredOrders.reduce(function(s,o){
+      return s + (new Date(o.updated_at) - new Date(o.created_at));
+    }, 0);
+    avgHours = Math.round(totalMs / deliveredOrders.length / 3600000 * 10) / 10;
+  }
+  container.innerHTML =
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4">' +
+    '<h3 class="font-bold text-brand-900 text-sm mb-4">🚚 معدل نجاح التوصيل</h3>' +
+    '<div class="flex items-center gap-4">' +
+    '<div class="relative w-20 h-20 flex-shrink-0">' +
+    '<svg viewBox="0 0 36 36" style="transform:rotate(-90deg);width:80px;height:80px;">' +
+    '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3"/>' +
+    '<circle cx="18" cy="18" r="15.9" fill="none" stroke="' + color + '" stroke-width="3" stroke-dasharray="' + rate + ' 100" stroke-linecap="round"/>' +
+    '</svg>' +
+    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">' +
+    '<span style="font-size:16px;font-weight:800;color:' + color + ';">' + rate + '%</span>' +
+    '</div></div>' +
+    '<div class="flex-1 space-y-2">' +
+    '<div class="flex justify-between text-xs"><span class="text-brand-600">✅ مكتمل</span><span class="font-bold text-green-700">' + delivered + ' طلب</span></div>' +
+    '<div class="flex justify-between text-xs"><span class="text-brand-600">❌ ملغى</span><span class="font-bold text-red-600">' + cancelled + ' (' + cancelRate + '%)</span></div>' +
+    (avgHours > 0 ? '<div class="flex justify-between text-xs"><span class="text-brand-600">⏱️ متوسط وقت التوصيل</span><span class="font-bold text-blue-700">' + avgHours + ' ساعة</span></div>' : '') +
+    '</div></div></div>';
+}
+
 async function loadVisitorStats() {
   const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
