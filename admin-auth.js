@@ -720,6 +720,10 @@ function logout(clearRemember) {
   sessionStorage.removeItem('adminSessionToken');
   sessionStorage.removeItem('adminDeviceToken');
   if (clearRemember === true) localStorage.removeItem('adminRememberToken');
+  // تسجيل الخروج من Supabase فعلياً لإلغاء الجلسة
+  if (typeof window.SupaDB !== 'undefined' && window.SupaDB.Auth) {
+    window.SupaDB.Auth.signOut().catch(function(e) { console.warn('[logout] Supabase signOut:', e.message); });
+  }
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('adminDashboard').classList.add('hidden');
   closeMobileMenu();
@@ -829,14 +833,18 @@ function _buildLoginMsg(status) {
 
 async function sendTelegramAlert(msg) {
   try {
-    // المفاتيح مخزّنة بأمان في متغيرات البيئة على الخادم (Replit Secrets)
-    var resp = await fetch('https://a5860b81-115f-4231-89ff-03cf4642abcf-00-npz9yu0ydb1d.pike.replit.dev/api/telegram/send', {
+    var _s = {};
+    try { _s = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) { _s = {}; }
+    var token = _s.telegramBotToken || '';
+    var chatId = _s.telegramChatId || '';
+    if (!token || !chatId) return;
+    var resp = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg })
+      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML' })
     });
     var data = await resp.json();
-    if (!data.ok) console.warn('[Telegram] Error:', data.error);
+    if (!data.ok) console.warn('[Telegram] Error:', data.description);
   } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
 
@@ -899,29 +907,5 @@ function loadAllData() {
 }
 
 async function _syncTelegramConfig() {
-  try {
-    var resp = await fetch('/api/config');
-    if (!resp.ok) return;
-    var cfg = await resp.json();
-    if (!cfg.telegramBotToken && !cfg.telegramChatId) return;
-    var settings = JSON.parse(localStorage.getItem('phSettings') || '{}');
-    var changed = false;
-    if (cfg.telegramBotToken && settings.telegramBotToken !== cfg.telegramBotToken) {
-      settings.telegramBotToken = cfg.telegramBotToken;
-      changed = true;
-    }
-    if (cfg.telegramChatId && settings.telegramChatId !== cfg.telegramChatId) {
-      settings.telegramChatId = cfg.telegramChatId;
-      changed = true;
-    }
-    if (changed) {
-      localStorage.setItem('phSettings', JSON.stringify(settings));
-      var tokenEl = document.getElementById('telegramBotToken');
-      var chatEl = document.getElementById('telegramChatId');
-      if (tokenEl) tokenEl.value = settings.telegramBotToken || '';
-      if (chatEl) chatEl.value = settings.telegramChatId || '';
-    }
-  } catch(e) {
-    console.warn('[Config] Telegram sync failed:', e.message);
-  }
+  // لا يوجد API server على GitHub Pages — نتخطى هذه الخطوة بصمت
 }
