@@ -59,10 +59,10 @@ async function loadOrders() {
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
       cardHtml += '<div>';
-      var _orderNum = _numMap[String(order.id)]; var _numBadge = _orderNum ? '<span class="inline-block bg-brand-800 text-white text-xs font-mono font-bold px-2 py-0.5 rounded mr-1">#NB-' + String(_orderNum).padStart(3,'0') + '</span> ' : ''; cardHtml += '<h3 class="font-bold text-brand-900">' + _numBadge + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
-      cardHtml += '<p class="text-brand-600 text-sm">' + escapeHTML(order.customer_phone||order.phone||'') + '</p>';
+      var _orderNum = _numMap[String(order.id)]; var _numBadge = _orderNum ? '<span style="display:inline-block;background:#1a5c0f;color:#ffffff;font-size:11px;font-family:monospace;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:5px;letter-spacing:0.5px">#NB-' + String(_orderNum).padStart(3,'0') + '</span>' : ''; cardHtml += '<h3 class="font-bold text-brand-900" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">' + _numBadge + ' ' + escapeHTML(order.customer_name||order.name||'—') + '</h3>';
+      cardHtml += '<p style="color:#4a7c2d;font-size:13px;margin-top:2px;direction:ltr;text-align:right;">' + escapeHTML(order.customer_phone||order.phone||'') + '</p>';
       if (order.tracking_code) {
-        cardHtml += '<p class="text-xs font-bold text-amber-700">📱 ' + escapeHTML(order.tracking_code) + '</p>';
+        cardHtml += '<p style="font-size:11px;font-weight:700;color:#92400e;margin-top:2px;">📱 ' + escapeHTML(order.tracking_code) + '</p>';
       }
       cardHtml += '</div>';
       cardHtml += '<div class="text-left">';
@@ -421,12 +421,11 @@ async function saveManualOrder() {
     return { product_name: i.name, name: i.name, quantity: i.qty, price: i.price, subtotal: i.price * i.qty };
   });
 
-  if (!_moItems.length) { showToast('يرجى إضافة منتج واحد على الأقل', 'error'); return; }
-
   var btn = document.getElementById('moSaveBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline-block ml-1"></i> جاري الحفظ...'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
 
   try {
+    if (!_moItems.length) { showToast('يرجى إضافة منتج واحد على الأقل', 'error'); if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب';if(typeof lucide!=='undefined')lucide.createIcons();} return; }
     var result = await SupaDB._db.from('orders').insert({
       customer_name:    name,
       customer_phone:   phone,
@@ -434,8 +433,9 @@ async function saveManualOrder() {
       notes:            notes    || null,
       status:           status,
       total_amount:     totalAmount,
+      delivery_fee:     delivery,
       items:            orderItems,
-      source:           'manual',
+      order_items:      orderItems,
       created_at:       new Date().toISOString()
     }).select().single();
 
@@ -447,13 +447,10 @@ async function saveManualOrder() {
     showToast('تم إضافة الطلب بنجاح ✅', 'success');
   } catch(e) {
     console.error('[ManualOrder] save error:', e);
-    var _errDetail = (e.message || e.details || JSON.stringify(e) || 'خطأ غير معروف');
-    showToast('❌ خطأ في الحفظ: ' + String(_errDetail).substring(0, 120), 'error');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
+    var _errDetail = (e.message||'') + (e.details?' — '+e.details:'') + (e.hint?' — '+e.hint:'') || JSON.stringify(e)||'غير معروف';
+    console.error('[ManualOrder full error]', JSON.stringify(e));
+    showToast('❌ خطأ في الحفظ: ' + _errDetail.substring(0,120), 'error');
+    alert('تفاصيل الخطأ:\n' + JSON.stringify(e, null, 2));
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب'; }
   }
 }
