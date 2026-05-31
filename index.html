@@ -89,131 +89,208 @@ section, div { max-width: 100%; }
 </div>
 
 <!-- Navigation -->
-<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-transparent">
-  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="#" class="flex items-center gap-3" aria-label="الصفحة الرئيسية">
-      <div class="brand-emblem">
-        <svg class="w-10 h-10 text-white" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M12 8L20 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M14 16C14 16 18 14 22 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<nav id="navbar" class="nav-top nav-visible" aria-label="التنقل الرئيسي">
+  <div class="nav-inner">
+
+    <!-- Logo -->
+    <a href="#" class="nav-logo" aria-label="ph.neurobin — الصفحة الرئيسية">
+      <div class="nav-logo-emblem" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+          <path d="M12 8L20 32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M14 16C14 16 18 14 22 16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </div>
-      <div>
-        <span class="font-heading font-bold text-xl text-white">ph.neurobin</span>
-        <span class="block text-xs text-white/70 font-medium">الصيدلي</span>
+      <div class="nav-logo-text">
+        <span class="nav-logo-name">ph.neurobin</span>
+        <span class="nav-logo-sub">الصيدلي</span>
       </div>
     </a>
 
-    <div class="hidden md:flex items-center gap-2">
-      <a href="#about" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">من نحن</a>
-      <a href="#products" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">المنتجات</a>
-      <a href="#features" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">المميزات</a>
-      <a href="#comments" class="text-white/90 hover:text-white px-4 py-2 rounded-full transition-all hover:bg-white/10">تواصل معنا</a>
-      <a href="#track-order" class="text-white bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all font-semibold backdrop-blur-sm flex items-center gap-1.5 text-sm"><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>تتبع طلبك</a>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <button onclick="openSearch()" class="btn-primary p-3 rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" title="البحث" aria-label="فتح البحث">
-        <i data-lucide="search" class="w-5 h-5"></i>
-      </button>
-      <button onclick="openFavorites()" class="btn-primary p-3 rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm relative" title="المفضلة" aria-label="عرض المنتجات المفضلة">
-        <i data-lucide="heart" class="w-5 h-5"></i>
-        <span id="favoritesBadge" class="cart-badge hidden">0</span>
-      </button>
-      <button onclick="openCart()" class="btn-primary p-3 rounded-full bg-gold text-white hover:bg-yellow-600 relative shadow-lg" title="السلة" aria-label="فتح سلة التسوق">
-        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-        <span id="cartBadge" class="cart-badge hidden">0</span>
-      </button>
-      <div class="relative hidden md:block" id="followDropdownWrap">
-        <button onclick="toggleFollowMenu(event)" class="btn-primary bg-white text-brand-800 px-5 py-2.5 rounded-full font-medium flex items-center gap-2 text-sm shadow-lg">
-          <span>تابعنا</span>
-          <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-200" id="followChevron"></i>
-        </button>
-        <div id="followMenu" class="hidden absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-2xl p-2 min-w-[170px] z-[999] border border-gray-100" dir="rtl">
-          <a href="https://instagram.com/ph.neurobin" target="_blank" rel="noopener noreferrer"
-             class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-pink-50 transition-colors text-brand-800 font-semibold text-sm">
-            <i data-lucide="instagram" class="w-5 h-5 text-pink-500 flex-shrink-0"></i>
-            <span>إنستغرام</span>
-          </a>
-          <a href="https://www.tiktok.com/@ph_neurobin" target="_blank" rel="noopener noreferrer"
-             class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-brand-800 font-semibold text-sm">
-            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.19 8.19 0 0 0 4.78 1.52V6.75a4.84 4.84 0 0 1-1.01-.06z"/></svg>
-            <span>تيك توك</span>
-          </a>
-        </div>
-      </div>
-      <!-- Hamburger Menu Button - Mobile Only -->
-      <button onclick="toggleMobileMenu()" id="mobileMenuBtn" class="md:hidden p-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm transition-all" aria-label="القائمة الرئيسية">
-        <svg id="hamburgerIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</nav>
-
-<!-- ══════════ MOBILE NAVIGATION DRAWER ══════════ -->
-<div id="mobileNav" class="hidden fixed inset-0 z-[70] md:hidden" aria-hidden="true" role="dialog" aria-label="القائمة الرئيسية">
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
-  <div class="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-gradient-to-b from-brand-800 to-brand-900 text-white overflow-y-auto shadow-2xl flex flex-col" dir="rtl" style="transform: translateX(100%); transition: transform 0.3s ease;" id="mobileNavPanel">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <svg class="w-8 h-8 text-white" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M12 8L20 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M14 16C14 16 18 14 22 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <span class="font-bold text-base block">ph.neurobin</span>
-          <span class="text-white/60 text-xs">الصيدلي</span>
-        </div>
-      </div>
-      <button onclick="toggleMobileMenu()" class="p-2 rounded-full hover:bg-white/10 transition-colors" aria-label="إغلاق القائمة">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    <nav class="px-4 py-4 space-y-1 flex-shrink-0">
-      <a href="#about" onclick="toggleMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors font-medium text-white/90">من نحن</a>
-      <a href="#products" onclick="toggleMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors font-medium text-white/90">المنتجات</a>
-      <a href="#features" onclick="toggleMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors font-medium text-white/90">المميزات</a>
-      <a href="#comments" onclick="toggleMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors font-medium text-white/90">تواصل معنا</a>
-      <a href="#track-order" onclick="toggleMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-colors font-semibold text-white mt-2">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <!-- Desktop Links -->
+    <div class="nav-links" role="navigation">
+      <a href="#about"    class="nav-link" data-section="about">من نحن</a>
+      <a href="#products" class="nav-link" data-section="products">المنتجات</a>
+      <a href="#features" class="nav-link" data-section="features">المميزات</a>
+      <a href="#comments" class="nav-link" data-section="comments">تواصل معنا</a>
+      <a href="#track-order" class="nav-link-track" data-section="track-order">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
         </svg>
-        <span>تتبع طلبك</span>
+        تتبع طلبك
       </a>
-    </nav>
-    <div class="border-t border-white/10 mx-4"></div>
-    <div class="px-4 py-3 flex-shrink-0">
-      <button onclick="openFavorites(); toggleMobileMenu();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors font-medium text-white/90">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    </div>
+
+    <!-- Actions -->
+    <div class="nav-actions">
+
+      <!-- Search -->
+      <button onclick="openSearch()" class="nav-icon-btn" aria-label="فتح البحث" title="البحث">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </button>
+
+      <!-- Favorites -->
+      <button onclick="openFavorites()" class="nav-icon-btn" aria-label="المفضلة" title="المفضلة">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
         </svg>
-        <span>المفضلة</span>
-        <span id="mobileNavFavBadge" class="hidden mr-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">0</span>
+        <span id="favoritesBadge" class="n-badge hidden">0</span>
+      </button>
+
+      <!-- Cart -->
+      <button onclick="openCart()" class="nav-icon-btn cart-btn" aria-label="سلة التسوق" title="السلة">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span id="cartBadge" class="n-badge hidden">0</span>
+      </button>
+
+      <!-- Follow Dropdown (desktop) -->
+      <div class="relative" id="followDropdownWrap" style="display:none;">
+        <button onclick="toggleFollowMenu(event)" class="nav-follow-btn" aria-haspopup="true" aria-expanded="false" id="followMenuBtn">
+          <span>تابعنا</span>
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" id="followChevron" style="transition:transform 0.2s" aria-hidden="true">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div id="followMenu" class="nav-follow-dropdown" dir="rtl" role="menu">
+          <a href="https://instagram.com/ph.neurobin" target="_blank" rel="noopener noreferrer" role="menuitem">
+            <svg width="18" height="18" fill="none" stroke="#e1306c" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            إنستغرام
+          </a>
+          <a href="https://www.tiktok.com/@ph_neurobin" target="_blank" rel="noopener noreferrer" role="menuitem">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#1a1a1a" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.19 8.19 0 0 0 4.78 1.52V6.75a4.84 4.84 0 0 1-1.01-.06z"/></svg>
+            تيك توك
+          </a>
+        </div>
+      </div>
+
+      <!-- Hamburger (mobile) -->
+      <button class="nav-hamburger" id="navHamburger" onclick="openMobileDrawer()" aria-label="فتح القائمة" aria-expanded="false">
+        <div class="hb-lines">
+          <div class="hb-line"></div>
+          <div class="hb-line"></div>
+          <div class="hb-line"></div>
+        </div>
+      </button>
+
+    </div><!-- /nav-actions -->
+  </div><!-- /nav-inner -->
+</nav>
+
+<!-- ══════════ MOBILE DRAWER ══════════ -->
+<div id="mobileDrawer" role="dialog" aria-label="القائمة الرئيسية" aria-modal="true">
+  <div id="drawerBackdrop" onclick="closeMobileDrawer()"></div>
+  <div id="drawerPanel" dir="rtl">
+
+    <!-- Header -->
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <div class="drawer-logo-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+            <path d="M12 8L20 32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 12C12 16 10 20 12C24 14 26 18 26 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 16C14 16 18 14 22 16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <span style="font-weight:800;font-size:0.95rem;color:#fff;font-family:'Cairo',sans-serif;display:block;">ph.neurobin</span>
+          <span style="font-size:0.68rem;color:rgba(255,255,255,0.5);font-family:'Cairo',sans-serif;">الصيدلي</span>
+        </div>
+      </div>
+      <button class="drawer-close-btn" onclick="closeMobileDrawer()" aria-label="إغلاق القائمة">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <div class="px-4 pb-8 mt-auto">
-      <div class="border-t border-white/10 pt-4">
-        <p class="text-white/40 text-xs mb-2 px-4">تابعنا على</p>
-        <a href="https://instagram.com/ph.neurobin" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-pink-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-          </svg>
-          <span class="font-medium text-white/90">إنستغرام</span>
+
+    <!-- Search inside drawer -->
+    <div class="drawer-search">
+      <div class="drawer-search-box">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" placeholder="ابحث عن منتج..." id="drawerSearchInput"
+          oninput="handleDrawerSearch(this.value)"
+          onkeydown="if(event.key==='Enter'){openSearch();document.getElementById('searchInput').value=this.value;performSearch();closeMobileDrawer();}"
+          autocomplete="off" maxlength="100" aria-label="البحث في المنتجات">
+      </div>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="drawer-nav" aria-label="روابط التنقل">
+      <a href="#about"    class="drawer-nav-link" onclick="closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        </div>
+        من نحن
+      </a>
+      <a href="#products" class="drawer-nav-link" onclick="closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        </div>
+        المنتجات
+      </a>
+      <a href="#features" class="drawer-nav-link" onclick="closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        المميزات
+      </a>
+      <a href="#comments" class="drawer-nav-link" onclick="closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </div>
+        تواصل معنا
+      </a>
+      <a href="#track-order" class="drawer-nav-link track" onclick="closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="#FFD700" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        </div>
+        تتبع طلبك
+      </a>
+    </nav>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Quick Actions -->
+    <div class="drawer-quick">
+      <div class="drawer-quick-title">إجراءات سريعة</div>
+      <button class="drawer-quick-btn" onclick="openFavorites();closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="#f87171" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        المفضلة
+        <span id="mobileNavFavBadge" class="hidden" style="margin-right:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:800;border-radius:100px;padding:2px 8px;min-width:20px;text-align:center;font-family:'Cairo',sans-serif;">0</span>
+      </button>
+      <button class="drawer-quick-btn" onclick="openCart();closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        سلة التسوق
+      </button>
+      <button class="drawer-quick-btn" onclick="openSearch();closeMobileDrawer()">
+        <div class="dnl-icon" aria-hidden="true">
+          <svg width="16" height="16" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        </div>
+        البحث
+      </button>
+    </div>
+
+    <!-- Footer / Social -->
+    <div class="drawer-footer">
+      <div class="drawer-social-title">تابعنا على</div>
+      <div class="drawer-social-row">
+        <a href="https://instagram.com/ph.neurobin" target="_blank" rel="noopener noreferrer" class="drawer-social-btn ig" aria-label="إنستغرام">
+          <svg width="16" height="16" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          انستغرام
         </a>
-        <a href="https://www.tiktok.com/@ph_neurobin" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors">
-          <svg class="w-5 h-5 flex-shrink-0 text-white/90" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.19 8.19 0 0 0 4.78 1.52V6.75a4.84 4.84 0 0 1-1.01-.06z"/>
-          </svg>
-          <span class="font-medium text-white/90">تيك توك</span>
+        <a href="https://www.tiktok.com/@ph_neurobin" target="_blank" rel="noopener noreferrer" class="drawer-social-btn tt" aria-label="تيك توك">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.19 8.19 0 0 0 4.78 1.52V6.75a4.84 4.84 0 0 1-1.01-.06z"/></svg>
+          تيك توك
         </a>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -2456,6 +2533,173 @@ window.submitProductRequest = async function() {
   // Expose for manual call
   window._nbSaveAddress  = _saveOrderData;
   window._nbFillAddress  = _autoFillOrderForm;
+})();
+</script>
+<script>
+// ══ Navbar Premium JS — ph.neurobin ══
+(function(){
+  var navbar   = document.getElementById('navbar');
+  var hamburger= document.getElementById('navHamburger');
+  var drawer   = document.getElementById('mobileDrawer');
+  var followWrap = document.getElementById('followDropdownWrap');
+  var lastY = 0;
+  var ticking = false;
+  var SCROLL_THRESHOLD = 60;
+
+  // Show follow btn only on md+
+  function updateFollowVisibility(){
+    if (!followWrap) return;
+    followWrap.style.display = window.innerWidth >= 768 ? '' : 'none';
+  }
+  updateFollowVisibility();
+  window.addEventListener('resize', updateFollowVisibility);
+
+  // ── Scroll behaviour ──
+  function onScroll(){
+    var y = window.scrollY || window.pageYOffset;
+    var navbar = document.getElementById('navbar');
+    if (!navbar) return;
+
+    // Transparent vs glass
+    if (y > SCROLL_THRESHOLD) {
+      navbar.classList.remove('nav-top');
+      navbar.classList.add('nav-scrolled');
+    } else {
+      navbar.classList.add('nav-top');
+      navbar.classList.remove('nav-scrolled');
+    }
+
+    // Hide on scroll down / show on scroll up (only after 120px)
+    if (y > 120) {
+      if (y > lastY + 4) {
+        navbar.classList.add('nav-hidden');
+        navbar.classList.remove('nav-visible');
+      } else if (y < lastY - 4) {
+        navbar.classList.remove('nav-hidden');
+        navbar.classList.add('nav-visible');
+      }
+    } else {
+      navbar.classList.remove('nav-hidden');
+      navbar.classList.add('nav-visible');
+    }
+    lastY = y;
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function(){
+    if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+  }, {passive:true});
+
+  // ── Active section highlight ──
+  var sections = ['about','products','features','comments','track-order','offersSlider','newProducts','trendingProducts'];
+  var navLinks = document.querySelectorAll('.nav-link[data-section]');
+
+  function updateActiveLink(){
+    var scrollY = window.scrollY + 100;
+    var active = '';
+    sections.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollY) active = id;
+    });
+    navLinks.forEach(function(a){
+      var s = a.getAttribute('data-section');
+      a.classList.toggle('active', s === active);
+    });
+  }
+
+  window.addEventListener('scroll', function(){
+    if (!ticking) { requestAnimationFrame(updateActiveLink); }
+  }, {passive:true});
+  updateActiveLink();
+
+  // ── Mobile Drawer ──
+  window.openMobileDrawer = function(){
+    if (!drawer) return;
+    drawer.classList.add('open');
+    hamburger && hamburger.classList.add('open');
+    hamburger && hamburger.setAttribute('aria-expanded','true');
+    document.body.style.overflow = 'hidden';
+    // focus first link for a11y
+    setTimeout(function(){
+      var first = drawer.querySelector('.drawer-nav-link');
+      if (first) first.focus();
+    }, 350);
+  };
+
+  window.closeMobileDrawer = function(){
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    hamburger && hamburger.classList.remove('open');
+    hamburger && hamburger.setAttribute('aria-expanded','false');
+    document.body.style.overflow = '';
+  };
+
+  // Keep backward-compat with old toggleMobileMenu()
+  window.toggleMobileMenu = function(){
+    drawer && drawer.classList.contains('open')
+      ? window.closeMobileDrawer()
+      : window.openMobileDrawer();
+  };
+
+  // ESC to close drawer
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      window.closeMobileDrawer();
+      // also close follow dropdown
+      var menu = document.getElementById('followMenu');
+      if (menu) menu.classList.remove('open');
+    }
+  });
+
+  // ── Follow Dropdown (improved) ──
+  window.toggleFollowMenu = function(e){
+    if (e) e.stopPropagation();
+    var menu = document.getElementById('followMenu');
+    var btn  = document.getElementById('followMenuBtn');
+    var chevron = document.getElementById('followChevron');
+    if (!menu) return;
+    var isOpen = menu.classList.contains('open');
+    menu.classList.toggle('open', !isOpen);
+    btn  && btn.setAttribute('aria-expanded', String(!isOpen));
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    if (!isOpen) {
+      setTimeout(function(){
+        document.addEventListener('click', function closeDD(ev){
+          var wrap = document.getElementById('followDropdownWrap');
+          if (wrap && !wrap.contains(ev.target)) {
+            menu.classList.remove('open');
+            btn  && btn.setAttribute('aria-expanded','false');
+            if (chevron) chevron.style.transform = '';
+            document.removeEventListener('click', closeDD);
+          }
+        });
+      }, 50);
+    }
+  };
+
+  // ── Drawer search — live passthrough to main search ──
+  window.handleDrawerSearch = function(val){
+    var si = document.getElementById('searchInput');
+    if (!si) return;
+    if (val.length >= 2) {
+      openSearch();
+      si.value = val;
+      performSearch();
+    }
+  };
+
+  // ── Touch swipe to close drawer ──
+  var swipeStartX = 0;
+  var panel = document.getElementById('drawerPanel');
+  if (panel) {
+    panel.addEventListener('touchstart', function(e){ swipeStartX = e.touches[0].clientX; }, {passive:true});
+    panel.addEventListener('touchend', function(e){
+      var diff = e.changedTouches[0].clientX - swipeStartX;
+      // In RTL, panel is on the right — swipe right = close
+      if (diff > 60) window.closeMobileDrawer();
+    }, {passive:true});
+  }
+
 })();
 </script>
 </body>
