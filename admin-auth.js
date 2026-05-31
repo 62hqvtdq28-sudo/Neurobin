@@ -614,13 +614,13 @@ async function handleLogin(e) {
       if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
       _commitSession(null, null);
       recordLoginEvent('fresh-login', 'success');
-      sendTelegramAlert(_buildLoginMsg('success'));
+      sendTelegramAlert(await _buildLoginMsg('success'));
       showDashboard();
       return;
     } catch (authErr) {
       if (typeof recordAttempt === 'function') recordAttempt();
       recordLoginEvent('fresh-login', 'failed');
-      sendTelegramAlert(_buildLoginMsg('failed'));
+      sendTelegramAlert(await _buildLoginMsg('failed'));
       var authMsg = authErr.message || '';
       if (authMsg.includes('Invalid login credentials') || authMsg.includes('invalid_credentials') || authMsg.includes('Invalid email or password')) {
         showErr('البريد الإلكتروني أو كلمة المرور غير صحيحة');
@@ -654,7 +654,7 @@ async function handleLogin(e) {
       if (hex !== storedHash) {
         if (typeof recordAttempt === 'function') recordAttempt();
         recordLoginEvent('fresh-login', 'failed');
-        sendTelegramAlert(_buildLoginMsg('failed'));
+        sendTelegramAlert(await _buildLoginMsg('failed'));
         showErr('كلمة المرور غير صحيحة');
         return;
       }
@@ -667,7 +667,7 @@ async function handleLogin(e) {
       if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
       _commitSession(storedHash, storedSalt);
       recordLoginEvent('fresh-login', 'success');
-      sendTelegramAlert(_buildLoginMsg('success'));
+      sendTelegramAlert(await _buildLoginMsg('success'));
       showDashboard();
     } catch(_) { showErr('خطأ في التحقق من كلمة المرور'); }
     return;
@@ -679,7 +679,7 @@ async function handleLogin(e) {
     if (!ok) {
       if (typeof recordAttempt === 'function') recordAttempt();
       recordLoginEvent('fresh-login', 'failed');
-      sendTelegramAlert(_buildLoginMsg('failed'));
+      sendTelegramAlert(await _buildLoginMsg('failed'));
       showErr('كلمة المرور غير صحيحة');
       return;
     }
@@ -687,7 +687,7 @@ async function handleLogin(e) {
   if (typeof recordSuccessfulLogin === 'function') recordSuccessfulLogin();
   _commitSession(storedHash, storedSalt);
   recordLoginEvent('fresh-login', 'success');
-  sendTelegramAlert(_buildLoginMsg('success'));
+  sendTelegramAlert(await _buildLoginMsg('success'));
   showDashboard();
 
   } catch(loginErr) {
@@ -820,15 +820,26 @@ function recordLoginEvent(type, status) {
   } catch(e) { console.warn('[LoginLog]', e.message); }
 }
 
-function _buildLoginMsg(status) {
+async function _buildLoginMsg(status) {
   var info = _getDeviceInfo();
   var now = new Date().toLocaleString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
   var icon = status === 'success' ? '✅' : '⚠️';
-  var title = status === 'success' ? 'تسجيل دخول ناجح' : 'محاولة دخول فاشلة';
+  var title = status === 'success' ? 'تسجيل دخول للوحة التحكم' : 'محاولة دخول فاشلة ⚠️';
+  var ipLine = '';
+  try {
+    var ipResp = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    if (ipResp.ok) {
+      var ipData = await ipResp.json();
+      var city = ipData.city || '';
+      var country = ipData.country_name || '';
+      var ip = ipData.ip || '';
+      if (ip) ipLine = '\n📍 الموقع: ' + (city ? city + '، ' : '') + country + ' (' + ip + ')';
+    }
+  } catch(e) {}
   return icon + ' <b>' + title + '</b>\n' +
          '📅 الوقت: ' + now + '\n' +
          '💻 الجهاز: ' + info.device + '\n' +
-         '🌐 المتصفح: ' + info.browser;
+         '🌐 المتصفح: ' + info.browser + ipLine;
 }
 
 // عنوان API server — يُحدَّث تلقائياً عند نشر المشروع
