@@ -1862,6 +1862,24 @@ window.submitProductRequest = async function() {
   style="position:fixed;bottom:145px;left:20px;z-index:996;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;"
   aria-label="طلب منتج">🔍</button>
 
+
+<script>
+(function(){
+  var SURL='https://hczsskviliuqyayylutv.supabase.co',SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  fetch(SURL+'/rest/v1/products?select=id&is_available=eq.true',{
+    headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Prefer':'count=exact'}
+  }).then(function(r){
+    var range=r.headers.get('content-range')||'';
+    var cnt=range.includes('/')?parseInt(range.split('/')[1])||0:0;
+    if(cnt>0){
+      document.querySelectorAll('.counter[data-target="500"]').forEach(function(el){
+        el.setAttribute('data-target',String(cnt));
+        el.textContent=cnt+'+';
+      });
+    }
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>
 

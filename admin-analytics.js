@@ -638,32 +638,17 @@ async function loadVisitorStats() {
 
     const [allRes, monthRes, todayRes] = await Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/page_views?select=id', { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
-      fetch(SUPABASE_URL + '/rest/v1/page_views?select=id,device,created_at&created_at=gte.' + since + '&order=created_at.desc&limit=1000', { headers }),
+      fetch(SUPABASE_URL + '/rest/v1/page_views?select=id&created_at=gte.' + since, { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
       fetch(SUPABASE_URL + '/rest/v1/page_views?select=id&created_at=gte.' + todayStr, { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
     ]);
 
     var allRange   = allRes.headers.get('content-range') || '';
-    var todayRange = todayRes.headers.get('content-range') || '';
+    var monthRange  = monthRes.headers.get('content-range') || '';
+    var todayRange  = todayRes.headers.get('content-range') || '';
     var totalVisitors = allRange.includes('/') ? parseInt(allRange.split('/')[1]) || 0 : 0;
+    var monthVisitors = monthRange.includes('/') ? parseInt(monthRange.split('/')[1]) || 0 : 0;
     var todayVisitors = todayRange.includes('/') ? parseInt(todayRange.split('/')[1]) || 0 : 0;
 
-    var monthData = await monthRes.json();
-    var monthVisitors = Array.isArray(monthData) ? monthData.length : 0;
-
-    var devices = { mobile: 0, desktop: 0, tablet: 0 };
-    if (Array.isArray(monthData)) {
-      monthData.forEach(function(v) { var d = v.device || 'desktop'; devices[d] = (devices[d] || 0) + 1; });
-    }
-    var dailyCounts = {};
-    if (Array.isArray(monthData)) {
-      monthData.forEach(function(v) { var day = v.created_at.slice(0, 10); dailyCounts[day] = (dailyCounts[day] || 0) + 1; });
-    }
-    var last7 = [];
-    for (var i = 6; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate() - i);
-      var key = d.toISOString().slice(0, 10);
-      last7.push({ day: key.slice(5), count: dailyCounts[key] || 0 });
-    }
 
     var analyticsSection = document.getElementById('analyticsCards');
     if (!analyticsSection) return;
@@ -671,62 +656,11 @@ async function loadVisitorStats() {
     var old = document.getElementById('visitorStatsSection');
     if (old) old.remove();
 
-    var mobilePercent  = monthVisitors ? Math.round((devices.mobile  / monthVisitors) * 100) : 0;
-    var desktopPercent = monthVisitors ? Math.round((devices.desktop / monthVisitors) * 100) : 0;
-    var tabletPercent  = monthVisitors ? Math.round((devices.tablet  / monthVisitors) * 100) : 0;
-    var maxDay = Math.max.apply(Math, last7.map(function(d){ return d.count; }).concat([1]));
-
-    var barsHtml = last7.map(function(d) {
-      return '<div class="flex-1 flex flex-col items-center gap-1">' +
-        '<span class="text-[10px] text-brand-400 font-semibold">' + d.count + '</span>' +
-        '<div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400" style="height:' + Math.max(4, Math.round((d.count / maxDay) * 80)) + 'px"></div>' +
-        '<span class="text-[10px] text-brand-400">' + d.day + '</span>' +
-        '</div>';
-    }).join('');
-
-    // Hourly breakdown for today (Baghdad time = UTC+3)
-    var hourlyBaghdad = {};
-    var todayBaghdadStr = new Date(new Date().getTime() + 3*3600*1000).toISOString().slice(0, 10);
-    if (Array.isArray(monthData)) {
-      monthData.forEach(function(v) {
-        var utcHour = new Date(v.created_at).getTime();
-        var baghdadDate = new Date(utcHour + 3*3600*1000).toISOString();
-        if (baghdadDate.slice(0, 10) === todayBaghdadStr) {
-          var h = parseInt(baghdadDate.slice(11, 13));
-          hourlyBaghdad[h] = (hourlyBaghdad[h] || 0) + 1;
-        }
-      });
-    }
-    var maxHour = Math.max.apply(Math, Object.values(hourlyBaghdad).concat([1]));
-    var hourlyHtml = '';
-    var peakHour = -1, peakCount = 0;
-    for (var h = 0; h < 24; h++) {
-      var cnt = hourlyBaghdad[h] || 0;
-      if (cnt > peakCount) { peakCount = cnt; peakHour = h; }
-      var pct = Math.max(2, Math.round((cnt / maxHour) * 60));
-      var hLabel = String(h).padStart(2,'0') + ':00';
-      hourlyHtml += '<div class="flex-1 flex flex-col items-center gap-0.5" title="' + hLabel + ': ' + cnt + ' زيارة">' +
-        (cnt > 0 ? '<span class="text-[8px] text-brand-400 font-semibold leading-none">' + cnt + '</span>' : '<span class="text-[8px] leading-none opacity-0">0</span>') +
-        '<div class="w-full rounded-t bg-gradient-to-t ' + (h === peakHour && cnt > 0 ? 'from-amber-500 to-amber-300' : 'from-brand-500 to-brand-300') + '" style="height:' + pct + 'px"></div>' +
-        '<span class="text-[8px] text-brand-300 leading-none">' + (h % 6 === 0 ? hLabel : '') + '</span>' +
-        '</div>';
-    }
-    var peakLabel = peakHour >= 0 && peakCount > 0 ? 'ذروة: ' + String(peakHour).padStart(2,'0') + ':00 — ' + peakCount + ' زيارة' : 'لا توجد زيارات اليوم';
-
-    var html = '<div id="visitorStatsSection" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">' +
-      '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('en-US') + '</p></div>' +
+    var html = '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('en-US') + '</p></div>' +
       '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700"><i data-lucide="calendar-check" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('en-US') + '</p></div>' +
       '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('en-US') + '</p></div>' +
-      '<div class="sm:col-span-2 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><h4 class="text-sm font-bold text-brand-700 mb-4">الزيارات — آخر 7 أيام</h4><div class="flex items-end gap-2 h-24">' + barsHtml + '</div></div>' +
-      '<div class="bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><h4 class="text-sm font-bold text-brand-700 mb-4">نوع الجهاز</h4><div class="space-y-3">' +
-        '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📱 موبايل</span><span>' + mobilePercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-green-400 rounded-full" style="width:' + mobilePercent + '%"></div></div></div>' +
-        '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>🖥️ كمبيوتر</span><span>' + desktopPercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-blue-400 rounded-full" style="width:' + desktopPercent + '%"></div></div></div>' +
-        '<div><div class="flex justify-between text-xs font-semibold text-brand-600 mb-1"><span>📲 تابلت</span><span>' + tabletPercent + '%</span></div><div class="h-2 bg-brand-100 rounded-full overflow-hidden"><div class="h-full bg-purple-400 rounded-full" style="width:' + tabletPercent + '%"></div></div></div>' +
-      '</div></div>' +
-      '<div class="sm:col-span-3 bg-white rounded-2xl p-5 border border-brand-100 shadow-sm"><div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-brand-700">الزيارات بالساعة — اليوم</h4><span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">' + peakLabel + '</span></div><div class="flex items-end gap-0.5" style="height:72px;">' + hourlyHtml + '</div><div class="flex justify-between mt-1 text-[9px] text-brand-300"><span>12:00 ص</span><span>06:00 ص</span><span>12:00 ظ</span><span>06:00 م</span><span>11:00 م</span></div></div>' +
     '</div>';
 
-    analyticsSection.insertAdjacentHTML('afterend', html);
     if (typeof lucide !== 'undefined') lucide.createIcons();
   } catch (e) {
     console.warn('[Visitors] Error loading visitor stats:', e.message);

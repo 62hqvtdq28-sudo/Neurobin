@@ -24,7 +24,8 @@
     <div class='stage' id='st5'><div class='stage-circle'><svg viewBox='0 0 24 24'><path d='M5 13l4 4L19 7'/></svg></div><span class='stage-label'>تم التوصيل</span></div>
   </div>
   <div id='statusPill' style='text-align:center;margin-bottom:12px;'></div>
-  <div id='multiOrders' style='display:none;'></div>
+  <div id='cancelWrap' style='margin-top:12px;'></div>
+<div id='multiOrders' style='display:none;'></div>
 </div></div>
 <a href='index.html' class='back-link'>← العودة للمتجر</a></div>
 <script>
@@ -35,7 +36,33 @@ var LL={'new':'تم تثبيت طلبكم بنجاح ✅','pending':'تم تثب
 var PC={'new':'pill-review','pending':'pill-review','preparing':'pill-prepare','shipped':'pill-prepare','progress':'pill-way','on_the_way':'pill-way','delivered':'pill-done','cancelled':'pill-cancel'};
 function escH(s){var d=document.createElement('div');d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}
 function updateStages(st){var n=SL[st]||1,ic=st==='cancelled';for(var i=1;i<=4;i++){var el=document.getElementById('st'+i);el.className='stage';if(!ic){if(i<n)el.classList.add('done');else if(i===n)el.classList.add('active');}else if(i===1)el.classList.add('cancelled');}document.getElementById('statusPill').innerHTML='<span class="status-pill '+(PC[st]||'pill-review')+'">'+(LL[st]||st)+'</span>';}
-function renderOrder(o){var d=(function(){var _d=new Date(o.created_at);var _months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];return _d.getDate()+' '+_months[_d.getMonth()]+' '+_d.getFullYear();})();document.getElementById('orderInfo').innerHTML='<div class="order-info-row"><span class="order-info-label">العميل</span><span class="order-info-value">'+escH(o.customer_name||'')+'</span></div><div class="order-info-row"><span class="order-info-label">كود التتبع</span><span class="tracking-code-badge">'+escH(o.tracking_code||'—')+'</span></div><div class="order-info-row"><span class="order-info-label">التاريخ</span><span class="order-info-value">'+d+'</span></div>'+(o.total_amount?'<div class="order-info-row"><span class="order-info-label">المجموع</span><span class="order-info-value">'+Number(o.total_amount).toLocaleString('en-US')+' د.ع</span></div>':'')+(function(){var st=o.status||'new';if(st==='delivered'||st==='cancelled')return '';var _today=new Date();var d1=new Date(_today);d1.setDate(d1.getDate()+1);var d2=new Date(_today);d2.setDate(d2.getDate()+2);var _m=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];var _f=function(x){return x.getDate()+' '+_m[x.getMonth()]};var _lbl1='غداً ('+_f(d1)+')';var _lbl2='بعد غداً ('+_f(d2)+')';return '<div class="order-info-row"><span class="order-info-label">التسليم المتوقع</span><span class="order-info-value" style="color:#16a34a;font-size:12px;">📦 '+_lbl1+' – '+_lbl2+'</span></div>'})();updateStages(o.status||'new');if(RT)_db.removeChannel(RT);RT=_db.channel('ord-'+o.id).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:'id=eq.'+o.id},function(p){if(p.new)renderOrder(p.new);}).subscribe();}
+function renderOrder(o){var d=(function(){var _d=new Date(o.created_at);var _months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];return _d.getDate()+' '+_months[_d.getMonth()]+' '+_d.getFullYear();})();document.getElementById('orderInfo').innerHTML='<div class="order-info-row"><span class="order-info-label">العميل</span><span class="order-info-value">'+escH(o.customer_name||'')+'</span></div><div class="order-info-row"><span class="order-info-label">كود التتبع</span><span class="tracking-code-badge">'+escH(o.tracking_code||'—')+'</span></div><div class="order-info-row"><span class="order-info-label">التاريخ</span><span class="order-info-value">'+d+'</span></div>'+(o.total_amount?'<div class="order-info-row"><span class="order-info-label">المجموع</span><span class="order-info-value">'+Number(o.total_amount).toLocaleString('en-US')+' د.ع</span></div>':'')+(function(){var st=o.status||'new';if(st==='delivered'||st==='cancelled')return '';var _today=new Date();var d1=new Date(_today);d1.setDate(d1.getDate()+1);var d2=new Date(_today);d2.setDate(d2.getDate()+2);var _m=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];var _f=function(x){return x.getDate()+' '+_m[x.getMonth()]};var _lbl1='غداً ('+_f(d1)+')';var _lbl2='بعد غداً ('+_f(d2)+')';return '<div class="order-info-row"><span class="order-info-label">التسليم المتوقع</span><span class="order-info-value" style="color:#16a34a;font-size:12px;">📦 '+_lbl1+' – '+_lbl2+'</span></div>'})();updateStages(o.status||'new');
+(function(){
+  var cw=document.getElementById('cancelWrap');
+  if(!cw)return;
+  var ms=o.created_at?Math.floor((Date.now()-new Date(o.created_at).getTime())/60000):999;
+  var ml=30-ms;
+  if((o.status==='new'||o.status==='pending')&&ml>0){
+    var btn=document.createElement('button');
+    btn.textContent='✕ إلغاء الطلب ('+ml+' دقيقة متبقية)';
+    btn.style.cssText='width:100%;margin-top:4px;padding:12px;background:#fff;border:2px solid #fca5a5;border-radius:12px;color:#dc2626;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;';
+    btn.onclick=function(){cancelOrder(o.id,o.created_at);};
+    cw.innerHTML='';
+    cw.appendChild(btn);
+  }else{cw.innerHTML='';}
+})();
+if(RT)_db.removeChannel(RT);RT=_db.channel('ord-'+o.id).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:'id=eq.'+o.id},function(p){if(p.new)renderOrder(p.new);}).subscribe();}
+function cancelOrder(oid,created_at){
+  var ms=created_at?Math.floor((Date.now()-new Date(created_at).getTime())/60000):999;
+  var cw=document.getElementById('cancelWrap');
+  if(ms>30){if(cw)cw.innerHTML='<p style="color:#dc2626;text-align:center;font-size:13px;padding:10px;">⏱️ انتهت مهلة الإلغاء (30 دقيقة)</p>';return;}
+  if(!confirm('هل تريد إلغاء هذا الطلب؟ لا يمكن التراجع.'))return;
+  _db.from('orders').update({status:'cancelled'}).eq('id',String(oid)).then(function(r){
+    if(r.error){alert('خطأ: '+r.error.message);return;}
+    if(cw)cw.innerHTML='<p style="color:#16a34a;text-align:center;font-size:13px;padding:10px;">✅ تم إلغاء الطلب بنجاح</p>';
+    updateStages('cancelled');
+  });
+}
 function showMulti(arr){var h='<p style="font-size:14px;font-weight:700;color:#2D5016;margin-bottom:12px;">آخر طلباتك ('+arr.length+')</p>';arr.forEach(function(o){h+='<div class="order-pick" onclick="pickOrd(\''+o.id+'\')">'+'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:800;font-family:monospace;">'+(o.tracking_code||'—')+'</span><span class="status-pill '+(PC[o.status||'new']||'pill-review')+'" style="font-size:11px;padding:4px 10px;">'+(LL[o.status||'new']||o.status)+'</span></div><span style="font-size:12px;color:#83A962;">'+new Date(o.created_at).toLocaleDateString('en-US')+'</span></div>';});var md=document.getElementById('multiOrders');md.innerHTML=h;md.style.display='block';['orderInfo','stagesRow','statusPill'].forEach(function(x){document.getElementById(x).style.display='none';});}
 window.pickOrd=async function(id){var r=await _db.from('orders').select('*').eq('id',id).single();if(r.data){['orderInfo','stagesRow','statusPill'].forEach(function(x){document.getElementById(x).style.display='';});document.getElementById('multiOrders').style.display='none';renderOrder(r.data);}};
 async function trackOrder(){var code=document.getElementById('codeInput').value.trim().toUpperCase(),phone=document.getElementById('phoneInput').value.trim().replace(/\s/g,'');if(!code&&!phone){showErr('يرجى إدخال كود التتبع أو رقم الهاتف');return;}setLoad(true);hideErr();document.getElementById('result').style.display='none';try{if(code){var q=await _db.from('orders').select('*').eq('tracking_code',code).is('deleted_at',null).limit(1);if(q.error)throw q.error;if(!q.data||!q.data.length){showErr('لم يُعثر على طلب بهذا الكود');return;}document.getElementById('result').style.display='block';['orderInfo','stagesRow','statusPill'].forEach(function(x){document.getElementById(x).style.display='';});document.getElementById('multiOrders').style.display='none';renderOrder(q.data[0]);}else{var cp=phone.replace(/^\+964/,'0');var q2=await _db.from('orders').select('*').eq('customer_phone',cp).is('deleted_at',null).order('created_at',{ascending:false}).limit(5);if(q2.error)throw q2.error;if(!q2.data||!q2.data.length){showErr('لم يُعثر على طلبات لهذا الرقم');return;}document.getElementById('result').style.display='block';if(q2.data.length===1){['orderInfo','stagesRow','statusPill'].forEach(function(x){document.getElementById(x).style.display='';});document.getElementById('multiOrders').style.display='none';renderOrder(q2.data[0]);}else showMulti(q2.data);}}catch(e){showErr('خطأ: '+e.message);}finally{setLoad(false);}}

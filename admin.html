@@ -681,43 +681,6 @@
           </button>
         </div>
       </div>
-
-
-      <!-- Telegram Notifications Card -->
-      <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
-        <h2 class="font-bold text-base sm:text-lg md:text-xl text-brand-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-          <i data-lucide="send" class="w-4 h-4 sm:w-5 sm:h-6 text-blue-500"></i>
-          تنبيهات تيليجرام
-        </h2>
-        <p class="text-xs text-brand-500 mb-3">احصل على إشعار فوري على تيليجرام عند كل طلب جديد أو دخول للوحة التحكم.</p>
-        <!-- Telegram setup steps -->
-        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 text-xs text-blue-700 space-y-1.5">
-          <p class="font-bold text-sm text-blue-800 mb-2">📱 كيفية الإعداد (3 خطوات):</p>
-          <p><span class="font-bold">1.</span> افتح تيليجرام وابحث عن <span class="font-mono bg-blue-100 px-1 rounded">@BotFather</span></p>
-          <p><span class="font-bold">2.</span> أرسل له <span class="font-mono bg-blue-100 px-1 rounded">/newbot</span> واتبع التعليمات — انسخ <strong>رمز البوت</strong> (Token)</p>
-          <p><span class="font-bold">3.</span> لمعرفة Chat ID: افتح محادثة مع البوت، ثم افتح الرابط <span class="font-mono bg-blue-100 px-1 rounded break-all">api.telegram.org/bot&#123;TOKEN&#125;/getUpdates</span> وانسخ قيمة <strong>id</strong> من chat</p>
-        </div>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-semibold text-brand-700 mb-2">رمز البوت (Bot Token)</label>
-            <input type="text" id="telegramBotToken" class="input-field" placeholder="123456789:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" dir="ltr" autocomplete="off">
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-brand-700 mb-2">معرّف المحادثة (Chat ID)</label>
-            <input type="text" id="telegramChatId" class="input-field" placeholder="-100123456789 أو 123456789" dir="ltr" autocomplete="off">
-          </div>
-          <div class="flex flex-wrap gap-2 sm:gap-3">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
-              <i data-lucide="save" class="w-4 h-4"></i>
-              <span>حفظ</span>
-            </button>
-            <button onclick="testTelegramAlert()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm shadow-lg">
-              <i data-lucide="send" class="w-4 h-4"></i>
-              <span>اختبار الإرسال</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </section>
 
     
@@ -4108,7 +4071,9 @@ function _getActivityLogs() {
 window._logActivity = _logActivity; // expose globally
 
 function loadActivityLog() {
-  _activityLogs = _getActivityLogs();
+  var stored = _getActivityLogs();
+  // prefer in-memory if localStorage is unavailable/empty
+  _activityLogs = stored.length > 0 ? stored : _activityLogs;
   filterActivityLog(_activityFilter);
 }
 
@@ -4146,14 +4111,32 @@ function filterActivityLog(filter) {
 }
 
 // Hook activity log into existing admin actions
-// Intercept updateOrderStatus
+// Intercept updateOrderStatus with late binding (after all scripts loaded)
 if (typeof window !== 'undefined') {
-  var _origUpdateOrderStatus = window.updateOrderStatus;
-  window.updateOrderStatus = async function(orderId, status) {
-    var statusLabels = {new:'تثبيت',preparing:'تجهيز',shipped:'مع المندوب',on_the_way:'في الطريق',delivered:'تم التسليم',cancelled:'إلغاء'};
-    _logActivity('order', 'تغيير حالة الطلب #' + orderId, 'الحالة الجديدة: ' + (statusLabels[status]||status));
-    if (typeof _origUpdateOrderStatus === 'function') return _origUpdateOrderStatus(orderId, status);
-  };
+  setTimeout(function() {
+    var _origUOS = window.updateOrderStatus;
+    window.updateOrderStatus = async function(orderId, status) {
+      var statusLabels = {new:'تثبيت',pending:'في الانتظار',preparing:'تجهيز',shipped:'مع المندوب',on_the_way:'في الطريق',delivered:'تم التسليم',cancelled:'إلغاء'};
+      _logActivity('order', 'تغيير حالة طلب #' + orderId, 'الحالة الجديدة: ' + (statusLabels[status]||status));
+      if (typeof _origUOS === 'function') return _origUOS(orderId, status);
+    };
+    // Also intercept saveProduct
+    var _origSP = window.saveProduct;
+    if (typeof _origSP === 'function') {
+      window.saveProduct = async function() {
+        _logActivity('product', 'تعديل/إضافة منتج', '');
+        return _origSP.apply(this, arguments);
+      };
+    }
+    // Also intercept deleteProduct
+    var _origDP = window.deleteProduct;
+    if (typeof _origDP === 'function') {
+      window.deleteProduct = async function(id) {
+        _logActivity('product', 'حذف منتج #' + id, '');
+        return _origDP.apply(this, arguments);
+      };
+    }
+  }, 0);
 }
 
 // Log login event
