@@ -82,9 +82,12 @@ section, div { max-width: 100%; }
 <body>
 <!-- Loading Screen -->
 <div id="loadingScreen" class="loading-screen">
-  <div class="text-center">
-    <div class="loading-spinner mx-auto mb-4"></div>
-    <p class="text-brand-700 font-semibold text-lg">جاري التحميل...</p>
+  <div style="text-align:center;padding:20px">
+    <div id="loadingLogo">
+      <svg width="38" height="38" viewBox="0 0 40 40" fill="none"><path d="M12 8L20 32" stroke="white" stroke-width="2.8" stroke-linecap="round"/><path d="M12 12C12 16 10 20 12 20C24 14 26 18 26 18" stroke="white" stroke-width="2.2" stroke-linecap="round"/><path d="M14 16C14 16 18 14 22 16" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <div id="loadingBars"><div class="load-bar"></div><div class="load-bar"></div><div class="load-bar"></div><div class="load-bar"></div><div class="load-bar"></div></div>
+    <p id="loadingText">ph.neurobin</p>
   </div>
 </div>
 
@@ -3117,6 +3120,177 @@ function _boot(){
 }
 document.addEventListener('DOMContentLoaded', function(){ _boot(); if(!_booted) setTimeout(_boot, 600); });
 window.addEventListener('load', _boot);
+
+})();
+</script>
+
+<script>
+/* ── Skeleton Loading Premium — ph.neurobin ── */
+(function(){
+'use strict';
+
+/* ─── 1. Override showProductSkeletons ────────── */
+window.showProductSkeletons = function(count){
+  var grid = document.getElementById('productsGrid');
+  if(!grid) return;
+  grid.classList.add('grid-loading');
+  var n = count || 8, html = '';
+  for(var i=0;i<n;i++){
+    html +=
+      '<div class="skeleton-card" style="animation-delay:'+(i*0.055)+'s">'+
+        '<div class="skeleton skeleton-img"></div>'+
+        '<div class="skeleton-body">'+
+          '<div class="skeleton skeleton-tag"></div>'+
+          '<div class="skeleton skeleton-title"></div>'+
+          '<div class="skeleton skeleton-sub" style="width:'+(55+Math.floor(i%3)*10)+'%"></div>'+
+          '<div class="skeleton-row">'+
+            '<div class="skeleton skeleton-price"></div>'+
+            '<div class="skeleton skeleton-btn"></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+  }
+  grid.innerHTML = html;
+};
+
+/* ─── 2. Patch renderProducts — fade transition ─ */
+var _origRender = null;
+function _patchRender(){
+  if(typeof renderProducts !== 'function' || renderProducts.__skelPatched) return;
+  _origRender = renderProducts;
+  window.renderProducts = function(list){
+    var grid = document.getElementById('productsGrid');
+    if(grid && grid.querySelector('.skeleton-card')){
+      /* Fade out skeleton, then render real content */
+      grid.classList.add('grid-fading-out');
+      setTimeout(function(){
+        grid.classList.remove('grid-loading','grid-fading-out');
+        _origRender(list);
+        grid.classList.add('grid-fading-in');
+        setTimeout(function(){ grid.classList.remove('grid-fading-in'); }, 400);
+        /* Image blur-up */
+        _applyBlurUp(grid);
+      }, 220);
+    } else {
+      _origRender(list);
+      if(grid) _applyBlurUp(grid);
+    }
+  };
+  window.renderProducts.__skelPatched = true;
+}
+
+/* ─── 3. Image Blur-Up ──────────────────────── */
+function _applyBlurUp(container){
+  var imgs = (container || document).querySelectorAll('.product-image-wrapper img');
+  imgs.forEach(function(img){
+    if(img.complete && img.naturalWidth > 0){
+      img.classList.add('img-loaded');
+      return;
+    }
+    img.classList.add('img-loading');
+    img.addEventListener('load', function(){
+      img.classList.remove('img-loading');
+      img.classList.add('img-loaded');
+    }, {once:true});
+    img.addEventListener('error', function(){
+      img.classList.remove('img-loading');
+    }, {once:true});
+  });
+}
+
+/* ─── 4. Filter skeleton while loading ─────── */
+function _showFilterSkeleton(){
+  var wrap = document.querySelector('.cat-grid-wrapper .cat-icon-grid');
+  if(!wrap || wrap.querySelector('.cat-icon-btn')) return; /* already real */
+  var parent = wrap.parentElement;
+  if(!parent || parent.querySelector('.sk-filter-wrap')) return;
+  var sk = document.createElement('div');
+  sk.className = 'sk-filter-wrap';
+  for(var i=0;i<7;i++){
+    sk.innerHTML +=
+      '<div class="sk-filter">'+
+        '<div class="sk-filter-circle"></div>'+
+        '<div class="sk-filter-label"></div>'+
+      '</div>';
+  }
+  sk.id = 'skFilterWrap';
+  parent.insertBefore(sk, wrap);
+  wrap.style.display = 'none';
+}
+function _removeFilterSkeleton(){
+  var sk = document.getElementById('skFilterWrap');
+  if(sk) sk.remove();
+  var wrap = document.querySelector('.cat-grid-wrapper .cat-icon-grid');
+  if(wrap) wrap.style.display = '';
+}
+
+/* ─── 5. Loading Screen — brand animation ─── */
+function _upgradeLoadingScreen(){
+  var screen = document.getElementById('loadingScreen');
+  if(!screen || screen.dataset.upgraded) return;
+  screen.dataset.upgraded = '1';
+  screen.innerHTML =
+    '<div style="text-align:center;padding:20px">'+
+      '<div id="loadingLogo">'+
+        '<svg width="38" height="38" viewBox="0 0 40 40" fill="none">'+
+          '<path d="M12 8L20 32" stroke="white" stroke-width="2.8" stroke-linecap="round"/>'+
+          '<path d="M12 12C12 16 10 20 12 20C24 14 26 18 26 18" stroke="white" stroke-width="2.2" stroke-linecap="round"/>'+
+          '<path d="M14 16C14 16 18 14 22 16" stroke="white" stroke-width="1.8" stroke-linecap="round"/>'+
+        '</svg>'+
+      '</div>'+
+      '<div id="loadingBars">'+
+        '<div class="load-bar"></div><div class="load-bar"></div>'+
+        '<div class="load-bar"></div><div class="load-bar"></div>'+
+        '<div class="load-bar"></div>'+
+      '</div>'+
+      '<p id="loadingText">ph.neurobin</p>'+
+    '</div>';
+}
+
+/* ─── 6. Show skeletons for prem sections ─── */
+function _premSkeletonFadeIn(){
+  /* New Products & Trending already have prem-skeleton divs.
+     Just ensure they have the right animation on replace */
+  document.querySelectorAll('.prem-skeleton').forEach(function(el, i){
+    el.style.animationDelay = (i * 0.08) + 's';
+  });
+}
+
+/* ─── 7. Section content-visibility fix ──── */
+function _fixContentVisibility(){
+  /* Ensure hero and products never get content-visibility auto */
+  var hero = document.getElementById('hero');
+  var prods = document.getElementById('products');
+  [hero, prods].forEach(function(el){
+    if(el){ el.style.contentVisibility = 'visible'; el.style.containIntrinsicSize = 'none'; }
+  });
+}
+
+/* ─── Boot ────────────────────────────────── */
+var _booted = false;
+function _boot(){
+  if(_booted) return;
+  _upgradeLoadingScreen();
+  _showFilterSkeleton();
+  _premSkeletonFadeIn();
+  _fixContentVisibility();
+  /* Wait for app.js to expose renderProducts */
+  if(typeof renderProducts === 'function'){
+    _booted = true;
+    _patchRender();
+  }
+}
+function _bootLate(){
+  if(!_booted && typeof renderProducts === 'function'){
+    _booted = true;
+    _patchRender();
+  }
+  _removeFilterSkeleton();
+}
+
+document.addEventListener('DOMContentLoaded', _boot);
+window.addEventListener('load', _bootLate);
+setTimeout(_bootLate, 1200);
 
 })();
 </script>
