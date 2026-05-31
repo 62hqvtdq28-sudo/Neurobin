@@ -109,7 +109,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .brand-emblem::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(170,191,137,.2);animation:pulseSoft 2s ease-out infinite}
 
 /* Navigation */
-.nav-scrolled{background-color:rgba(253,252,248,.97)!important;backdrop-filter:blur(20px);box-shadow:0 4px 30px rgba(45,80,22,.1)}
+.nav-scrolled{background-color:rgba(253,252,248,.97)!important;backdrop-box-shadow:0 4px 30px rgba(45,80,22,.1)}
 
 /* Buttons */
 .btn-primary{transition:all .3s cubic-bezier(.4,0,.2,1)}
@@ -160,10 +160,10 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .cart-badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;background:#EF4444;color:#fff;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px}
 
 /* Glass Effect */
-.glass-effect{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255, 255, 255, 0.3)}
+.glass-effect{background:rgba(255,255,255,0.85);backdrop-border:1px solid rgba(255, 255, 255, 0.3)}
 
 /* Checkout Modal */
-.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(10px);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
+.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
 .checkout-modal.active{opacity:1;visibility:visible}
 .checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .checkout-modal.active .checkout-container{transform:scale(1)}
@@ -177,7 +177,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .whatsapp-float .pulse-ring{position:absolute;inset:0;border-radius:50%;border:3px solid #25D366;animation:pulseRing 2s infinite;opacity:0}
 
 /* Search Modal */
-.search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(10px);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:all .3s ease}
+.search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:all .3s ease}
 .search-modal.active{opacity:1;visibility:visible}
 .search-container{width:90%;max-width:600px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:translateY(-30px);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .search-modal.active .search-container{transform:translateY(0)}
@@ -215,7 +215,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .comment-input:focus{outline:none;border-color:#5C933B;box-shadow:0 0 0 4px rgba(92,147,59,.1)}
 
 /* Quick View Modal */
-.quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(10px);z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
+.quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
 .quick-view-modal.active{opacity:1;visibility:visible}
 .quick-view-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto}
 .quick-view-modal.active .quick-view-container{transform:scale(1)}
@@ -512,8 +512,8 @@ a:focus:not(:focus-visible) { outline: none; }
 
 /* ── Quick view overlay button improved ─────────────────── */
 .product-overlay button {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-
+  -webkit-backdrop-
   font-family: 'Cairo', sans-serif;
   letter-spacing: 0.02em;
 }
@@ -642,8 +642,8 @@ a:focus:not(:focus-visible) { outline: none; }
 
 /* Search modal glassmorphism backdrop */
 #searchModal {
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   background: rgba(30,53,15,.35);
   transition: opacity var(--t-normal);
 }
@@ -652,8 +652,8 @@ a:focus:not(:focus-visible) { outline: none; }
 /* Search box container */
 #searchModal .search-modal-box {
   background: rgba(255,255,255,.97);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-
+  -webkit-backdrop-
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,.6);
 }
@@ -737,14 +737,14 @@ mark.search-hl {
    ───────────────────────────────────────────────────────── */
 .glass {
   background: rgba(255,255,255,.75);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid rgba(255,255,255,.6);
 }
 .glass-dark {
   background: rgba(30,53,15,.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-
+  -webkit-backdrop-
   border: 1px solid rgba(255,255,255,.12);
 }
 
