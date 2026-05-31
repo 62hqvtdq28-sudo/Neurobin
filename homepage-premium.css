@@ -2207,24 +2207,8 @@ mark, .search-result-item mark {
 .skeleton-price { height: 20px; width: 40%; border-radius: 6px !important; }
 .skeleton-btn   { height: 32px; width: 38%; border-radius: 100px !important; }
 
-/* ── Products Grid Fade Transition ───────────── */
-#productsGrid {
-  transition: opacity 0.3s ease !important;
-}
-#productsGrid.grid-loading {
-  opacity: 0.7 !important;
-  pointer-events: none !important;
-}
-#productsGrid.grid-fading-out {
-  opacity: 0 !important;
-  transform: translateY(6px) !important;
-  transition: opacity 0.22s ease, transform 0.22s ease !important;
-}
-#productsGrid.grid-fading-in {
-  animation: gridFadeIn 0.35s ease both !important;
-}
-@keyframes gridFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+/* ── Products Grid: NO fade (removed — conflicts with scroll-animate-scale on Safari) */
+#productsGrid.grid-loading { opacity: 0.7 !important; pointer-events: none !important; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -2800,19 +2784,7 @@ img, .product-image-wrapper img {
    PERFORMANCE OPTIMIZATIONS — perf.js companion styles
    ============================================================ */
 
-/* 1. Grid fade transition for product re-renders */
-#productsGrid {
-  transition: opacity 0.18s ease;
-}
-#productsGrid.grid-fading-out {
-  opacity: 0;
-  pointer-events: none;
-}
-#productsGrid.grid-fading-in {
-  animation: gridFadeIn 0.35s ease both;
-}
-@keyframes gridFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+/* 1. Grid — no fade animation (removed: caused double-opacity-0 with scroll-animate-scale in Safari) */
   to   { opacity: 1; transform: translateY(0); }
 }
 
