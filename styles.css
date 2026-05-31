@@ -165,8 +165,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 /* Checkout Modal */
 .checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:all .3s ease}
 .checkout-modal.active{opacity:1;visibility:visible}
-.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1)}
-.checkout-modal.active .checkout-container{transform:scale(1)}
+.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease}
+.checkout-modal.active .checkout-container{opacity:1;transform:translateY(0)}
 
 /* WhatsApp Float Button */
 .whatsapp-float{position:fixed;bottom:24px;left:24px;z-index:1000;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#25D366 0%,#128C7E 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 30px rgba(37,211,102,.4);transition:all .3s cubic-bezier(.4,0,.2,1);cursor:pointer;overflow:hidden}
@@ -217,8 +217,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 /* Quick View Modal */
 .quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:all .3s ease}
 .quick-view-modal.active{opacity:1;visibility:visible}
-.quick-view-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow:hidden;transform:scale(.9);transition:transform .4s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto}
-.quick-view-modal.active .quick-view-container{transform:scale(1)}
+.quick-view-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow:hidden;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease;max-height:90vh;overflow-y:auto}
+.quick-view-modal.active .quick-view-container{opacity:1;transform:translateY(0)}
 
 /* Favorite Button */
 .favorite-btn{position:absolute;top:12px;left:12px;width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,.15);cursor:pointer;transition:all .3s ease;z-index:10}
@@ -447,14 +447,14 @@ button, a, [role="button"], label,
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-#productsGrid > * { animation: fadeInPage 0.28s ease-out both; }
-#productsGrid > *:nth-child(1)  { animation-delay: 0ms; }
-#productsGrid > *:nth-child(2)  { animation-delay: 30ms; }
-#productsGrid > *:nth-child(3)  { animation-delay: 60ms; }
-#productsGrid > *:nth-child(4)  { animation-delay: 90ms; }
-#productsGrid > *:nth-child(5)  { animation-delay: 120ms; }
-#productsGrid > *:nth-child(6)  { animation-delay: 150ms; }
-#productsGrid > *:nth-child(n+7){ animation-delay: 180ms; }
+#productsGrid > .skeleton-card { animation: fadeInPage 0.28s ease-out both; }
+#productsGrid > .skeleton-card:nth-child(1)  { animation-delay: 0ms; }
+#productsGrid > .skeleton-card:nth-child(2)  { animation-delay: 30ms; }
+#productsGrid > .skeleton-card:nth-child(3)  { animation-delay: 60ms; }
+#productsGrid > .skeleton-card:nth-child(4)  { animation-delay: 90ms; }
+#productsGrid > .skeleton-card:nth-child(5)  { animation-delay: 120ms; }
+#productsGrid > .skeleton-card:nth-child(6)  { animation-delay: 150ms; }
+#productsGrid > .skeleton-card:nth-child(n+7){ animation-delay: 180ms; }
 
 /* ── iOS Safari-specific fixes ──────────────────────────── */
 @supports (-webkit-touch-callout: none) {
@@ -476,6 +476,18 @@ button, a, [role="button"], label,
 
   /* Fix button active state on iOS */
   .btn-primary:active { transform: scale(0.96) !important; }
+}
+
+
+/* ── Prevent ghost compositing layers on inactive modals (iPad/iOS Safari fix) ──
+   transform+backdrop-filter on hidden elements creates visible GPU artifacts */
+.checkout-modal:not(.active) .checkout-container,
+.quick-view-modal:not(.active) .quick-view-container,
+.search-modal:not(.active) .search-container {
+  opacity: 0 !important;
+  transform: translateY(24px) !important;
+  pointer-events: none !important;
+  will-change: auto !important;
 }
 
 /* ── Scrollbar styling ───────────────────────────────────── */
