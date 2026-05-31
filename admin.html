@@ -1779,9 +1779,9 @@
 <script src="supabase-db.js?v=14"></script>
 <script src="admin-security.js?v=21"></script>
     <script src="admin-improvements.js?v=21"></script>
-    <script src="admin-auth.js?v=22"></script>
+    <script src="admin-auth.js?v=23"></script>
     <script src="admin-charts.js?v=21"></script>
-    <script src="admin.js?v=21"></script>
+    <script src="admin.js?v=22"></script>
 <script src="products.js?v=11"></script>
 <script src="orders.js?v=11"></script>
 
@@ -4108,8 +4108,8 @@ function filterActivityLog(filter) {
     return '<div class="flex items-start gap-3 p-3 rounded-xl border ' + colorCls + '">' +
       '<span style="font-size:20px;flex-shrink:0;">' + icon + '</span>' +
       '<div class="flex-1 min-w-0">' +
-      '<p class="font-semibold text-brand-900 text-sm">' + l.message + '</p>' +
-      (l.details ? '<p class="text-brand-500 text-xs mt-0.5">' + l.details + '</p>' : '') +
+      '<p class="font-semibold text-brand-900 text-sm">' + (typeof escapeHTML==='function'?escapeHTML(String(l.message||'')):String(l.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')) + '</p>' +
+      (l.details ? '<p class="text-brand-500 text-xs mt-0.5">' + (typeof escapeHTML==='function'?escapeHTML(String(l.details)):String(l.details).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')) + '</p>' : '') +
       '<p class="text-brand-400 text-xs mt-1">' + timeStr + '</p>' +
       '</div></div>';
   }).join('');
@@ -4144,8 +4144,8 @@ if (typeof window !== 'undefined') {
   }, 0);
 }
 
-// Log login event
-_logActivity('login', 'دخول للوحة التحكم', navigator.userAgent.slice(0, 60));
+// SEC-FIX: _logActivity('login') تم نقله داخل showDashboard() في admin-auth.js
+// (كان يُنفَّذ عند كل تحميل للصفحة قبل التحقق من المصادقة — تم إلغاؤه هنا)
 
 // ══════════════════════════════════════════════════════════════════
 // #137: تنبيه دخول من جهاز/متصفح جديد
@@ -4166,17 +4166,21 @@ _logActivity('login', 'دخول للوحة التحكم', navigator.userAgent.sl
   if (savedFP && savedFP !== currentFP) {
     // Different device/browser detected
     setTimeout(function() {
+      // SEC-FIX: استخدام DOM بدلاً من innerHTML لتجنب XSS عبر User-Agent مزوّر
       var banner = document.createElement('div');
-      banner.innerHTML =
-        '<div style="position:fixed;top:70px;right:16px;z-index:9999;background:#fef3c7;border:2px solid #f59e0b;border-radius:16px;padding:14px 16px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,0.15);direction:rtl;">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
-        '<span style="font-size:20px;">⚠️</span>' +
-        '<span style="font-weight:800;color:#92400e;font-size:14px;">دخول من جهاز جديد</span>' +
-        '<button onclick="this.closest('div').remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#92400e;">✕</button>' +
-        '</div>' +
-        '<p style="font-size:12px;color:#78350f;margin:0 0 10px;">تم تسجيل الدخول من متصفح أو جهاز مختلف عن المعتاد.</p>' +
-        '<button onclick="localStorage.setItem('nb_device_fp','' + currentFP.replace(/'/g,'') + '');this.closest('div').remove();" style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:12px;">هذا أنا — ثق بهذا الجهاز</button>' +
-        '</div>';
+      var _bWrap = document.createElement('div');
+      _bWrap.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:#fef3c7;border:2px solid #f59e0b;border-radius:16px;padding:14px 16px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,0.15);direction:rtl;';
+      var _bHeader = document.createElement('div');
+      _bHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+      var _bIcon = document.createElement('span'); _bIcon.style.fontSize = '20px'; _bIcon.textContent = '⚠️';
+      var _bTitle = document.createElement('span'); _bTitle.style.cssText = 'font-weight:800;color:#92400e;font-size:14px;'; _bTitle.textContent = 'دخول من جهاز جديد';
+      var _bX = document.createElement('button'); _bX.style.cssText = 'margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#92400e;'; _bX.textContent = '✕'; _bX.onclick = function() { banner.remove(); };
+      _bHeader.appendChild(_bIcon); _bHeader.appendChild(_bTitle); _bHeader.appendChild(_bX);
+      var _bMsg = document.createElement('p'); _bMsg.style.cssText = 'font-size:12px;color:#78350f;margin:0 0 10px;'; _bMsg.textContent = 'تم تسجيل الدخول من متصفح أو جهاز مختلف عن المعتاد.';
+      var _bBtn = document.createElement('button'); _bBtn.style.cssText = 'background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:12px;'; _bBtn.textContent = 'هذا أنا — ثق بهذا الجهاز';
+      _bBtn.onclick = function() { try { localStorage.setItem('nb_device_fp', currentFP); } catch(_e) {} banner.remove(); };
+      _bWrap.appendChild(_bHeader); _bWrap.appendChild(_bMsg); _bWrap.appendChild(_bBtn);
+      banner.appendChild(_bWrap);
       document.body.appendChild(banner);
       _logActivity('login', '⚠️ دخول من جهاز جديد', navigator.userAgent.slice(0, 80));
     }, 1500);
