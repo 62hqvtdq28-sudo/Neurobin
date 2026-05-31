@@ -2702,6 +2702,144 @@ window.submitProductRequest = async function() {
 
 })();
 </script>
+<script>
+/* ── Product Cards Premium Enhancements ──────── */
+(function(){
+  /* 1. Add-to-cart success animation */
+  var _origAddToCart = null;
+  function patchAddToCart(){
+    if(typeof addToCart === 'function' && !addToCart.__patched){
+      _origAddToCart = addToCart;
+      window.addToCart = function(productId){
+        _origAddToCart(productId);
+        /* Animate the button on the card */
+        setTimeout(function(){
+          var btn = document.querySelector('.product-card-main[data-id="'+productId+'"] .btn-primary');
+          if(btn){
+            var origHTML = btn.innerHTML;
+            btn.innerHTML = '<span style="font-size:14px">✓</span><span>أُضيف</span>';
+            btn.classList.add('cart-success');
+            btn.disabled = true;
+            setTimeout(function(){
+              btn.innerHTML = origHTML;
+              btn.classList.remove('cart-success');
+              btn.disabled = false;
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+            }, 1200);
+          }
+        }, 50);
+      };
+      window.addToCart.__patched = true;
+    }
+  }
+
+  /* 2. Ripple effect on all .btn-primary clicks */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.btn-primary');
+    if(!btn) return;
+    var r = document.createElement('span');
+    var rect = btn.getBoundingClientRect();
+    var d = Math.max(rect.width, rect.height);
+    var x = e.clientX - rect.left - d/2;
+    var y = e.clientY - rect.top  - d/2;
+    r.style.cssText = 'position:absolute;border-radius:50%;pointer-events:none;'+
+      'width:'+d+'px;height:'+d+'px;left:'+x+'px;top:'+y+'px;'+
+      'background:rgba(255,255,255,0.28);transform:scale(0);'+
+      'animation:rippleAnim 0.5s linear;';
+    if(getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+    btn.style.overflow = 'hidden';
+    btn.appendChild(r);
+    setTimeout(function(){ r.remove(); }, 520);
+  }, {passive:true});
+
+  /* 3. Ripple CSS */
+  var rippleStyle = document.createElement('style');
+  rippleStyle.textContent = '@keyframes rippleAnim{to{transform:scale(4);opacity:0}}';
+  document.head.appendChild(rippleStyle);
+
+  /* 4. Quick View — add image zoom hint text */
+  var _origOpenQV = null;
+  function patchQuickView(){
+    if(typeof openQuickView === 'function' && !openQuickView.__patched){
+      _origOpenQV = openQuickView;
+      window.openQuickView = function(pid){
+        _origOpenQV(pid);
+        /* Add stock indicator dot */
+        setTimeout(function(){
+          var imgBox = document.querySelector('.quick-view-container .h-64');
+          if(imgBox && !imgBox.querySelector('.qv-zoom-hint')){
+            var hint = document.createElement('span');
+            hint.className = 'qv-zoom-hint';
+            hint.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);'+
+              'background:rgba(0,0,0,0.4);color:#fff;font-size:10px;padding:2px 8px;'+
+              'border-radius:100px;font-family:Cairo,sans-serif;pointer-events:none;'+
+              'white-space:nowrap;backdrop-filter:blur(4px);';
+            hint.textContent = '🔍 مرّر للتكبير';
+            imgBox.style.position = 'relative';
+            imgBox.appendChild(hint);
+          }
+        }, 120);
+      };
+      window.openQuickView.__patched = true;
+    }
+  }
+
+  /* 5. Card image second-hover: subtle color-shift + shimmer on wrapper */
+  function addImageShimmer(){
+    var style = document.createElement('style');
+    style.textContent =
+      '.product-image-wrapper::after{content:"";position:absolute;inset:0;'+
+      'background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.18) 50%,transparent 60%);'+
+      'background-size:200% 100%;opacity:0;transition:opacity 0.3s ease;pointer-events:none;}'+
+      '.product-card-main:hover .product-image-wrapper::after{opacity:1;'+
+      'animation:imgShimmer 1.2s ease 0.1s;}'+
+      '@keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}';
+    document.head.appendChild(style);
+  }
+
+  /* 6. Ensure discount badge & favorite-btn don't overlap:
+        if discount-badge exists, move favorite-btn to the right side */
+  function fixBadgeOverlap(){
+    document.querySelectorAll('.product-card-main').forEach(function(card){
+      var disc = card.querySelector('.discount-badge');
+      var fav  = card.querySelector('.favorite-btn');
+      if(disc && fav){
+        fav.style.left = 'auto';
+        fav.style.right = '10px';
+      }
+    });
+  }
+
+  /* Wait for app.js to load, then patch */
+  var ready = false;
+  function tryPatch(){
+    if(ready) return;
+    if(typeof addToCart === 'function' && typeof openQuickView === 'function'){
+      ready = true;
+      patchAddToCart();
+      patchQuickView();
+      addImageShimmer();
+      /* Observe grid for renders */
+      var grid = document.getElementById('productsGrid');
+      if(grid){
+        new MutationObserver(function(){
+          fixBadgeOverlap();
+          /* Re-apply animation restart trick */
+          grid.querySelectorAll('.product-card-main').forEach(function(c,i){
+            c.style.animationDelay = (i*0.045)+'s';
+          });
+        }).observe(grid, {childList:true});
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    tryPatch();
+    if(!ready) setTimeout(tryPatch, 600);
+  });
+  window.addEventListener('load', tryPatch);
+})();
+</script>
+
 </body>
 </html>
 
