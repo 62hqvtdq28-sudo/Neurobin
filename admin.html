@@ -17,7 +17,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- Security: Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://i.ibb.co https://ibb.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org https://ipapi.co https://ipinfo.io https://api.imgbb.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://i.ibb.co https://ibb.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org https://ipapi.co https://ipinfo.io https://api.imgbb.com https://*.replit.dev https://*.replit.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
@@ -609,6 +609,11 @@
             <label class="block text-sm font-semibold text-brand-700 mb-1">مفتاح imgBB API <span class="text-xs font-normal text-brand-400">(لرفع صور الأقسام)</span></label>
             <p class="text-xs text-brand-400 mb-2">احصل عليه مجاناً من <a href="https://api.imgbb.com/" target="_blank" rel="noopener" class="text-blue-500 underline">api.imgbb.com</a> — يُستخدم فقط لرفع صور الأقسام بأمان</p>
             <input type="text" id="imgbbApiKey" class="input-field font-mono text-sm" placeholder="أدخل مفتاح imgBB API هنا..." dir="ltr" autocomplete="off">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-brand-700 mb-1">رابط API Server <span class="text-xs font-normal text-brand-400">(لإشعارات تيليجرام)</span></label>
+            <p class="text-xs text-brand-400 mb-2">رابط سيرفر Replit المنشور — احفظه هنا ليُستخدم في إشعارات تسجيل الدخول</p>
+            <input type="url" id="apiServerUrl" class="input-field font-mono text-sm" placeholder="https://your-repl.replit.dev" dir="ltr" autocomplete="off">
           </div>
           <button onclick="saveSettings()" class="bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-xs sm:text-sm md:text-base shadow-lg">
             <i data-lucide="save" class="w-4 h-4 sm:w-5"></i>
