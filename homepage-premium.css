@@ -2846,14 +2846,32 @@ img, .product-image-wrapper img {
 }
 
 /* 4. Image loading transitions */
-.product-img-animated {
-  transition: opacity 0.3s ease;
+/* ── Image loading states — SAFE approach (no opacity:0) ─────────
+   If img-loader.js fails to remove img-loading, images stay VISIBLE.
+   Fade-in happens via img-loaded animation, not from opacity:0 start. */
+.product-img-animated,
+.product-image-wrapper img {
+  /* Only transform transition — opacity handled by img-loaded animation */
+  transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94) !important;
 }
 .img-loading {
-  opacity: 0;
+  /* SAFE: do NOT set opacity:0 — causes permanent invisible if class sticks.
+     Use background shimmer instead (visible on transparent img bg). */
+  background: linear-gradient(90deg,#f0f2e8 25%,#e8ead8 50%,#f0f2e8 75%);
+  background-size: 200% 100%;
+  animation: imgSkeletonPulse 1.4s ease-in-out infinite !important;
 }
 .img-loaded {
-  opacity: 1;
+  background: none !important;
+  animation: imgFadeIn 0.3s ease both !important;
+}
+@keyframes imgSkeletonPulse {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes imgFadeIn {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
 }
 
 /* 5. Low-end device — disable heavy animations */
@@ -2900,4 +2918,12 @@ img, .product-image-wrapper img {
 /* 10. Font loading optimization */
 body {
   font-synthesis: none;
+}
+
+/* Override: ensure product images are always visible unless in img-loading shimmer */
+.product-image-wrapper img:not(.img-loading) {
+  opacity: 1 !important;
+}
+.product-card-main .product-img-animated:not(.img-loading) {
+  opacity: 1 !important;
 }
