@@ -306,15 +306,20 @@ function updateCommentsBadge() {
 }
 
 function updateOrdersBadge() {
-  var orders = safeJSONParse(localStorage.getItem('phOrders'), []) || [];
-  var newOrders = orders.filter(function(o) { return o.status === 'new' || o.status === 'progress'; }).length;
   var badge = document.getElementById('ordersBadge');
-  if (newOrders > 0) {
-    badge.textContent = newOrders;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
+  if (!badge) return;
+  if (typeof SupaDB === 'undefined' || !SupaDB.Orders) return;
+  SupaDB.Orders.list().then(function(orders) {
+    var newOrders = (orders||[]).filter(function(o) {
+      return o.status === 'new' || o.status === 'pending' || o.status === 'preparing';
+    }).length;
+    if (newOrders > 0) {
+      badge.textContent = newOrders;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }).catch(function() {});
 }
 
 function clearAllProducts() {
