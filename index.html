@@ -2229,15 +2229,21 @@ window.addEventListener('load', function() {
     var _origHandler = null;
     var _debTimer = null;
     // Wrap the oninput handler with debounce
+    // Remove oninput attr — search is debounced by the SEARCH UX PREMIUM patch below
+    // FIX: old code used dispatchEvent(new Event('input')) which caused an infinite loop:
+    //   dispatch → triggers this listener → new dispatch → triggers listener → ...
     var _existingHandler = searchInput.getAttribute('oninput');
     if (_existingHandler) {
       searchInput.removeAttribute('oninput');
-      searchInput.addEventListener('input', function() {
-        clearTimeout(_debTimer);
-        _debTimer = setTimeout(function() {
-          try { searchInput.dispatchEvent(new Event('input')); } catch(e) {}
-        }, 200);
-      });
+      // Only add a listener if __srPatched hasn't already set up debounce
+      if (!window.performSearch || !window.performSearch.__srPatched) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(_debTimer);
+          _debTimer = setTimeout(function() {
+            if (typeof window.performSearch === 'function') window.performSearch();
+          }, 200);
+        });
+      }
     }
   }, 1200);
 });
