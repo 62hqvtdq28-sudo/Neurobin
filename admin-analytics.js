@@ -386,20 +386,25 @@ async function _loadProfitBreakdown() {
       list.innerHTML = '<p class="text-sm text-amber-600 text-center py-3">لم يتم إدخال أسعار الكوست بعد — عدّل أي منتج وأدخل سعر الكوست</p>';
       return;
     }
-    // Split: items WITH cost come first (sorted by total profit), items WITHOUT cost go to the bottom
-    var _withCost = [], _noCost = [];
+    // ✅ Only show products that have actually been SOLD (soldQty > 0)
+    var _soldProducts = [];
     products
       .filter(function(p){ return Number(p.price||0) > 0; })
       .forEach(function(p) {
+        var pName = p.name_ar || p.name || '';
+        var soldQty = _productQtyCache[pName] || 0;
+        if (soldQty <= 0) return; // skip unsold products
         var cost = Number(costMap[String(p.id)]||0);
         var unitProfit = Number(p.price||0) - cost;
-        var soldQty = _productQtyCache[p.name_ar || p.name || ''] || 0;
-        p._sortProfit = soldQty > 0 ? unitProfit * soldQty : unitProfit;
-        if (cost > 0) _withCost.push(p); else _noCost.push(p);
+        p._sortProfit = unitProfit * soldQty;
+        _soldProducts.push(p);
       });
-    _withCost.sort(function(a,b){ return b._sortProfit - a._sortProfit; });
-    _noCost.sort(function(a,b){ return Number(b.price||0) - Number(a.price||0); });
-    var rows = _withCost.concat(_noCost)
+    if (!_soldProducts.length) {
+      list.innerHTML = '<p class="text-sm text-amber-600 text-center py-4">لا توجد منتجات مباعة بعد — ستظهر التفاصيل بعد أول عملية بيع</p>';
+      return;
+    }
+    _soldProducts.sort(function(a,b){ return b._sortProfit - a._sortProfit; });
+    var rows = _soldProducts
       .map(function(p) {
         var cost   = Number(costMap[String(p.id)] || 0);
         var price  = Number(p.price || 0);
