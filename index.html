@@ -18,6 +18,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="صيدلية نيروبين">
 <link rel="apple-touch-icon" href="./logo.jpg">
+<link rel="apple-touch-icon" sizes="152x152" href="./logo.jpg">
+<link rel="apple-touch-icon" sizes="167x167" href="./logo.jpg">
+<link rel="apple-touch-icon" sizes="180x180" href="./logo.jpg">
+<!-- iOS Splash Screens -->
+<link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2)" href="./logo.jpg">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="./logo.jpg">
+<!-- Android: theme color for dark mode -->
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#2D5016">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e350f">
 <title>ph.neurobin - صيدليتك الموثوقة | أدوية، العناية بالبشرة، مكياج</title>
 <meta name="description" content="صيدلية neurobin - صيدليتك الموثوقة في العراق. أدوية، منتجات العناية بالبشرة، ومكياج بأعلى معايير الجودة. توصيل سريع 24-48 ساعة.">
 <meta name="keywords" content="صيدلية, أدوية, عناية بالبشرة, مكياج, عراق, بغداد, صيدلية اونلاين, توصيل أدوية, كريم, واقي شمس, مستحضرات تجميل, نيروبين, ph neurobin">
@@ -60,6 +73,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
     overflow-y: auto !important;
   }
 }
+
+
+/* PWA App Shell — Mobile App Feeling */
+@media (display-mode: standalone) {
+  /* Remove browser-like elements in standalone mode */
+  body { -webkit-user-select: none; user-select: none; }
+  /* Allow text selection only in inputs */
+  input, textarea, [contenteditable] { -webkit-user-select: auto; user-select: auto; }
+  /* Pull-to-refresh disable */
+  body { overscroll-behavior-y: contain; }
+}
+/* iOS status bar safe area */
+#navbar { padding-top: env(safe-area-inset-top, 0); }
+.loading-screen { padding-top: env(safe-area-inset-top, 0); }
 
 /* Prevent all overflow */
 section, div { max-width: 100%; }
@@ -3545,6 +3572,7 @@ window.addEventListener('resize', function(){
 })();
 </script>
 
+<script src="./pwa-install.js"></script>
 <script src="./safari-ios-fix.js"></script>
 </body>
 </html>
