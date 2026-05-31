@@ -831,20 +831,32 @@ function _buildLoginMsg(status) {
          '🌐 المتصفح: ' + info.browser;
 }
 
+// عنوان API server — يُحدَّث تلقائياً عند نشر المشروع
+var _API_SERVER_URL = (function() {
+  try {
+    var _s = JSON.parse(localStorage.getItem('phSettings') || '{}');
+    if (_s.apiServerUrl) return _s.apiServerUrl.replace(/\/$/, '');
+  } catch(e) {}
+  // الدومين الافتراضي — يتغيّر عند إعادة تشغيل Replit
+  return 'https://5d41658f-f4b9-4eeb-b2d8-8941535432d6-00-mtqgpydj46o2.pike.replit.dev';
+})();
+
 async function sendTelegramAlert(msg) {
   try {
     var _s = {};
     try { _s = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) { _s = {}; }
-    var token = _s.telegramBotToken || '';
-    var chatId = _s.telegramChatId || '';
+    var token = (_s.telegramBotToken || '').trim();
+    var chatId = (_s.telegramChatId || '').trim();
     if (!token || !chatId) return;
-    var resp = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+    // استخدام Replit API proxy بدلاً من استدعاء Telegram مباشرةً من المتصفح
+    var apiUrl = (_s.apiServerUrl || _API_SERVER_URL).replace(/\/$/, '');
+    var resp = await fetch(apiUrl + '/api/telegram/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML' })
+      body: JSON.stringify({ botToken: token, chatId: chatId, message: msg })
     });
     var data = await resp.json();
-    if (!data.ok) console.warn('[Telegram] Error:', data.description);
+    if (!data.ok) console.warn('[Telegram] Error:', data.error);
   } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
 
