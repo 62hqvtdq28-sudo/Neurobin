@@ -120,7 +120,10 @@ function renderProductsList(products, filter) {
   el.innerHTML = products.map(function(p,i) {
     var pid = escapeHTML(String(p.id));
     var imgSrc = p.image_url || p.image || '';
-    var img = imgSrc ? '<img src="' + escapeHTML(imgSrc) + '" class="w-full h-40 object-contain bg-white rounded-lg mb-3" onerror="this.style.display=\'none\'">' : '';
+    var img = imgSrc
+      ? '<img src="' + escapeHTML(imgSrc) + '" class="w-full h-40 object-contain bg-white rounded-lg mb-3" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+        '<div class="w-full h-40 flex-col items-center justify-center bg-brand-50 rounded-lg mb-3 text-brand-300" style="display:none"><svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21,15 16,10 5,21\'/></svg><p style=\'font-size:11px;margin-top:6px\'>لا توجد صورة</p></div>'
+      : '<div class="w-full h-40 flex flex-col items-center justify-center bg-brand-50 rounded-lg mb-3 text-brand-300"><svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21,15 16,10 5,21\'/></svg><p style=\'font-size:11px;margin-top:6px\'>لا توجد صورة</p></div>';
     return '<div class="product-card-admin animate-fade-in" style="animation-delay:' + (i*0.05) + 's" data-product-id="' + pid + '">' +
       '<div class="p-4">' +
       '<div class="flex items-start justify-between mb-3">' +
