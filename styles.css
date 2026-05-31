@@ -979,4 +979,43 @@ nav:not(.nav-scrolled) {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+/* 13. iOS/iPad Safari — comprehensive filter:blur elimination ─────────────
+   Root cause: any filter:blur on ANY element creates a GPU compositing layer.
+   On iPad/iPhone Safari this bleeds upward, making the ENTIRE page appear blurred.
+   Solution: replace blur-based effects with opacity-only on all touch devices. */
+@supports (-webkit-touch-callout: none) {
+  /* Kill blur on ALL decorative elements */
+  .offer-slide-deco,
+  .offer-slide-deco.right,
+  [class*=deco],
+  .hero-blob,
+  .bg-blob {
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+
+  /* Kill img-loading blur — causes stuck page-wide blur */
+  .product-image-wrapper img.img-loading,
+  .product-image-wrapper img {
+    filter: none !important;
+    -webkit-filter: none !important;
+    transition: opacity 0.3s ease !important;
+  }
+
+  /* Ensure loaded images are fully visible */
+  .product-image-wrapper img.img-loaded {
+    opacity: 1 !important;
+  }
+
+  /* Kill backdrop-filter on ALL hidden modals */
+  #searchModal:not(.active),
+  #checkoutModal:not(.active),
+  #quickViewModal:not(.active),
+  .search-modal:not(.active),
+  .checkout-modal:not(.active),
+  .quick-view-modal:not(.active) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
 
