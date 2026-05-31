@@ -6,6 +6,20 @@ var _profitBreakdownCache = null;
 var _productQtyCache = {};
 
 async function loadAnalytics() {
+  // ← إذا أخفى المستخدم الإحصائيات يدوياً، لا تعيد التحميل التلقائي
+  if (sessionStorage.getItem('analyticsHidden') === '1') {
+    var _cardsElCheck = document.getElementById('analyticsCards');
+    if (_cardsElCheck) _cardsElCheck.innerHTML =
+      '<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400">' +
+      '<p class="mb-4">تم مسح الإحصائيات</p>' +
+      '<button onclick="sessionStorage.removeItem('analyticsHidden');loadAnalytics();" ' +
+      'class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button>' +
+      '</div>';
+    var _undoBtn=document.getElementById('analyticsUndoBtn');
+    if(_undoBtn) _undoBtn.classList.remove('hidden');
+    return;
+  }
+  _profitBreakdownCache = null; // ← دائماً تصفير الكاش عند كل تحميل
   var cardsEl    = document.getElementById('analyticsCards');
   var productsEl = document.getElementById('topProductsList');
   if (cardsEl) cardsEl.innerHTML =
@@ -44,7 +58,8 @@ async function loadAnalytics() {
     );
 
     var productQty = {};
-    allOrders.forEach(function(o){
+    // ← تجاهل الطلبات الملغاة عند حساب أكثر المنتجات مبيعاً
+    allOrders.filter(function(o){ return o.status !== 'cancelled'; }).forEach(function(o){
       var items = [];
       if (Array.isArray(o.items) && o.items.length > 0) items = o.items;
       else if (Array.isArray(o.order_items) && o.order_items.length > 0) items = o.order_items;
@@ -422,30 +437,38 @@ function deleteAnalyticsView() {
   var status=document.getElementById('analyticsStatusSummary');
   if (!_lastAnalyticsSnapshot) { if(typeof showToast==='function') showToast('لا توجد بيانات لحذفها','error'); return; }
   if (!confirm('هل تريد مسح عرض الإحصائيات الحالية؟ يمكنك التراجع لاحقاً')) return;
-  if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-10 text-brand-400"><p>تم مسح العرض — اضغط "تراجع" لاستعادته أو "تحديث" لإعادة التحميل</p></div>';
-  // Clear products distribution
+  if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400"><p class="mb-4">تم مسح الإحصائيات</p><button onclick="sessionStorage.removeItem('analyticsHidden');loadAnalytics();" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button></div>';
+  // Clear products, status, chart
   if (products) products.innerHTML='';
   if (status) status.innerHTML='';
   if (_analyticsChartMonthly) { _analyticsChartMonthly.destroy(); _analyticsChartMonthly=null; }
   var summaryEl=document.getElementById('analyticsSalesSummary'); if(summaryEl) summaryEl.innerHTML='';
+  // ← مسح كروت الأرباح (صافي الربح / الكوست / هامش الربح)
+  var profitSection=document.getElementById('analyticsProfitCards');
+  if (profitSection) profitSection.innerHTML='';
   // Clear profit details panel
   var profitPanel=document.getElementById('profitDetailsPanel');
   if (profitPanel) { profitPanel.classList.add('hidden'); var pList=document.getElementById('profitDetailsList'); if(pList) pList.innerHTML=''; }
   _profitBreakdownCache=null;
-  // Clear profit cards
+  _productQtyCache={};
+  _lastAnalyticsSnapshot=null;
+  // Clear profit details button label
   var profitBtn=document.getElementById('profitDetailsBtn');
   if (profitBtn) { var sp=profitBtn.querySelector('span'); if(sp) sp.textContent='تفاصيل الربح'; }
-  // Remove the visitor stats section injected by loadVisitorStats
+  // Remove visitor stats
   var visStats=document.getElementById('visitorStatsSection');
   if (visStats) visStats.remove();
+  // ← حفظ حالة الحذف في sessionStorage لمنع الإعادة التلقائية عند الرفرش
+  sessionStorage.setItem('analyticsHidden','1');
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) { undoBtn.classList.remove('hidden'); }
-  if(typeof showToast==='function') showToast('تم مسح العرض — يمكنك التراجع','info');
+  if(typeof showToast==='function') showToast('تم مسح الإحصائيات','info');
 }
 
 function undoDeleteAnalytics() {
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) undoBtn.classList.add('hidden');
+  sessionStorage.removeItem('analyticsHidden');
   loadAnalytics();
   if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
 }
