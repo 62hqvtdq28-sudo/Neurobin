@@ -664,9 +664,13 @@ function renderProducts(productsToRender) {
     } else {
       stockBadge = '<span class="stock-badge in-stock z-10">\u0645\u062a\u0648\u0641\u0631 \u0644\u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0641\u0648\u0631\u064a</span>';
     }
+    const _discPct = (product.originalPrice && product.originalPrice > product.price)
+      ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
+    const discountBadge = _discPct >= 5
+      ? `<span class="discount-badge">-${_discPct}%</span>` : '';
     return `
       <div class="product-card-main scroll-animate-scale" role="listitem" data-category="${safeCategory}" data-id="${safeId}">
-        ${stockBadge}
+        ${stockBadge}${discountBadge}
         <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? '\u0625\u0632\u0627\u0644\u0629 \u0645\u0646 \u0627\u0644\u0645\u0641\u0636\u0644\u0629' : '\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0645\u0641\u0636\u0644\u0629'}">
           <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : ''}"></i>
         </button>
@@ -1120,9 +1124,60 @@ function closeQuickViewOnBackdrop(e) {
   if (e.target === document.getElementById('quickViewModal')) closeQuickView();
 }
 
+// ── Recent Searches (stored in localStorage) ──────────────
+var _recentSearches = [];
+function _loadRecentSearches() {
+  try { _recentSearches = JSON.parse(localStorage.getItem('nbRecentSearches') || '[]').slice(0, 6); }
+  catch(e) { _recentSearches = []; }
+}
+function _saveRecentSearch(q) {
+  if (!q || q.length < 2) return;
+  _loadRecentSearches();
+  _recentSearches = _recentSearches.filter(function(s) { return s !== q; });
+  _recentSearches.unshift(q);
+  _recentSearches = _recentSearches.slice(0, 6);
+  try { localStorage.setItem('nbRecentSearches', JSON.stringify(_recentSearches)); } catch(e) {}
+}
+function _showRecentSearches() {
+  _loadRecentSearches();
+  var el = document.getElementById('searchResults');
+  if (!el || _recentSearches.length === 0) { if(el) el.innerHTML = ''; return; }
+  var esc = function(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  el.innerHTML =
+    '<div style="padding:12px 16px 4px;display:flex;align-items:center;justify-content:space-between;">' +
+      '<span style="font-size:11px;font-weight:700;color:#AABF89;letter-spacing:0.05em;">&#128336; عمليات البحث الأخيرة</span>' +
+      '<button onclick="_clearRecentSearches()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;font-family:Cairo,sans-serif;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'#94a3b8\'">مسح الكل</button>' +
+    '</div>' +
+    _recentSearches.map(function(s) {
+      var safe = esc(s);
+      var safeJs = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<div class="search-result-item recent-search-item" onclick="document.getElementById(\'searchInput\').value=\'' + safeJs + '\';performSearch();" style="gap:12px;padding:10px 16px;cursor:pointer;">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#AABF89" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>' +
+        '<span style="font-size:13px;color:#4a7c2d;flex-grow:1;">' + safe + '</span>' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg>' +
+      '</div>';
+    }).join('');
+}
+function _clearRecentSearches() {
+  _recentSearches = [];
+  try { localStorage.removeItem('nbRecentSearches'); } catch(e) {}
+  document.getElementById('searchResults').innerHTML = '';
+}
+
+// Highlight matching text in search results
+function _highlightMatch(text, query) {
+  if (!text || !query || query.length < 2) return text;
+  try {
+    var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp('(' + escaped + ')', 'gi'),
+      '<mark style="background:linear-gradient(90deg,#fef08a,#fde047);color:#1E350F;font-weight:800;border-radius:3px;padding:0 2px;">$1</mark>');
+  } catch(e) { return text; }
+}
+
 function openSearch() {
   document.getElementById('searchModal').classList.add('active');
-  document.getElementById('searchInput').focus();
+  var input = document.getElementById('searchInput');
+  if (input) { input.focus(); if (!input.value.trim()) _showRecentSearches(); }
   document.body.style.overflow = 'hidden';
 }
 
@@ -1322,31 +1377,43 @@ function performSearch() {
     if (_aiSearchTimer) clearTimeout(_aiSearchTimer);
     if (rawQuery.length >= 3) { _aiSearchTimer = setTimeout(function() { _aiSearchSuggest(rawQuery); }, 700); }
   } else {
-    const fuzzyNotice = isFuzzy ? `<div class="px-4 pt-3 text-xs text-brand-500">🔍 نتائج مقاربة لـ &quot;${SecurityValidator.escapeHtml(rawQuery)}&quot;</div>` : '';
-    results.innerHTML = fuzzyNotice + matches.map(p => {
-      const safeId = SecurityValidator.escapeHtml(p.id);
+    _saveRecentSearch(rawQuery.trim());
+    const fuzzyNotice = isFuzzy ? `<div class="px-4 pt-3 pb-1" style="font-size:11px;color:#AABF89;font-weight:700;">🔍 نتائج مقاربة لـ &quot;${SecurityValidator.escapeHtml(rawQuery)}&quot;</div>` : '';
+    results.innerHTML = fuzzyNotice + matches.slice(0, 12).map(p => {
+      const safeId   = SecurityValidator.escapeHtml(p.id);
       const safeName = SecurityValidator.escapeHtml(p.nameAr);
+      const highlightedName = _highlightMatch(safeName, rawQuery);
       const safePrice = SecurityValidator.escapeHtml(formatPrice(p.price));
-      const safeImg = p.image ? SecurityValidator.escapeHtml(p.image) : '';
+      const safeImg  = p.image ? SecurityValidator.escapeHtml(p.image) : '';
       var _sn2 = (typeof p.stock === 'number') ? p.stock : null;
       var stockBadge = (!p.inStock || _sn2 === 0)
-        ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذت الكمية</span>'
-        : (_sn2 === 1 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعة</span>'
-        : (_sn2 === 2 ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">آخر قطعتين</span>'
-        : '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">متوفر للتسليم الفوري</span>'));
+        ? '<span style="font-size:10px;background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:999px;font-weight:700;">نفذت الكمية</span>'
+        : (_sn2 === 1
+          ? '<span style="font-size:10px;background:#fff7ed;color:#ea580c;padding:2px 7px;border-radius:999px;font-weight:700;">آخر قطعة</span>'
+          : (_sn2 === 2
+            ? '<span style="font-size:10px;background:#fff7ed;color:#ea580c;padding:2px 7px;border-radius:999px;font-weight:700;">آخر قطعتين</span>'
+            : '<span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:2px 7px;border-radius:999px;font-weight:700;">✓ متوفر</span>'));
+      const discPct = (p.originalPrice && p.originalPrice > p.price)
+        ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+      const discBadge = discPct >= 5
+        ? `<span style="font-size:10px;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:2px 6px;border-radius:999px;font-weight:800;margin-right:4px;">-${discPct}%</span>` : '';
       const imgHtml = safeImg
-        ? `<img src="${safeImg}" alt="" class="w-full h-full object-contain" loading="lazy">`
+        ? `<img src="${safeImg}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">`
         : `<svg class="w-7 h-7 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg>`;
-      return `<div class="search-result-item" onclick="openQuickView('${safeId}'); closeSearch();" style="gap:14px;padding:12px 16px;">
-        <div class="flex-shrink-0 w-16 h-16 bg-brand-50 rounded-xl overflow-hidden flex items-center justify-center border border-brand-100">
+      return `<div class="search-result-item" onclick="openQuickView('${safeId}'); closeSearch();" style="gap:12px;padding:10px 16px;border-top:1px solid #f6f7f4;">
+        <div style="flex-shrink:0;width:56px;height:56px;background:#f6f7f4;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid #E8EAD8;">
           ${imgHtml}
         </div>
-        <div class="flex-grow min-w-0">
-          <h4 class="font-semibold text-brand-900 text-sm leading-snug mb-1">${safeName}</h4>
-          <p class="font-bold text-brand-700 text-sm mb-1">${safePrice}</p>
-          ${stockBadge}
+        <div style="flex-grow:1;min-width:0;">
+          <h4 style="font-weight:600;color:#1E350F;font-size:13px;line-height:1.4;margin:0 0 3px;">${highlightedName}</h4>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            ${discBadge}
+            <span style="font-weight:800;color:#2D5016;font-size:13px;">${safePrice}</span>
+            ${p.originalPrice && p.originalPrice > p.price ? `<span style="font-size:11px;color:#94a3b8;text-decoration:line-through;">${SecurityValidator.escapeHtml(formatPrice(p.originalPrice))}</span>` : ''}
+          </div>
+          <div style="margin-top:3px;">${stockBadge}</div>
         </div>
-        <svg class="flex-shrink-0 w-4 h-4 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg style="flex-shrink:0;width:14px;height:14px;color:#AABF89;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
       </div>`;
     }).join('');
   }
