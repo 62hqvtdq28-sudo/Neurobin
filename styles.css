@@ -382,12 +382,11 @@ button[title="السلة"]:hover {
    ═══════════════════════════════════════════════════════════ */
 
 /* GPU acceleration for key animated elements */
+/* NOTE: checkout-modal, search-modal, quick-view-modal EXCLUDED from will-change:transform
+   because it creates a GPU stacking context that breaks backdrop-filter blur on iOS Safari.
+   Only truly animated elements that need it are listed here. */
 .product-card-main,
 .cart-sidebar,
-.checkout-modal,
-.checkout-container,
-.search-modal,
-.quick-view-modal,
 .float-animation,
 .scroll-animate {
   will-change: transform;
