@@ -503,8 +503,6 @@ async function checkAuth() {
           // Update remember token with new session token
           tokenData.sessionToken = newSessionToken;
           localStorage.setItem('adminRememberToken', JSON.stringify(tokenData));
-          recordLoginEvent('remember-me', 'success');
-          sendTelegramAlert(_buildLoginMsg('success'));
           showDashboard();
           return;
         }
@@ -757,7 +755,7 @@ function recordLoginEvent(type, status) {
   try {
     var logs = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
     var info = _getDeviceInfo();
-    var logEntry = {
+    var entry = {
       id: Date.now(),
       time: new Date().toISOString(),
       type: type,
@@ -765,23 +763,24 @@ function recordLoginEvent(type, status) {
       device: info.device,
       browser: info.browser,
       userAgent: navigator.userAgent.slice(0, 200),
-      ip: null,
-      location: null
+      ip: null, city: null, country: null
     };
-    logs.unshift(logEntry);
+    logs.unshift(entry);
     if (logs.length > 100) logs.splice(100);
     localStorage.setItem('adminLoginLogs', JSON.stringify(logs));
-    // Fetch IP + location in the background
-    fetch('https://api.ipapi.is/?q=')
+    // Async IP lookup — update the first entry once resolved
+    fetch('https://ipapi.co/json/', { cache: 'no-store' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        logEntry.ip = d.ip || '';
-        var city = (d.location && d.location.city) ? d.location.city : '';
-        var country = (d.location && d.location.country) ? d.location.country : (d.country_name || '');
-        logEntry.location = city ? city + '، ' + country : country;
-        var stored = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
-        var idx = stored.findIndex ? stored.findIndex(function(x) { return x.id === logEntry.id; }) : -1;
-        if (idx > -1) { stored[idx] = logEntry; localStorage.setItem('adminLoginLogs', JSON.stringify(stored)); }
+        try {
+          var saved = JSON.parse(localStorage.getItem('adminLoginLogs') || '[]');
+          if (saved[0] && saved[0].id === entry.id) {
+            saved[0].ip = d.ip || null;
+            saved[0].city = d.city || null;
+            saved[0].country = d.country_name || null;
+            localStorage.setItem('adminLoginLogs', JSON.stringify(saved));
+          }
+        } catch(e2) {}
       })
       .catch(function() {});
   } catch(e) { console.warn('[LoginLog]', e.message); }
