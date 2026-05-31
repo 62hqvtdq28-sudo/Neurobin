@@ -1,31 +1,40 @@
 function saveSettings() {
-  // CSRF Protection: Verify authentication and session
-  if (!isAuthenticated()) {
-    showToast('يرجى تسجيل الدخول أولاً', 'error');
-    return;
-  }
+  var siteName = typeof validateInput === 'function'
+    ? validateInput((document.getElementById('siteName') || {}).value || '', 100)
+    : ((document.getElementById('siteName') || {}).value || '');
+  var instagramUrl = typeof validateURL === 'function'
+    ? validateURL((document.getElementById('instagramUrl') || {}).value || '')
+    : ((document.getElementById('instagramUrl') || {}).value || '');
+  var whatsappNumber = typeof validatePhone === 'function'
+    ? validatePhone((document.getElementById('whatsappNumber') || {}).value || '')
+    : ((document.getElementById('whatsappNumber') || {}).value || '');
 
-  var siteName = validateInput(document.getElementById('siteName').value, 100);
-  var instagramUrl = validateURL(document.getElementById('instagramUrl').value);
-  var whatsappNumber = validatePhone(document.getElementById('whatsappNumber').value);
+  var telegramBotToken = ((document.getElementById('telegramBotToken') || {}).value || '').trim();
+  var telegramChatId = ((document.getElementById('telegramChatId') || {}).value || '').trim();
 
-  var telegramBotToken = (document.getElementById('telegramBotToken').value || '').trim();
-  var telegramChatId = (document.getElementById('telegramChatId').value || '').trim();
-  var settings = {
+  var prev = {};
+  try { prev = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) {}
+  var settings = Object.assign({}, prev, {
     siteName: siteName,
     instagramUrl: instagramUrl,
     whatsappNumber: whatsappNumber,
     telegramBotToken: telegramBotToken,
     telegramChatId: telegramChatId
-  };
+  });
   localStorage.setItem('phSettings', JSON.stringify(settings));
-  showToast('تم حفظ الإعدادات بنجاح', 'success');
+  if (typeof showToast === 'function') showToast('تم حفظ الإعدادات بنجاح ✓', 'success');
 }
 
 // CSRF Protection helper: Check if user is authenticated
 function isAuthenticated() {
-  return sessionStorage.getItem('adminLoggedIn') === 'true' &&
-         sessionStorage.getItem('adminSessionToken') !== null;
+  var ssOk = sessionStorage.getItem('adminLoggedIn') === 'true' &&
+             sessionStorage.getItem('adminSessionToken') !== null;
+  if (ssOk) return true;
+  try {
+    var rem = JSON.parse(localStorage.getItem('adminRememberToken') || 'null');
+    if (rem && rem.sessionToken) return true;
+  } catch(e) {}
+  return false;
 }
 
 // Security: URL Validation
@@ -934,14 +943,17 @@ function loadLoginLogs() {
       var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
       var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
       var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
-      var ipText = log.ip ? '<span class="font-mono text-xs">' + _esc(log.ip) + '</span>' : '<span class="text-brand-300 text-xs">—</span>';
-      var locText = log.location ? '<br><span class="text-xs text-brand-400">📍 ' + _esc(log.location) + '</span>' : '';
+      var ipStr = '';
+      if (log.ip) {
+        ipStr = _esc(log.ip);
+        if (log.city || log.country) ipStr += '<br><span class="text-xs text-brand-400">' + _esc((log.city || '') + (log.country ? ' — ' + log.country : '')) + '</span>';
+      } else { ipStr = '<span class="text-brand-300 text-xs">—</span>'; }
       return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(dateStr) + '<br><span class="text-xs text-brand-400">' + _esc(timeStr) + '</span></td>' +
         '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.device || 'غير معروف') + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.browser || 'غير معروف') + '</td>' +
-        '<td class="px-4 py-3 text-sm">' + ipText + locText + '</td>' +
+        '<td class="px-4 py-3 text-sm font-mono dir-ltr">' + ipStr + '</td>' +
         '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
         '</tr>';
     }).join('');
