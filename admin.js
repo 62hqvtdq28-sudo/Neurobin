@@ -930,8 +930,45 @@ function loadLoginLogs() {
     logs = [];
   }
 
+  // ── بطاقات الملخص ────────────────────────────────────────────────
+  var summaryEl = document.getElementById('loginLogSummary');
+  if (summaryEl) {
+    if (logs.length === 0) {
+      summaryEl.innerHTML = '';
+    } else {
+      var total   = logs.length;
+      var success = logs.filter(function(l){ return l.status === 'success'; }).length;
+      var failed  = logs.filter(function(l){ return l.status === 'failed';  }).length;
+      // عدد المحاولات الفاشلة المتتالية من آخر نجاح
+      var consecutiveFails = 0;
+      for (var _i = 0; _i < logs.length; _i++) {
+        if (logs[_i].status === 'failed') consecutiveFails++;
+        else break;
+      }
+      var failBg  = failed > 0 ? 'background:#fef2f2;border:1px solid #fca5a5;' : 'background:#f0fdf4;border:1px solid #bbf7d0;';
+      var failTxt = failed > 0 ? 'color:#dc2626;' : 'color:#16a34a;';
+      summaryEl.innerHTML =
+        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:#166534">' + total + '</div>' +
+          '<div style="font-size:11px;color:#4a7c2d;margin-top:2px">إجمالي السجلات</div>' +
+        '</div>' +
+        '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:#1d4ed8">' + success + '</div>' +
+          '<div style="font-size:11px;color:#3b82f6;margin-top:2px">دخول ناجح</div>' +
+        '</div>' +
+        '<div style="' + failBg + 'border-radius:12px;padding:14px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;' + failTxt + '">' + failed + '</div>' +
+          '<div style="font-size:11px;' + failTxt + 'margin-top:2px">محاولة فاشلة' + (consecutiveFails > 1 ? ' (' + consecutiveFails + ' متتالية!)' : '') + '</div>' +
+        '</div>';
+      if (consecutiveFails >= 3) {
+        summaryEl.innerHTML += '<div style="grid-column:1/-1;background:#fff1f2;border:2px solid #f87171;border-radius:12px;padding:12px;text-align:center;font-weight:700;color:#be123c;font-size:13px">⚠️ تحذير: ' + consecutiveFails + ' محاولات دخول فاشلة متتالية! تحقق من الأمان.</div>';
+        summaryEl.style.gridTemplateColumns = '';
+      }
+    }
+  }
+
   if (logs.length === 0) {
-    container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
+    container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد — سيظهر بعد تسجيل الدخول القادم</td></tr>';
     return;
   }
 
@@ -940,20 +977,24 @@ function loadLoginLogs() {
       var d = new Date(log.time);
       var dateStr = d.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' });
       var timeStr = d.toLocaleTimeString('ar-IQ', { timeZone: 'Asia/Baghdad', hour12: true });
-      var statusClass = log.status === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
-      var statusText = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
-      var typeText = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
+      // relative time
+      var diff = Date.now() - d.getTime();
+      var relStr = diff < 60000 ? 'الآن' : diff < 3600000 ? Math.floor(diff/60000) + ' دقيقة' : diff < 86400000 ? Math.floor(diff/3600000) + ' ساعة' : Math.floor(diff/86400000) + ' يوم';
+      var statusClass = log.status === 'success' ? 'text-green-700 bg-green-50 border border-green-200' : 'text-red-700 bg-red-50 border border-red-200';
+      var statusText  = log.status === 'success' ? '✅ ناجح' : '❌ فاشل';
+      var typeText    = log.type === 'fresh-login' ? '🔐 دخول جديد' : '🔄 استعادة جلسة';
       var ipStr = '';
       if (log.ip) {
-        ipStr = _esc(log.ip);
-        if (log.city || log.country) ipStr += '<br><span class="text-xs text-brand-400">' + _esc((log.city || '') + (log.country ? ' — ' + log.country : '')) + '</span>';
+        ipStr = '<span style="font-family:monospace;font-size:12px">' + _esc(log.ip) + '</span>';
+        if (log.city || log.country) ipStr += '<br><span class="text-xs text-brand-400">' + _esc((log.city||'') + (log.country ? ' — ' + log.country : '')) + '</span>';
       } else { ipStr = '<span class="text-brand-300 text-xs">—</span>'; }
-      return '<tr class="border-b border-brand-50 hover:bg-brand-50/30 transition-colors">' +
-        '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(dateStr) + '<br><span class="text-xs text-brand-400">' + _esc(timeStr) + '</span></td>' +
+      var ua = _esc(log.userAgent || '');
+      return '<tr class="border-b border-brand-50 hover:bg-brand-50/40 transition-colors">' +
+        '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(dateStr) + '<br><span class="text-xs text-brand-400">' + _esc(timeStr) + '</span><br><span class="text-xs text-brand-300">منذ ' + relStr + '</span></td>' +
         '<td class="px-4 py-3 text-sm">' + typeText + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.device || 'غير معروف') + '</td>' +
         '<td class="px-4 py-3 text-sm text-brand-700">' + _esc(log.browser || 'غير معروف') + '</td>' +
-        '<td class="px-4 py-3 text-sm font-mono dir-ltr">' + ipStr + '</td>' +
+        '<td class="px-4 py-3 text-sm">' + ipStr + '</td>' +
         '<td class="px-4 py-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold ' + statusClass + '">' + statusText + '</span></td>' +
         '</tr>';
     }).join('');
@@ -961,6 +1002,79 @@ function loadLoginLogs() {
     container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-brand-400">لا يوجد سجل دخول بعد</td></tr>';
   }
 }
+
+// ── AI Customer Session Controls ─────────────────────────────────────────────
+window.loadAICustomerSessions = async function() {
+  var el = document.getElementById('ai-customer-sessions');
+  if (!el) return;
+  el.innerHTML = '<p class="text-center text-brand-400 text-sm py-4">جاري التحميل...</p>';
+  try {
+    var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+    var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY };
+    var r = await fetch(SURL + '/rest/v1/chat_sessions?select=id,user_id,ai_enabled,created_at&order=created_at.desc&limit=20', { headers: H });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var sessions = await r.json();
+    if (!sessions || !sessions.length) { el.innerHTML = '<p class="text-center text-brand-400 text-sm py-4">لا توجد محادثات بعد</p>'; return; }
+    function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    el.innerHTML = sessions.map(function(s) {
+      var aiOn = s.ai_enabled !== false;
+      var sid  = _esc(s.id);
+      var uid  = _esc((s.user_id || '').slice(0,8) + '...');
+      var d    = new Date(s.created_at);
+      var dt   = d.toLocaleDateString('ar-IQ') + ' ' + d.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="flex items-center justify-between p-3 rounded-xl border ' + (aiOn ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50') + ' gap-3">' +
+        '<div class="min-w-0">' +
+          '<p class="text-xs font-mono text-brand-700 truncate" style="max-width:160px" title="' + sid + '">' + sid.slice(0,12) + '…</p>' +
+          '<p class="text-xs text-brand-400">' + dt + '</p>' +
+        '</div>' +
+        '<div class="flex items-center gap-2 flex-shrink-0">' +
+          '<button onclick="document.getElementById(\'ai-direct-session-id\').value=\'' + sid + '\'" class="text-xs px-2 py-1 bg-brand-100 text-brand-700 rounded-lg hover:bg-brand-200">نسخ ID</button>' +
+          '<button onclick="toggleAIForCustomerSession(\'' + sid + '\',' + (!aiOn) + ')" ' +
+            'class="text-xs font-bold px-3 py-1.5 rounded-lg ' + (aiOn ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200') + '">' +
+            (aiOn ? '🚫 إيقاف AI' : '✅ تفعيل AI') +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<p class="text-center text-red-400 text-sm py-4">خطأ: ' + String(e.message) + '</p>';
+  }
+};
+
+window.toggleAIForCustomerSession = async function(sessionId, enableAI) {
+  try {
+    var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+    var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+    var r = await fetch(SURL + '/rest/v1/chat_sessions?id=eq.' + encodeURIComponent(sessionId), { method: 'PATCH', headers: H, body: JSON.stringify({ ai_enabled: enableAI }) });
+    if (!r.ok && r.status !== 204) { var e = await r.json().catch(function(){return{};}); throw new Error(e.message || 'HTTP ' + r.status); }
+    if (typeof showToast === 'function') showToast(enableAI ? '✅ تم تفعيل AI للعميل' : '🚫 تم إيقاف AI للعميل', enableAI ? 'success' : 'warning');
+    window.loadAICustomerSessions();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('خطأ: ' + e.message, 'error');
+  }
+};
+
+window.sendDirectMessageToCustomer = async function() {
+  var sidEl = document.getElementById('ai-direct-session-id');
+  var msgEl = document.getElementById('ai-direct-message');
+  var sid = (sidEl ? sidEl.value : '').trim();
+  var msg = (msgEl ? msgEl.value : '').trim();
+  if (!sid) { if(typeof showToast==='function') showToast('أدخل Session ID أولاً', 'error'); return; }
+  if (!msg) { if(typeof showToast==='function') showToast('أدخل نص الرسالة', 'error'); return; }
+  try {
+    var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+    var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+    var r = await fetch(SURL + '/rest/v1/chat_messages', { method: 'POST', headers: H, body: JSON.stringify({ session_id: sid, role: 'admin', message: msg }) });
+    if (!r.ok && r.status !== 201) { var e = await r.json().catch(function(){return{};}); throw new Error(e.message || 'HTTP ' + r.status); }
+    if (msgEl) msgEl.value = '';
+    if (typeof showToast === 'function') showToast('✅ تم إرسال الرسالة للعميل', 'success');
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('خطأ في الإرسال: ' + e.message, 'error');
+  }
+};
 
 function clearLoginLogs() {
   if (!confirm('هل أنت متأكد من حذف سجل الدخول كاملاً؟')) return;
