@@ -219,6 +219,10 @@
         <span class="font-semibold text-sm sm:text-base">طلبات الإشعار</span>
         <span id="notifyBadge" class="hidden absolute left-3 top-3 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
       </button>
+      <button onclick="showSection('activitylog'); loadActivityLog();" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="activitylog">
+        <i data-lucide="activity" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">سجل النشاط</span>
+      </button>
       <button onclick="showSection('loginlogs'); if(typeof loadLoginLogs==='function') loadLoginLogs(); else { var _tb=document.getElementById('loginLogsTable'); if(_tb) _tb.innerHTML='<tr><td colspan=6 class=\'text-center py-8 text-brand-400\'>لا يوجد سجل دخول بعد</td></tr>'; }" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="loginlogs">
         <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-500"></i>
         <span class="font-medium text-brand-700 text-xs sm:text-sm">سجل الدخول</span>
@@ -1016,6 +1020,12 @@
       </div>
       <canvas id="analyticsMonthlyChart" height="130"></canvas>
       <div id="analyticsSalesSummary"></div>
+      <!-- New analytics panels: #113 day-of-week, #117 best customer, #119 delivery rate -->
+      <div id="dayOfWeekSection" class="mt-4"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-0">
+        <div id="bestCustomerSection"></div>
+        <div id="deliveryRateSection"></div>
+      </div>
     </div>
 
     <!-- أزرار إدارة التحليلات -->
@@ -1367,7 +1377,36 @@
       </div>
     </div>
   </section>
-</main>
+
+  <!-- ═══ #133: Activity Log ═══════════════════════════════════════════ -->
+  <section id="section-activitylog" class="section-content hidden">
+    <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-2xl text-brand-900">سجل النشاط</h1>
+          <p class="text-brand-600 text-sm">كل الإجراءات التي تمّت على النظام</p>
+        </div>
+      </div>
+      <button onclick="loadActivityLog()" class="flex items-center gap-2 bg-brand-100 text-brand-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-200">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> تحديث
+      </button>
+    </div>
+    <!-- Filter -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="filterActivityLog('all')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-700 text-white text-xs font-semibold" data-filter="all">الكل</button>
+      <button onclick="filterActivityLog('order')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="order">📦 الطلبات</button>
+      <button onclick="filterActivityLog('product')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="product">🧴 المنتجات</button>
+      <button onclick="filterActivityLog('login')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="login">🔐 الدخول</button>
+    </div>
+    <div id="activityLogList" class="space-y-2">
+      <div class="text-center py-8 text-brand-400 text-sm">جاري التحميل...</div>
+    </div>
+  </section>
+
+  </main>
 </div>
 
 <script>
@@ -4036,6 +4075,174 @@ async function exportFullBackup() {
       }).catch(function(){});
     } catch(_) {}
   });
+})();
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// #133: Activity Log — client-side log using localStorage
+// ══════════════════════════════════════════════════════════════════
+var _activityLogs = [];
+var _activityFilter = 'all';
+
+function _logActivity(type, message, details) {
+  var entry = {
+    id: Date.now(),
+    type: type, // 'order' | 'product' | 'login' | 'setting' | 'backup'
+    message: message,
+    details: details || '',
+    time: new Date().toISOString()
+  };
+  var logs = _getActivityLogs();
+  logs.unshift(entry);
+  if (logs.length > 500) logs = logs.slice(0, 500); // Max 500 entries
+  try { localStorage.setItem('nb_activity_log', JSON.stringify(logs)); } catch(e){}
+  _activityLogs = logs;
+}
+
+function _getActivityLogs() {
+  try { return JSON.parse(localStorage.getItem('nb_activity_log') || '[]'); } catch(e) { return []; }
+}
+
+window._logActivity = _logActivity; // expose globally
+
+function loadActivityLog() {
+  _activityLogs = _getActivityLogs();
+  filterActivityLog(_activityFilter);
+}
+
+function filterActivityLog(filter) {
+  _activityFilter = filter;
+  // Update button styles
+  document.querySelectorAll('.activity-filter-btn').forEach(function(btn) {
+    var isActive = btn.dataset.filter === filter;
+    btn.className = btn.className.replace(/bg-brand-\d+ text-(?:white|brand-700)/g, '');
+    btn.classList.remove('bg-brand-700','text-white','bg-brand-100','text-brand-700');
+    if (isActive) { btn.classList.add('bg-brand-700','text-white'); }
+    else { btn.classList.add('bg-brand-100','text-brand-700'); }
+  });
+  var filtered = filter === 'all' ? _activityLogs : _activityLogs.filter(function(l){ return l.type === filter; });
+  var list = document.getElementById('activityLogList');
+  if (!list) return;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="text-center py-10 text-brand-400 text-sm">لا يوجد سجل نشاط بعد</div>';
+    return;
+  }
+  var typeIcons = { order:'📦', product:'🧴', login:'🔐', setting:'⚙️', backup:'💾', customer:'👤', discount:'🏷️' };
+  var typeColors = { order:'bg-blue-50 border-blue-100', product:'bg-green-50 border-green-100', login:'bg-purple-50 border-purple-100', setting:'bg-amber-50 border-amber-100', backup:'bg-indigo-50 border-indigo-100' };
+  list.innerHTML = filtered.map(function(l) {
+    var icon = typeIcons[l.type] || '📝';
+    var colorCls = typeColors[l.type] || 'bg-brand-50 border-brand-100';
+    var timeStr = new Date(l.time).toLocaleString('ar-EG');
+    return '<div class="flex items-start gap-3 p-3 rounded-xl border ' + colorCls + '">' +
+      '<span style="font-size:20px;flex-shrink:0;">' + icon + '</span>' +
+      '<div class="flex-1 min-w-0">' +
+      '<p class="font-semibold text-brand-900 text-sm">' + l.message + '</p>' +
+      (l.details ? '<p class="text-brand-500 text-xs mt-0.5">' + l.details + '</p>' : '') +
+      '<p class="text-brand-400 text-xs mt-1">' + timeStr + '</p>' +
+      '</div></div>';
+  }).join('');
+}
+
+// Hook activity log into existing admin actions
+// Intercept updateOrderStatus
+if (typeof window !== 'undefined') {
+  var _origUpdateOrderStatus = window.updateOrderStatus;
+  window.updateOrderStatus = async function(orderId, status) {
+    var statusLabels = {new:'تثبيت',preparing:'تجهيز',shipped:'مع المندوب',on_the_way:'في الطريق',delivered:'تم التسليم',cancelled:'إلغاء'};
+    _logActivity('order', 'تغيير حالة الطلب #' + orderId, 'الحالة الجديدة: ' + (statusLabels[status]||status));
+    if (typeof _origUpdateOrderStatus === 'function') return _origUpdateOrderStatus(orderId, status);
+  };
+}
+
+// Log login event
+_logActivity('login', 'دخول للوحة التحكم', navigator.userAgent.slice(0, 60));
+
+// ══════════════════════════════════════════════════════════════════
+// #137: تنبيه دخول من جهاز/متصفح جديد
+// ══════════════════════════════════════════════════════════════════
+(function() {
+  function _getDeviceFingerprint() {
+    return [
+      navigator.userAgent.slice(0, 80),
+      screen.width + 'x' + screen.height,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+      navigator.language || ''
+    ].join('|');
+  }
+  var currentFP = _getDeviceFingerprint();
+  var savedFP   = '';
+  try { savedFP = localStorage.getItem('nb_device_fp') || ''; } catch(e) {}
+
+  if (savedFP && savedFP !== currentFP) {
+    // Different device/browser detected
+    setTimeout(function() {
+      var banner = document.createElement('div');
+      banner.innerHTML =
+        '<div style="position:fixed;top:70px;right:16px;z-index:9999;background:#fef3c7;border:2px solid #f59e0b;border-radius:16px;padding:14px 16px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,0.15);direction:rtl;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+        '<span style="font-size:20px;">⚠️</span>' +
+        '<span style="font-weight:800;color:#92400e;font-size:14px;">دخول من جهاز جديد</span>' +
+        '<button onclick="this.closest('div').remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#92400e;">✕</button>' +
+        '</div>' +
+        '<p style="font-size:12px;color:#78350f;margin:0 0 10px;">تم تسجيل الدخول من متصفح أو جهاز مختلف عن المعتاد.</p>' +
+        '<button onclick="localStorage.setItem('nb_device_fp','' + currentFP.replace(/'/g,'') + '');this.closest('div').remove();" style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:12px;">هذا أنا — ثق بهذا الجهاز</button>' +
+        '</div>';
+      document.body.appendChild(banner);
+      _logActivity('login', '⚠️ دخول من جهاز جديد', navigator.userAgent.slice(0, 80));
+    }, 1500);
+  }
+  // Update fingerprint
+  try { localStorage.setItem('nb_device_fp', currentFP); } catch(e) {}
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// #173: مراقبة الـ Uptime — ping Supabase كل 5 دقائق
+// ══════════════════════════════════════════════════════════════════
+(function() {
+  var _SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var _SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var _failCount = 0;
+  var _uptimeIndicator = null;
+
+  function _createUptimeIndicator() {
+    var el = document.createElement('div');
+    el.id = 'uptimeIndicator';
+    el.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:999;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.9);border:1px solid #e2e8f0;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1);direction:rtl;';
+    el.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div><span style="color:#059669;">متصل</span>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function _pingSupabase() {
+    var start = Date.now();
+    fetch(_SURL + '/rest/v1/settings?select=id&limit=1', {
+      headers: { 'apikey': _SKEY, 'Authorization': 'Bearer ' + _SKEY }
+    }).then(function(r) {
+      var ms = Date.now() - start;
+      _failCount = 0;
+      if (!_uptimeIndicator) _uptimeIndicator = _createUptimeIndicator();
+      var dot = _uptimeIndicator.querySelector('div');
+      var txt = _uptimeIndicator.querySelector('span');
+      if (dot) dot.style.background = ms < 500 ? '#10b981' : '#f59e0b';
+      if (txt) { txt.textContent = 'متصل ' + ms + 'ms'; txt.style.color = ms < 500 ? '#059669' : '#d97706'; }
+    }).catch(function() {
+      _failCount++;
+      if (_failCount >= 2) {
+        if (!_uptimeIndicator) _uptimeIndicator = _createUptimeIndicator();
+        var dot = _uptimeIndicator.querySelector('div');
+        var txt = _uptimeIndicator.querySelector('span');
+        if (dot) dot.style.background = '#ef4444';
+        if (txt) { txt.textContent = 'انقطع الاتصال!'; txt.style.color = '#dc2626'; }
+        if(typeof showToast === 'function') showToast('⚠️ تعذّر الاتصال بالخادم', 'error');
+      }
+    });
+  }
+
+  // First ping after 3s, then every 5 minutes
+  setTimeout(_pingSupabase, 3000);
+  setInterval(_pingSupabase, 5 * 60 * 1000);
 })();
 </script>
 
