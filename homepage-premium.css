@@ -761,8 +761,8 @@
   top: 0; left: 0; right: 0;
   z-index: 50;
   transition: background 0.35s ease, box-shadow 0.35s ease,
-              padding 0.35s ease, backdrop-filter 0.35s ease;
-  will-change: transform, background;
+              padding 0.35s ease;
+  will-change: auto;
 }
 
 /* Transparent state (at top of page) */
@@ -1640,9 +1640,13 @@
 /* ── Quick View Modal — Enhanced ───────────── */
 .quick-view-modal {
   background: rgba(10, 25, 5, 0.65) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   padding: 16px !important;
+}
+.quick-view-modal.active {
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
 }
 .quick-view-container {
   max-width: 480px !important;
@@ -1756,8 +1760,12 @@
 
 /* ── Modal Backdrop ─────────────────────────── */
 #searchModal {
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#searchModal.active {
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   background: radial-gradient(ellipse 80% 60% at 50% 20%,
     rgba(15,38,8,0.5) 0%,
     rgba(0,0,0,0.72) 100%) !important;
@@ -2637,23 +2645,23 @@ textarea#customerNotes { border-radius: 12px !important; }
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
-  /* Modals: keep blur but reduced */
-  .quick-view-modal,
-  #quickViewModal {
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-  }
-  .checkout-modal {
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-  }
-  #searchModal {
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-  }
-  #mobileDrawer {
+  /* Modals: blur ONLY when active — prevents black layer on pinch-zoom */
+  .quick-view-modal.active,
+  #quickViewModal.active {
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
+  }
+  .checkout-modal.active {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+  #searchModal.active {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+  #mobileDrawer {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   /* Full-height fixes for all key panels */
