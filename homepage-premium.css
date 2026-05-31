@@ -1764,11 +1764,10 @@
   -webkit-backdrop-filter: none !important;
 }
 #searchModal.active {
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-  background: radial-gradient(ellipse 80% 60% at 50% 20%,
-    rgba(15,38,8,0.5) 0%,
-    rgba(0,0,0,0.72) 100%) !important;
+  /* backdrop-filter removed — causes full-viewport GPU compositing on Safari/iPad (lag/freeze) */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(8,22,4,0.80) !important;
   align-items: flex-start !important;
   padding: 12vh 16px 16px !important;
 }
@@ -1784,10 +1783,8 @@
   backdrop-
   -webkit-backdrop-
   border: 1px solid rgba(200,220,190,0.4) !important;
-  box-shadow:
-    0 28px 72px rgba(0,0,0,0.28),
-    0 4px 16px rgba(0,0,0,0.12),
-    0 0 0 1px rgba(255,255,255,0.6) inset !important;
+  /* Simplified to single shadow — triple shadows cause extra GPU compositing */
+  box-shadow: 0 20px 52px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.5) !important;
   opacity: 0 !important; transform: translateY(-20px) !important;
   transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) !important;
   overflow: hidden !important;
@@ -1871,6 +1868,8 @@
   scroll-behavior: smooth !important;
   scrollbar-width: thin !important;
   scrollbar-color: #d1d5b1 transparent !important;
+  contain: layout style !important; /* Isolate reflow — DOM changes inside don't trigger page relayout */
+  overscroll-behavior: contain !important; /* Prevent scroll chaining to body on iPad */
 }
 .search-results::-webkit-scrollbar { width: 4px; }
 .search-results::-webkit-scrollbar-track { background: transparent; }
@@ -1883,7 +1882,7 @@
   padding: 11px 18px !important;
   gap: 13px !important;
   cursor: pointer !important;
-  transition: background 0.15s ease, transform 0.15s ease !important;
+  transition: background 0.15s ease !important; /* transform removed — no longer used */
   border-top: 1px solid #f4f7f0 !important;
   outline: none !important;
   -webkit-tap-highlight-color: transparent !important;
@@ -1891,7 +1890,7 @@
 .search-result-item:hover,
 .search-result-item.sr-focused {
   background: linear-gradient(90deg, #f4f8f0, #f0fdf4) !important;
-  transform: translateX(-3px) !important;
+  /* transform: translateX(-3px) removed — creates GPU compositing layer per hovered item */
 }
 .search-result-item.sr-focused {
   box-shadow: inset 3px 0 0 #2D5016 !important;
@@ -1918,19 +1917,22 @@
 .search-result-item:hover svg:last-child,
 .search-result-item.sr-focused svg:last-child {
   color: #2D5016 !important;
-  transform: translateX(-4px) !important;
+  /* translateX removed — unnecessary GPU layer on every hovered result */
 }
 
-/* Stagger animation on results */
-.search-result-item { animation: srItemIn 0.2s ease both; }
-.search-result-item:nth-child(1) { animation-delay: 0.02s; }
-.search-result-item:nth-child(2) { animation-delay: 0.04s; }
-.search-result-item:nth-child(3) { animation-delay: 0.06s; }
-.search-result-item:nth-child(4) { animation-delay: 0.08s; }
-.search-result-item:nth-child(n+5){ animation-delay: 0.10s; }
+/* Stagger animation — reduced to 3 tiers, faster duration for iPad */
+.search-result-item { animation: srItemIn 0.15s ease both; }
+.search-result-item:nth-child(1) { animation-delay: 0.01s; }
+.search-result-item:nth-child(2) { animation-delay: 0.03s; }
+.search-result-item:nth-child(3) { animation-delay: 0.05s; }
+.search-result-item:nth-child(n+4){ animation-delay: 0.06s; }
 @keyframes srItemIn {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(6px); } /* vertical only — no horizontal GPU nudge */
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Disable animations on low-power / reduced-motion devices */
+@media (prefers-reduced-motion: reduce) {
+  .search-result-item { animation: none !important; }
 }
 
 /* ── Loading Skeleton ────────────────────────── */
