@@ -17,7 +17,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- Security: Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org https://ipapi.co https://ipinfo.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
@@ -392,7 +392,6 @@
 
       <div class="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
         <button onclick="filterOrders('all')" class="tab-btn active px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-700 text-white font-medium text-xs sm:text-sm" data-filter="all">الكل</button>
-        <button onclick="filterOrders('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">جديدة</button>
         <button onclick="filterOrders('new')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="new">✅ جديد</button>
         <button onclick="filterOrders('preparing')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="preparing">📦 تجهيز</button>
         <button onclick="filterOrders('shipped')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="shipped">🚐 مع المندوب</button>
@@ -1037,6 +1036,46 @@
       </div>
     </div>
 
+    <!-- AI Customer Control Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5 sm:p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="users" class="w-5 h-5 text-brand-600"></i>
+          <h2 class="font-bold text-brand-900 text-lg">التحكم بـ AI للعملاء</h2>
+        </div>
+        <button onclick="loadAICustomerSessions()" class="flex items-center gap-1 text-brand-600 text-sm hover:text-brand-800 border border-brand-200 px-3 py-1.5 rounded-lg hover:bg-brand-50">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          تحميل
+        </button>
+      </div>
+      <p class="text-sm text-brand-600 mb-4">أوقف ردود الذكاء الاصطناعي لعميل بعينه، أو أرسل رسالة مباشرة إليه.</p>
+
+      <div id="ai-customer-sessions" class="space-y-2 mb-5 max-h-64 overflow-y-auto">
+        <p class="text-center text-brand-400 text-sm py-4">اضغط "تحميل" لعرض المحادثات الأخيرة</p>
+      </div>
+
+      <div class="border-t border-brand-100 pt-4">
+        <h3 class="font-semibold text-brand-800 mb-3 text-sm flex items-center gap-2">
+          <i data-lucide="send" class="w-4 h-4 text-brand-600"></i>
+          إرسال رسالة مباشرة لعميل
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-brand-600 mb-1">معرّف الجلسة (Session ID)</label>
+            <input type="text" id="ai-direct-session-id" class="input-field text-xs" placeholder="انسخه من قائمة المحادثات أعلاه..." dir="ltr">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-brand-600 mb-1">نص الرسالة</label>
+            <textarea id="ai-direct-message" rows="3" class="input-field resize-none text-sm" placeholder="اكتب رسالتك للعميل هنا..." dir="rtl"></textarea>
+          </div>
+          <button onclick="sendDirectMessageToCustomer()" class="bg-brand-700 hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            إرسال الرسالة
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Replies Card -->
     <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5 sm:p-6">
       <div class="flex items-center justify-between mb-4">
@@ -1171,6 +1210,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Login Summary Cards -->
+    <div id="loginLogSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
 
     <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
       <div class="flex items-center justify-between mb-4 sm:mb-6">
@@ -2979,10 +3021,18 @@ async function saveCatImg(key, url) {
 
   /* ── saveBundle ── */
   window.saveBundle = function() {
-    var btn = document.querySelector('#bundleModal [onclick="saveBundle()"]');
-    if (btn) { btn.textContent='جاري...'; btn.disabled=true; }
+    var btn = document.querySelector('#bundleModal button[onclick="saveBundle()"]') ||
+              document.querySelector('#bundleModal .flex button');
+    if (btn) { btn.textContent='جاري الحفظ...'; btn.disabled=true; }
 
     var restore = function() { if(btn){btn.textContent='حفظ';btn.disabled=false;} };
+
+    // Safety timeout: reset button after 30 seconds no matter what
+    var _safetyTimer = setTimeout(function(){
+      restore();
+      if(typeof showToast==='function') showToast('انتهى وقت الانتظار — حاول مرة أخرى','warning');
+    }, 30000);
+    var restoreWithTimer = function() { clearTimeout(_safetyTimer); restore(); };
 
     var titleAr  = (document.getElementById('bundleTitleAr')||{}).value||'';
     titleAr = titleAr.trim();
@@ -2990,16 +3040,18 @@ async function saveCatImg(key, url) {
     var origPrice= parseInt(((document.getElementById('bundleOriginalPrice')||{}).value)||'0')||0;
     var isActive = (document.getElementById('bundleActive')||{}).checked !== false;
     var bundleId = ((document.getElementById('bundleId')||{}).value)||null;
+    if (bundleId === '') bundleId = null;
 
-    if (!titleAr)  { if(typeof showToast==='function') showToast('يرجى إدخال اسم الباقة','error'); restore(); return; }
-    if (!price)    { if(typeof showToast==='function') showToast('يرجى إدخال سعر صحيح','error'); restore(); return; }
+    if (!titleAr)  { if(typeof showToast==='function') showToast('يرجى إدخال اسم الباقة','error'); restoreWithTimer(); return; }
+    if (!price)    { if(typeof showToast==='function') showToast('يرجى إدخال سعر صحيح','error'); restoreWithTimer(); return; }
 
     var cards = document.querySelectorAll('#bundleProductsContainer [data-selected="true"]');
     var pids  = Array.from(cards).map(function(c){return c.dataset.pid;}).filter(Boolean);
-    if (pids.length < 2) { if(typeof showToast==='function') showToast('يرجى اختيار منتجين على الأقل','error'); restore(); return; }
+    if (pids.length < 2) { if(typeof showToast==='function') showToast('يرجى اختيار منتجين على الأقل','error'); restoreWithTimer(); return; }
 
     var imgInp = document.getElementById('bundleImageInput');
     var imgUrl = ((document.getElementById('bundleImageUrl')||{}).value)||null;
+    if (imgUrl === '') imgUrl = null;
     var imgFile= imgInp && imgInp.files && imgInp.files[0] ? imgInp.files[0] : null;
 
     var doSave = function(finalImgUrl) {
@@ -3007,26 +3059,33 @@ async function saveCatImg(key, url) {
         title_ar:       titleAr,
         product_ids:    JSON.stringify(pids),
         bundle_price:   price,
-        original_price: (origPrice > price) ? origPrice : null,
+        original_price: (origPrice && origPrice > price) ? origPrice : null,
         active:         isActive,
         updated_at:     new Date().toISOString()
       };
       if (finalImgUrl) row.image = finalImgUrl;
+      if (!bundleId) row.created_at = new Date().toISOString();
 
-      var op = bundleId ? window.SupaDB.Bundles.update(bundleId, row) : (function(){row.created_at=new Date().toISOString(); return window.SupaDB.Bundles.create(row);})();
+      var op = bundleId ? window.SupaDB.Bundles.update(bundleId, row) : window.SupaDB.Bundles.create(row);
       op.then(function() {
+        restoreWithTimer();
         if(typeof closeBundleModal==='function') closeBundleModal();
         if(typeof loadBundles==='function') loadBundles();
-        if(typeof showToast==='function') showToast('تم الحفظ بنجاح','success');
-        restore();
+        if(typeof showToast==='function') showToast('✅ تم حفظ الباقة بنجاح','success');
       }).catch(function(e) {
-        if(typeof showToast==='function') showToast('خطأ: '+(e&&e.message?e.message:String(e)),'error');
-        restore();
+        restoreWithTimer();
+        var msg = e && e.message ? e.message : String(e);
+        console.error('[saveBundle]', msg);
+        if(typeof showToast==='function') showToast('خطأ في الحفظ: '+msg,'error');
       });
     };
 
     if (imgFile && window.SupaDB && window.SupaDB.ImageStorage) {
-      window.SupaDB.ImageStorage.upload(imgFile,'bundle_'+Date.now()).then(doSave).catch(function(){doSave(imgUrl);});
+      // 15-second timeout for image upload
+      var _imgTimeout = setTimeout(function(){ doSave(null); }, 15000);
+      window.SupaDB.ImageStorage.upload(imgFile,'bundle_'+Date.now())
+        .then(function(url){ clearTimeout(_imgTimeout); doSave(url); })
+        .catch(function(e){ clearTimeout(_imgTimeout); console.warn('[bundleImg upload]',e); doSave(imgUrl); });
     } else {
       doSave(imgUrl);
     }
