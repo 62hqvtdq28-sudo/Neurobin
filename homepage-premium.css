@@ -2130,3 +2130,303 @@ mark, .search-result-item mark {
   outline: 2px solid #2D5016 !important;
   outline-offset: -2px !important;
 }
+
+/* ══════════════════════════════════════════════
+   SKELETON LOADING PREMIUM — ph.neurobin
+   Prevent CLS · Shimmer · Fade · Blur-up
+══════════════════════════════════════════════ */
+
+/* ── Shimmer Core (override existing) ────────── */
+@keyframes skShimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.skeleton,
+.sk {
+  background: linear-gradient(
+    90deg,
+    #eef2e8 0%,
+    #e0e8d6 20%,
+    #d4e0c8 40%,
+    #e0e8d6 60%,
+    #eef2e8 80%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: skShimmer 1.6s ease-in-out infinite !important;
+  border-radius: 10px !important;
+}
+
+/* Stagger shimmer phase per card position */
+.products-grid .skeleton-card:nth-child(2) .skeleton { animation-delay: 0.1s; }
+.products-grid .skeleton-card:nth-child(3) .skeleton { animation-delay: 0.2s; }
+.products-grid .skeleton-card:nth-child(4) .skeleton { animation-delay: 0.3s; }
+.products-grid .skeleton-card:nth-child(5) .skeleton { animation-delay: 0.4s; }
+.products-grid .skeleton-card:nth-child(6) .skeleton { animation-delay: 0.5s; }
+.products-grid .skeleton-card:nth-child(n+7) .skeleton{ animation-delay: 0.6s; }
+
+/* ── Skeleton Card — exact card dimensions ────── */
+.skeleton-card {
+  background: #fff !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  border: 1.5px solid #eef2e8 !important;
+  box-shadow: 0 2px 10px rgba(45,80,22,0.05) !important;
+  animation: skCardIn 0.35s ease both !important;
+  min-height: 340px;
+  contain: layout style;
+}
+@keyframes skCardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.skeleton-card:nth-child(2) { animation-delay: 0.05s; }
+.skeleton-card:nth-child(3) { animation-delay: 0.10s; }
+.skeleton-card:nth-child(4) { animation-delay: 0.15s; }
+.skeleton-card:nth-child(5) { animation-delay: 0.20s; }
+.skeleton-card:nth-child(6) { animation-delay: 0.25s; }
+.skeleton-card:nth-child(n+7){ animation-delay: 0.30s; }
+
+/* Image area — matches product-image-wrapper height */
+.skeleton-img {
+  height: 200px !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  display: block !important;
+}
+@media (max-width: 767px) {
+  .skeleton-img { height: 155px !important; }
+  .skeleton-card { min-height: 270px; }
+}
+
+/* Body area */
+.skeleton-body { padding: 12px 12px 14px !important; }
+.skeleton-tag   { height: 16px; width: 42%; margin-bottom: 9px; border-radius: 100px !important; }
+.skeleton-title { height: 13px; width: 88%; margin-bottom: 7px; }
+.skeleton-sub   { height: 11px; width: 62%; margin-bottom: 14px; }
+.skeleton-row   { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.skeleton-price { height: 20px; width: 40%; border-radius: 6px !important; }
+.skeleton-btn   { height: 32px; width: 38%; border-radius: 100px !important; }
+
+/* ── Products Grid Fade Transition ───────────── */
+#productsGrid {
+  transition: opacity 0.3s ease !important;
+}
+#productsGrid.grid-loading {
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+#productsGrid.grid-fading-out {
+  opacity: 0 !important;
+  transform: translateY(6px) !important;
+  transition: opacity 0.22s ease, transform 0.22s ease !important;
+}
+#productsGrid.grid-fading-in {
+  animation: gridFadeIn 0.35s ease both !important;
+}
+@keyframes gridFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Image Blur-Up (lazy reveal) ─────────────── */
+.product-image-wrapper img {
+  transition: opacity 0.4s ease, filter 0.4s ease !important;
+}
+.product-image-wrapper img.img-loading {
+  opacity: 0.2 !important;
+  filter: blur(8px) !important;
+}
+.product-image-wrapper img.img-loaded {
+  opacity: 1 !important;
+  filter: blur(0) !important;
+}
+
+/* ── Loading Screen Upgraded ─────────────────── */
+.loading-screen {
+  background: linear-gradient(135deg, #f8fdf4 0%, #f0f8e8 100%) !important;
+  transition: opacity 0.55s ease, visibility 0.55s ease !important;
+}
+.loading-screen.hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#loadingLogo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, #2D5016, #4a7c23);
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  animation: loadLogoPulse 1.8s ease-in-out infinite;
+  box-shadow: 0 8px 32px rgba(45,80,22,0.25);
+}
+@keyframes loadLogoPulse {
+  0%,100% { transform: scale(1);   box-shadow: 0 8px 32px rgba(45,80,22,0.25); }
+  50%     { transform: scale(1.06); box-shadow: 0 12px 40px rgba(45,80,22,0.38); }
+}
+#loadingBars {
+  display: flex; gap: 5px; justify-content: center; margin-top: 18px;
+}
+.load-bar {
+  width: 6px; height: 28px;
+  background: linear-gradient(to top, #2D5016, #6aaa35);
+  border-radius: 100px;
+  animation: loadBarBounce 1s ease-in-out infinite;
+}
+.load-bar:nth-child(2) { animation-delay: 0.12s; }
+.load-bar:nth-child(3) { animation-delay: 0.24s; }
+.load-bar:nth-child(4) { animation-delay: 0.36s; }
+.load-bar:nth-child(5) { animation-delay: 0.48s; }
+@keyframes loadBarBounce {
+  0%,100% { transform: scaleY(0.4); opacity: 0.5; }
+  50%     { transform: scaleY(1.0); opacity: 1.0; }
+}
+#loadingText {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2D5016;
+  margin-top: 14px;
+  animation: loadTextPulse 2s ease-in-out infinite;
+}
+@keyframes loadTextPulse {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0.6; }
+}
+
+/* ── Filter Tabs Skeleton ─────────────────────── */
+.sk-filter-wrap {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 4px 0 8px;
+  overflow: hidden;
+}
+.sk-filter {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+}
+.sk-filter-circle {
+  width: 58px; height: 58px;
+  border-radius: 50% !important;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+}
+.sk-filter-label {
+  height: 10px; width: 44px;
+  border-radius: 6px !important;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+}
+.sk-filter:nth-child(2) .sk-filter-circle,
+.sk-filter:nth-child(2) .sk-filter-label { animation-delay: 0.1s; }
+.sk-filter:nth-child(3) .sk-filter-circle,
+.sk-filter:nth-child(3) .sk-filter-label { animation-delay: 0.2s; }
+.sk-filter:nth-child(4) .sk-filter-circle,
+.sk-filter:nth-child(4) .sk-filter-label { animation-delay: 0.3s; }
+.sk-filter:nth-child(5) .sk-filter-circle,
+.sk-filter:nth-child(5) .sk-filter-label { animation-delay: 0.4s; }
+.sk-filter:nth-child(n+6) .sk-filter-circle,
+.sk-filter:nth-child(n+6) .sk-filter-label { animation-delay: 0.5s; }
+
+/* ── Section Header Skeleton ─────────────────── */
+.sk-section-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.sk-section-title {
+  height: 28px; width: 200px;
+  border-radius: 8px !important;
+  margin: 0 auto 10px;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+}
+.sk-section-sub {
+  height: 14px; width: 280px;
+  border-radius: 6px !important;
+  margin: 0 auto;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+  animation-delay: 0.15s;
+}
+
+/* ── Admin: Stat Card Skeleton ───────────────── */
+.sk-stat-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #eef2e8;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(45,80,22,0.06);
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: skCardIn 0.3s ease both;
+}
+.sk-stat-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px !important;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+}
+.sk-stat-num  { height: 28px; width: 55%; border-radius: 8px !important; animation: skShimmer 1.6s 0.1s ease-in-out infinite; background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%); background-size: 200% 100%; }
+.sk-stat-lbl  { height: 12px; width: 70%; border-radius: 6px !important; animation: skShimmer 1.6s 0.2s ease-in-out infinite; background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%); background-size: 200% 100%; }
+.sk-stat-card:nth-child(2) * { animation-delay: 0.15s; }
+.sk-stat-card:nth-child(3) * { animation-delay: 0.30s; }
+.sk-stat-card:nth-child(4) * { animation-delay: 0.45s; }
+
+/* ── Admin: Table Row Skeleton ───────────────── */
+.sk-table-row td {
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #f4f7f0 !important;
+}
+.sk-table-cell {
+  height: 14px;
+  border-radius: 7px !important;
+  animation: skShimmer 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
+  background-size: 200% 100%;
+  display: block;
+}
+tr.sk-table-row:nth-child(2) .sk-table-cell { animation-delay: 0.08s; }
+tr.sk-table-row:nth-child(3) .sk-table-cell { animation-delay: 0.16s; }
+tr.sk-table-row:nth-child(4) .sk-table-cell { animation-delay: 0.24s; }
+tr.sk-table-row:nth-child(5) .sk-table-cell { animation-delay: 0.32s; }
+
+/* ── prem-skeleton override (New/Trending sections) ── */
+.prem-skeleton {
+  background: linear-gradient(
+    90deg,
+    #eef2e8 0%, #e0e8d6 20%, #d4e0c8 40%, #e0e8d6 60%, #eef2e8 80%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: skShimmer 1.6s ease-in-out infinite !important;
+  border-radius: 16px !important;
+  min-height: 280px !important;
+  flex-shrink: 0 !important;
+  width: 180px !important;
+}
+@media (max-width: 767px) {
+  .prem-skeleton { width: 148px !important; min-height: 240px !important; }
+}
+
+/* ── Content-visibility for off-screen sections ─ */
+section:not(#hero):not(#products):not(#navbar) {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* ── Reduce motion support ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton, .sk, .prem-skeleton,
+  .sk-filter-circle, .sk-filter-label,
+  .sk-section-title, .sk-section-sub,
+  .sk-stat-icon, .sk-stat-num, .sk-stat-lbl,
+  .sk-table-cell, .load-bar, #loadingLogo {
+    animation: none !important;
+  }
+}
