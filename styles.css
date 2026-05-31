@@ -507,3 +507,341 @@ a:focus:not(:focus-visible) { outline: none; }
     box-shadow: 0 12px 30px rgba(45,80,22,.12);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 PREMIUM DESIGN SYSTEM — CSS Custom Properties + Components
+   Neurobin Pharmacy — v2.0
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Color Palette ──────────────────────────────── */
+  --c-brand-950: #111c08;
+  --c-brand-900: #1E350F;
+  --c-brand-800: #2D5016;
+  --c-brand-700: #3D6B2D;
+  --c-brand-600: #5C933B;
+  --c-brand-500: #7CB550;
+  --c-brand-400: #AABF89;
+  --c-brand-200: #D4E4C0;
+  --c-brand-100: #E8EAD8;
+  --c-brand-50:  #F6F7F4;
+  --c-gold:      #F59E0B;
+  --c-gold-light:#FDE68A;
+
+  /* ── Shadow System ──────────────────────────────── */
+  --shadow-xs:   0 1px 4px rgba(30,53,15,.06);
+  --shadow-sm:   0 2px 10px rgba(30,53,15,.09);
+  --shadow-md:   0 6px 24px rgba(30,53,15,.12);
+  --shadow-lg:   0 16px 48px rgba(30,53,15,.16);
+  --shadow-xl:   0 28px 80px rgba(30,53,15,.20);
+  --shadow-glow: 0 0 0 3px rgba(92,147,59,.25);
+  --shadow-card: 0 2px 12px rgba(30,53,15,.07), 0 8px 32px rgba(30,53,15,.05);
+  --shadow-card-hover: 0 8px 36px rgba(30,53,15,.15), 0 2px 8px rgba(30,53,15,.08);
+
+  /* ── Radius System ──────────────────────────────── */
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 9999px;
+
+  /* ── Transitions ────────────────────────────────── */
+  --t-fast:   150ms cubic-bezier(.4,0,.2,1);
+  --t-normal: 280ms cubic-bezier(.4,0,.2,1);
+  --t-slow:   450ms cubic-bezier(.4,0,.2,1);
+  --t-bounce: 400ms cubic-bezier(.34,1.56,.64,1);
+
+  /* ── Typography ─────────────────────────────────── */
+  --font-sans: 'Cairo', 'Tajawal', system-ui, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────
+   💊 DISCOUNT BADGE — Premium red pill on product cards
+   ───────────────────────────────────────────────────────── */
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px; /* RTL: appears on left (start) side */
+  z-index: 12;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: #fff;
+  font-size: 0.625rem;   /* 10px */
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 10px rgba(220,38,38,.45);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.4;
+  animation: badgePop .4s var(--t-bounce) both;
+}
+@keyframes badgePop {
+  0%   { transform: scale(0) rotate(-12deg); opacity: 0; }
+  70%  { transform: scale(1.15) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   🃏 PRODUCT CARD — Premium hover & depth
+   ───────────────────────────────────────────────────────── */
+.product-card-main {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid var(--c-brand-100);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--t-normal), box-shadow var(--t-normal), border-color var(--t-fast);
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.product-card-main:hover {
+  transform: translateY(-5px) scale(1.005);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--c-brand-200);
+}
+.product-card-main:active {
+  transform: translateY(-2px) scale(1.002);
+  transition-duration: 80ms;
+}
+/* Image container smooth zoom on hover */
+.product-card-main .product-image-wrapper {
+  overflow: hidden;
+  border-radius: var(--r-md);
+}
+.product-card-main .product-image-wrapper img {
+  transition: transform var(--t-slow);
+}
+.product-card-main:hover .product-image-wrapper img {
+  transform: scale(1.06);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🔍 SEARCH — Premium modal + recent searches
+   ───────────────────────────────────────────────────────── */
+
+/* Search modal glassmorphism backdrop */
+#searchModal {
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  background: rgba(30,53,15,.35);
+  transition: opacity var(--t-normal);
+}
+#searchModal:not(.active) { pointer-events: none; }
+
+/* Search box container */
+#searchModal .search-modal-box {
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,.6);
+}
+
+/* Search input focus glow */
+#searchInput:focus {
+  outline: none;
+  box-shadow: var(--shadow-glow), 0 0 0 1px rgba(92,147,59,.4);
+}
+
+/* Search result items */
+.search-result-item {
+  display: flex;
+  align-items: center;
+  transition: background var(--t-fast);
+  cursor: pointer;
+}
+.search-result-item:hover {
+  background: var(--c-brand-50);
+}
+
+/* Recent searches hover */
+.recent-search-item:hover {
+  background: var(--c-brand-50);
+  border-radius: var(--r-sm);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🏷️ STOCK BADGES — Refined pill style
+   ───────────────────────────────────────────────────────── */
+.stock-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px; /* RTL: appears on right (end) side */
+  z-index: 11;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.stock-badge.out-of-stock {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.stock-badge.low-stock {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+  animation: pulseStock 2s ease infinite;
+}
+.stock-badge.in-stock {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+@keyframes pulseStock {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 3px rgba(234,88,12,.15); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ✨ MARK HIGHLIGHT — Search result text
+   ───────────────────────────────────────────────────────── */
+.search-result-item mark,
+mark.search-hl {
+  background: linear-gradient(90deg, #fef08a 0%, #fde047 100%);
+  color: var(--c-brand-900);
+  font-weight: 800;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 1px 4px rgba(245,158,11,.3);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🪟 GLASSMORPHISM UTILITY
+   ───────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.6);
+}
+.glass-dark {
+  background: rgba(30,53,15,.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🔘 BUTTON SYSTEM — Consistent interactive states
+   ───────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--c-brand-700), var(--c-brand-800));
+  color: #fff;
+  border-radius: var(--r-pill);
+  padding: .75rem 2rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), filter var(--t-fast);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(61,107,45,.35);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(61,107,45,.45);
+  filter: brightness(1.05);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(61,107,45,.3);
+}
+.btn-gold {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: var(--c-brand-900);
+  border-radius: var(--r-pill);
+  padding: .75rem 2rem;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245,158,11,.4);
+}
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(245,158,11,.55);
+}
+
+/* ─────────────────────────────────────────────────────────
+   📱 iPAD / SAFARI — Additional targeted fixes
+   ───────────────────────────────────────────────────────── */
+
+/* Prevent zoom on input focus in iOS */
+input[type="text"], input[type="tel"], input[type="email"],
+input[type="search"], select, textarea {
+  font-size: max(16px, 1rem); /* prevents iOS auto-zoom */
+}
+
+/* Safe area insets for notch devices */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px);    }
+
+/* Fix Safari sticky header rendering artifact */
+header[class*="sticky"], nav[class*="sticky"] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button, a, [role="button"] {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
+/* Fix Safari overflow with border-radius clipping */
+.product-card-main,
+[class*="rounded-xl"],
+[class*="rounded-2xl"],
+[class*="rounded-3xl"] {
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+/* iPad grid: ensure 3 columns on landscape iPad */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #productsGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   🌐 GLOBAL POLISH
+   ───────────────────────────────────────────────────────── */
+
+/* Smooth text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Custom focus ring matching brand */
+*:focus-visible {
+  outline: 2px solid var(--c-brand-500);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Prevent horizontal scroll leak on mobile */
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* Consistent selection color */
+::selection {
+  background: var(--c-brand-200);
+  color: var(--c-brand-900);
+}
+::-moz-selection {
+  background: var(--c-brand-200);
+  color: var(--c-brand-900);
+}
