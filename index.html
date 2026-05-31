@@ -2840,6 +2840,287 @@ window.submitProductRequest = async function() {
 })();
 </script>
 
+<script>
+/* ── Search UX Premium Enhancements — ph.neurobin ── */
+(function(){
+'use strict';
+
+/* ─── 1. Keyboard Navigation ──────────────────── */
+var _srFocusIdx = -1;
+
+function _getSrItems(){
+  return Array.from(document.querySelectorAll('#searchResults .search-result-item'));
+}
+function _srSetFocus(idx){
+  var items = _getSrItems();
+  items.forEach(function(el){ el.classList.remove('sr-focused'); el.removeAttribute('tabindex'); });
+  _srFocusIdx = Math.max(-1, Math.min(idx, items.length - 1));
+  if(_srFocusIdx >= 0 && items[_srFocusIdx]){
+    items[_srFocusIdx].classList.add('sr-focused');
+    items[_srFocusIdx].setAttribute('tabindex','0');
+    items[_srFocusIdx].scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+}
+
+/* Override handleSearchKeydown */
+if(typeof window.handleSearchKeydown !== 'undefined' || true){
+  window.handleSearchKeydown = function(e){
+    if(e.key === 'Escape'){ if(typeof closeSearch==='function') closeSearch(); return; }
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      _srSetFocus(_srFocusIdx + 1);
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      if(_srFocusIdx <= 0){ _srFocusIdx = -1; document.getElementById('searchInput') && document.getElementById('searchInput').focus(); }
+      else { _srSetFocus(_srFocusIdx - 1); }
+    } else if(e.key === 'Enter'){
+      var items = _getSrItems();
+      if(_srFocusIdx >= 0 && items[_srFocusIdx]){ items[_srFocusIdx].click(); return; }
+      /* Enter with index -1: just run performSearch */
+    }
+  };
+}
+
+/* Reset focus index when results change */
+var _srObs = null;
+function _initSrObserver(){
+  var el = document.getElementById('searchResults');
+  if(!el || _srObs) return;
+  _srObs = new MutationObserver(function(){ _srFocusIdx = -1; });
+  _srObs.observe(el, {childList:true, subtree:true});
+}
+
+/* ─── 2. Loading Skeleton ─────────────────────── */
+function _showSkeleton(){
+  var el = document.getElementById('searchResults');
+  if(!el) return;
+  var s = '';
+  for(var i=0;i<3;i++) s +=
+    '<div class="sr-skeleton"><div class="sr-skel-img"></div>'+
+    '<div class="sr-skel-lines"><div class="sr-skel-line"></div>'+
+    '<div class="sr-skel-line"></div></div></div>';
+  el.innerHTML = s;
+}
+
+/* ─── 3. Empty State ──────────────────────────── */
+function _showEmptyState(query){
+  var el = document.getElementById('searchResults');
+  if(!el) return;
+  var safe = query ? query.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+  el.innerHTML =
+    '<div class="sr-empty-state">'+
+    '<div class="sr-empty-icon">🔍</div>'+
+    '<p class="sr-empty-title">لا توجد نتائج'+(safe ? ' لـ «'+safe+'»' : '')+'</p>'+
+    '<p class="sr-empty-sub">جرّب كلمات مختلفة أو تصفّح الفئات أدناه</p>'+
+    '<div class="sr-cats">'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 العناية بالبشرة</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
+    '</div></div>';
+}
+
+/* ─── 4. Results Count Banner ─────────────────── */
+function _showCountBanner(count, query){
+  var el = document.getElementById('searchResults');
+  if(!el) return;
+  var safe = query ? query.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+  var banner = document.createElement('div');
+  banner.className = 'sr-count';
+  banner.innerHTML =
+    '<span class="sr-count-num">'+count+' نتيجة</span>'+
+    '<span class="sr-count-q">'+safe+'</span>';
+  el.insertBefore(banner, el.firstChild);
+}
+
+/* ─── 5. Recent Searches — pill-tag UI ────────── */
+function _newShowRecentSearches(){
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('nbRecentSearches')||'[]').slice(0,8); }
+  catch(e){ stored = []; }
+  var el = document.getElementById('searchResults');
+  if(!el) return;
+  if(!stored.length){
+    /* Show category chips only */
+    el.innerHTML =
+      '<div class="sr-cats">'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 بشرة</span>'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'devices\')">📱 أجهزة</span>'+
+      '</div>';
+    return;
+  }
+  var esc = function(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var escJs = function(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); };
+
+  var pills = stored.map(function(s){
+    return '<span class="sr-pill" onclick="document.getElementById(\'searchInput\').value=\''+escJs(s)+'\';_srRunSearch();">'+
+      '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;opacity:.6"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>'+
+      '<span style="overflow:hidden;text-overflow:ellipsis;">'+esc(s)+'</span>'+
+      '<span class="sr-pill-del" onclick="event.stopPropagation();_srRemoveRecent(\''+escJs(s)+'\');" title="حذف">✕</span>'+
+    '</span>';
+  }).join('');
+
+  el.innerHTML =
+    '<div id="recentSearchHeader">'+
+    '<span>عمليات البحث الأخيرة</span>'+
+    '<button onclick="_srClearAll()">مسح الكل</button>'+
+    '</div>'+
+    '<div class="sr-pills">'+pills+'</div>'+
+    '<div class="sr-cats">'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 بشرة</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
+    '</div>';
+}
+window._newShowRecentSearches = _newShowRecentSearches;
+
+window._srRemoveRecent = function(term){
+  try{
+    var arr = JSON.parse(localStorage.getItem('nbRecentSearches')||'[]');
+    arr = arr.filter(function(s){ return s !== term; });
+    localStorage.setItem('nbRecentSearches', JSON.stringify(arr));
+  }catch(e){}
+  _newShowRecentSearches();
+};
+window._srClearAll = function(){
+  try{ localStorage.removeItem('nbRecentSearches'); }catch(e){}
+  document.getElementById('searchResults').innerHTML='';
+  _newShowRecentSearches();
+};
+window._srRunSearch = function(){
+  var inp = document.getElementById('searchInput');
+  if(inp && typeof performSearch==='function'){ performSearch(); }
+};
+
+/* ─── 6. Debounced performSearch wrapper ─────── */
+var _searchDebTimer = null;
+var _lastSearchQ = '';
+
+function _patchPerformSearch(){
+  if(typeof performSearch !== 'function' || performSearch.__srPatched) return;
+  var _origPS = performSearch;
+  window.performSearch = function(){
+    var inp = document.getElementById('searchInput');
+    var q = inp ? inp.value.trim() : '';
+
+    /* Clear — show recent */
+    if(q.length < 2){
+      _lastSearchQ = '';
+      clearTimeout(_searchDebTimer);
+      if(typeof _newShowRecentSearches === 'function') _newShowRecentSearches();
+      return;
+    }
+
+    /* Same query — skip */
+    if(q === _lastSearchQ) return;
+
+    /* Show skeleton immediately */
+    _showSkeleton();
+
+    clearTimeout(_searchDebTimer);
+    _searchDebTimer = setTimeout(function(){
+      _lastSearchQ = q;
+      _origPS();
+      /* After render: inject count banner */
+      setTimeout(function(){
+        var el = document.getElementById('searchResults');
+        if(!el) return;
+        var items = el.querySelectorAll('.search-result-item');
+        var isEmpty = el.querySelector('.p-6, [class*="empty"]');
+        if(items.length > 0 && !isEmpty && !el.querySelector('.sr-count')){
+          _showCountBanner(items.length, q);
+        }
+        /* Empty state override */
+        if(el.textContent.includes('لم يتم العثور على نتائج') && !el.querySelector('.sr-empty-state')){
+          _showEmptyState(q);
+        }
+        _srFocusIdx = -1;
+      }, 40);
+    }, 180);
+  };
+  window.performSearch.__srPatched = true;
+}
+
+/* ─── 7. openSearch override — better focus UX ── */
+function _patchOpenSearch(){
+  if(typeof openSearch !== 'function' || openSearch.__srPatched) return;
+  var _origOS = openSearch;
+  window.openSearch = function(){
+    _origOS();
+    _lastSearchQ = '';
+    _srFocusIdx = -1;
+    /* Show new recent UI */
+    var inp = document.getElementById('searchInput');
+    if(inp && !inp.value.trim()){
+      setTimeout(_newShowRecentSearches, 60);
+    }
+    /* Add kbd shortcut hint if not present */
+    var box = document.querySelector('.search-container > div:first-child');
+    if(box && !document.getElementById('searchKbdHint')){
+      var hint = document.createElement('span');
+      hint.id = 'searchKbdHint';
+      hint.textContent = 'Esc للإغلاق • ↑↓ للتنقل';
+      box.style.position = 'relative';
+      box.appendChild(hint);
+    }
+  };
+  window.openSearch.__srPatched = true;
+}
+
+/* ─── 8. closeSearch override — reset state ──── */
+function _patchCloseSearch(){
+  if(typeof closeSearch !== 'function' || closeSearch.__srPatched) return;
+  var _origCS = closeSearch;
+  window.closeSearch = function(){
+    _origCS();
+    _lastSearchQ = '';
+    _srFocusIdx = -1;
+  };
+  window.closeSearch.__srPatched = true;
+}
+
+/* ─── 9. Mobile: dismiss keyboard on result tap ─ */
+document.addEventListener('click', function(e){
+  if(e.target.closest('#searchResults .search-result-item')){
+    var inp = document.getElementById('searchInput');
+    if(inp) inp.blur();
+  }
+}, {passive: true});
+
+/* ─── 10. Inject keyboard shortcut hint to input area ── */
+function _addSearchBarKbd(){
+  var box = document.querySelector('#searchModal .search-container > div:first-child');
+  if(box && !document.getElementById('searchKbdHint')){
+    var hint = document.createElement('span');
+    hint.id = 'searchKbdHint';
+    hint.textContent = 'Esc للإغلاق  •  ↑↓ للتنقل';
+    box.style.position = 'relative';
+    box.appendChild(hint);
+  }
+}
+
+/* ─── Boot: wait for app.js ────────────────────── */
+var _booted = false;
+function _boot(){
+  if(_booted) return;
+  if(typeof performSearch!=='function' || typeof openSearch!=='function') return;
+  _booted = true;
+  _patchPerformSearch();
+  _patchOpenSearch();
+  _patchCloseSearch();
+  _initSrObserver();
+  _addSearchBarKbd();
+}
+document.addEventListener('DOMContentLoaded', function(){ _boot(); if(!_booted) setTimeout(_boot, 600); });
+window.addEventListener('load', _boot);
+
+})();
+</script>
+
 </body>
 </html>
 
