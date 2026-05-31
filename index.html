@@ -277,13 +277,13 @@ section, div { max-width: 100%; }
 .product-card-main{opacity:1!important}
 
 /* Layer 2: But allow scroll animation to work by initially hiding */
-.product-card-main.scroll-animate-scale{opacity:0;transform:scale(0.9)}
-.product-card-main.scroll-animate-scale.visible{opacity:1!important;transform:scale(1)}
+.product-card-main.scroll-animate-scale{opacity:0}
+.product-card-main.scroll-animate-scale.visible{opacity:1!important;transform:none}
 
 /* Layer 3: CSS fallback — auto-reveal if .visible never added */
 .product-card-main.scroll-animate-scale:not(.visible){
-  animation:cardRevealFallback .5s ease-out .8s forwards}
-@keyframes cardRevealFallback{to{opacity:1;transform:scale(1)}}
+  animation:cardRevealFallback .4s ease-out .5s forwards}
+@keyframes cardRevealFallback{to{opacity:1}}
 
 /* Layer 4: Product images — always visible */
 .product-image-wrapper img{opacity:1!important;filter:none!important;-webkit-filter:none!important}
@@ -3367,11 +3367,10 @@ function _patchRender(){
       setTimeout(function(){
         grid.classList.remove('grid-loading','grid-fading-out');
         _origRender(list);
-        grid.classList.add('grid-fading-in');
-        setTimeout(function(){ grid.classList.remove('grid-fading-in'); }, 400);
+        /* Do NOT add grid-fading-in — product cards have their own opacity reveal */
         /* Image blur-up */
         _applyBlurUp(grid);
-      }, 220);
+      }, 80);
     } else {
       _origRender(list);
       if(grid) _applyBlurUp(grid);
