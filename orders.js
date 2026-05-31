@@ -15,6 +15,13 @@ async function loadOrders() {
     var orders = allOrders;
     var q = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
     if (currentOrderFilter !== 'all' && currentOrderFilter !== 'deleted') orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
+    // #30: Advanced date filter
+    var _df = (typeof window._orderDateFrom !== 'undefined') ? window._orderDateFrom : '';
+    var _dt = (typeof window._orderDateTo !== 'undefined') ? window._orderDateTo : '';
+    var _rg = (typeof window._orderRegion !== 'undefined') ? window._orderRegion : '';
+    if (_df) { var _dfd=new Date(_df); orders=orders.filter(function(o){ return new Date(o.created_at||0)>=_dfd; }); }
+    if (_dt) { var _dtd=new Date(_dt); _dtd.setHours(23,59,59,999); orders=orders.filter(function(o){ return new Date(o.created_at||0)<=_dtd; }); }
+    if (_rg) orders=orders.filter(function(o){ return ((o.customer_address||o.address||'').toLowerCase()).includes(_rg.toLowerCase()); });
     if (q) orders = orders.filter(function(o){ var itemsStr=(Array.isArray(o.items)?o.items:Array.isArray(o.order_items)?o.order_items:[]).map(function(it){return (it.name||it.product_name||'').toLowerCase();}).join(' '); return (o.name||o.customer_name||'').toLowerCase().includes(q)||(o.phone||o.customer_phone||'').includes(q)||(o.customer_address||o.address||'').toLowerCase().includes(q)||itemsStr.includes(q); });
     if (!orders.length) { container.classList.add('hidden'); noOrders.classList.remove('hidden'); return; }
     container.classList.remove('hidden'); noOrders.classList.add('hidden');
@@ -49,6 +56,9 @@ async function loadOrders() {
         actionBtns = '<p class="text-center text-sm text-red-500 font-bold py-2 bg-red-50 rounded-lg">❌ تم إلغاء الطلب</p>';
         actionBtns += '<button data-action="delete-order" data-order-id="' + oid + '" class="w-full mt-2 bg-red-50 text-red-400 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors">🗑️ حذف</button>';
       } else {
+        // #15: if order < 30 minutes old and status is new, show cancel hint
+        var _orderAge = Date.now() - new Date(order.created_at||0).getTime();
+        var _canCancelAge = _orderAge < 30*60*1000;
         var _statusFlow = {new:'preparing',preparing:'shipped',shipped:'on_the_way',on_the_way:'delivered'};
         var _statusBtnLabels = {new:'📦 تجهيز الطلب',preparing:'🚐 تسليم للمندوب',shipped:'🚚 المندوب في الطريق',on_the_way:'✅ تم التوصيل'};
         var _nextStatus = _statusFlow[status];
@@ -464,3 +474,23 @@ async function saveManualOrder() {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب'; }
   }
 }
+
+// ── #11: Save & restore customer address in localStorage ──────────────────
+window._saveOrderAddress = function(addr) {
+  if (addr && addr.length > 3) {
+    try { localStorage.setItem('nb_last_addr', addr); } catch(e) {}
+  }
+};
+window._getLastAddress = function() {
+  try { return localStorage.getItem('nb_last_addr') || ''; } catch(e) { return ''; }
+};
+// Auto-fill address fields when visible
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var addrInput = document.getElementById('address') || document.getElementById('customerAddress');
+    if (addrInput && !addrInput.value) {
+      var saved = window._getLastAddress();
+      if (saved) addrInput.placeholder = 'آخر عنوان: ' + saved;
+    }
+  }, 800);
+});
