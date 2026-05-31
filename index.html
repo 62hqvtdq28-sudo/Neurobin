@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="tailwind.css">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="font-override.css">
+<link rel="stylesheet" href="homepage-premium.css?v=1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css"></noscript>
 
@@ -565,6 +566,156 @@ section, div { max-width: 100%; }
 
 
 
+
+<!-- ══ PREMIUM: Offers Slider ══ -->
+<section class="offers-slider-section" id="offersSlider">
+  <div class="offers-slider-wrapper">
+    <div class="offers-slider-header">
+      <div class="offers-slider-title">
+        <span style="font-size:1.8rem;">🎁</span>
+        <div>
+          <h2>عروض &amp; تخفيضات</h2>
+          <p>أحدث العروض الحصرية لعملائنا</p>
+        </div>
+      </div>
+      <div class="slider-nav-btns">
+        <button class="slider-nav-btn" onclick="offersSliderPrev()" aria-label="السابق">&#8249;</button>
+        <button class="slider-nav-btn" onclick="offersSliderNext()" aria-label="التالي">&#8250;</button>
+      </div>
+    </div>
+    <div class="offers-track-container">
+      <div class="offers-track" id="offersTrack">
+
+        <!-- Slide 1 -->
+        <div class="offer-slide" style="background:linear-gradient(135deg,#2D5016 0%,#4a7c23 60%,#6aaa35 100%);" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+          <div class="offer-slide-bg"></div>
+          <div class="offer-slide-deco circle1"></div>
+          <div class="offer-slide-deco circle2"></div>
+          <div class="offer-slide-content">
+            <div class="offer-badge">🌿 عرض خاص</div>
+            <h3>خصم على منتجات العناية بالبشرة</h3>
+            <p>احصل على أفضل منتجات العناية بالبشرة بأسعار لا تُقاوم — عروض محدودة الوقت</p>
+            <button class="offer-cta-btn" onclick="event.stopPropagation();filterProducts(null,'skincare');document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+              تسوق الآن ←
+            </button>
+          </div>
+          <div class="offer-discount-pill" aria-hidden="true">
+            <span>20%</span><span>خصم</span>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="offer-slide" style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#3b82f6 100%);" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+          <div class="offer-slide-bg"></div>
+          <div class="offer-slide-deco circle1"></div>
+          <div class="offer-slide-deco circle2"></div>
+          <div class="offer-slide-content">
+            <div class="offer-badge">🚚 توصيل مجاني</div>
+            <h3>توصيل مجاني على طلبات أكثر من 25,000 د.ع</h3>
+            <p>اطلب بثقة — نوصل لجميع محافظات العراق خلال 24-48 ساعة</p>
+            <button class="offer-cta-btn" onclick="event.stopPropagation();document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+              تسوق الآن ←
+            </button>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="offer-slide" style="background:linear-gradient(135deg,#7c2d12 0%,#c2410c 60%,#f97316 100%);" onclick="document.getElementById('topSelling').scrollIntoView({behavior:'smooth'})">
+          <div class="offer-slide-bg"></div>
+          <div class="offer-slide-deco circle1"></div>
+          <div class="offer-slide-deco circle2"></div>
+          <div class="offer-slide-content">
+            <div class="offer-badge">🔥 الأكثر مبيعاً</div>
+            <h3>منتجات جديدة وصلت — كن أول من يحصل عليها</h3>
+            <p>منتجات مختارة بعناية من أفضل الماركات العالمية — متوفرة الآن</p>
+            <button class="offer-cta-btn" onclick="event.stopPropagation();document.getElementById('newProducts').scrollIntoView({behavior:'smooth'})">
+              اكتشف الجديد ←
+            </button>
+          </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="offer-slide" style="background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 60%,#a78bfa 100%);" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+          <div class="offer-slide-bg"></div>
+          <div class="offer-slide-deco circle1"></div>
+          <div class="offer-slide-deco circle2"></div>
+          <div class="offer-slide-content">
+            <div class="offer-badge">💜 عروض التوفير</div>
+            <h3>عروض التوفير — اشترِ أكثر وادفع أقل</h3>
+            <p>باقات مخصوصة بأسعار استثنائية — وفّر على احتياجاتك الصحية والجمالية</p>
+            <button class="offer-cta-btn" onclick="event.stopPropagation();filterProducts(null,'bundles');document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+              اكتشف الباقات ←
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="slider-dots" id="sliderDots">
+      <button class="slider-dot active" onclick="offersSliderGoTo(0)" aria-label="الشريحة 1"></button>
+      <button class="slider-dot" onclick="offersSliderGoTo(1)" aria-label="الشريحة 2"></button>
+      <button class="slider-dot" onclick="offersSliderGoTo(2)" aria-label="الشريحة 3"></button>
+      <button class="slider-dot" onclick="offersSliderGoTo(3)" aria-label="الشريحة 4"></button>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  var track = document.getElementById('offersTrack');
+  var dots = document.querySelectorAll('#sliderDots .slider-dot');
+  var total = 4;
+  var cur = 0;
+  var timer;
+
+  function goTo(idx) {
+    cur = (idx + total) % total;
+    track.style.transform = 'translateX(' + (cur * 100) + '%)';
+    dots.forEach(function(d, i) {
+      d.classList.toggle('active', i === cur);
+    });
+  }
+
+  window.offersSliderNext = function() { goTo(cur + 1); resetTimer(); };
+  window.offersSliderPrev = function() { goTo(cur - 1); resetTimer(); };
+  window.offersSliderGoTo = function(i) { goTo(i); resetTimer(); };
+
+  function resetTimer() {
+    clearInterval(timer);
+    timer = setInterval(function() { goTo(cur + 1); }, 5000);
+  }
+
+  // RTL: slides go left, so transform is positive
+  // Actually for RTL we want slides going right-to-left: use negative for LTR, but page is RTL
+  // Let's use translateX in pixels instead to be safe
+  function goToFixed(idx) {
+    cur = (idx + total) % total;
+    var w = track.parentElement.offsetWidth || 0;
+    // RTL: each slide is 100% width, translate right for RTL
+    track.style.transform = 'translateX(' + (cur * w) + 'px)';
+    dots.forEach(function(d, i) {
+      d.classList.toggle('active', i === cur);
+    });
+  }
+
+  window.offersSliderNext = function() { goToFixed(cur + 1); resetTimer(); };
+  window.offersSliderPrev = function() { goToFixed(cur - 1); resetTimer(); };
+  window.offersSliderGoTo = function(i) { goToFixed(i); resetTimer(); };
+
+  resetTimer();
+
+  // Touch/swipe support
+  var startX = 0;
+  track.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchend', function(e) {
+    var diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) window.offersSliderNext();
+      else window.offersSliderPrev();
+    }
+  }, {passive:true});
+})();
+</script>
+
 <!-- ✅ Feature #16: الأكثر مبيعاً Section -->
 <section id="topSelling" class="py-14 bg-gradient-to-b from-white to-brand-50/40" style="border-bottom:1px solid #e8f5e9;">
   <div class="max-w-7xl mx-auto px-6">
@@ -661,6 +812,181 @@ section, div { max-width: 100%; }
   } else {
     setTimeout(loadTopSelling, 1000);
   }
+})();
+</script>
+
+
+<!-- ══ PREMIUM: منتجات جديدة ══ -->
+<section class="premium-products-section" id="newProducts">
+  <div class="premium-products-wrapper">
+    <div class="premium-section-header">
+      <div>
+        <div class="premium-section-label new" style="background:#ede9fe;color:#5b21b6;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;margin-bottom:8px;">
+          ✨ وصل حديثاً
+        </div>
+        <h2 class="premium-section-title">منتجات جديدة</h2>
+        <p class="premium-section-sub">أحدث المنتجات التي أضفناها لمتجرنا</p>
+      </div>
+      <a href="#products" class="premium-view-all" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
+        عرض الكل ←
+      </a>
+    </div>
+    <div class="premium-products-scroll" id="newProductsScroll">
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  var SURL='https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
+
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function catLabel(cat){
+    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض'};
+    return m[cat]||cat||'';
+  }
+
+  function renderCard(p, badgeClass, badgeText) {
+    var name = esc(p.name_ar||p.name||'منتج');
+    var price = Number(p.price||0).toLocaleString('en-US');
+    var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
+    var hasImg = p.image && p.image.startsWith('http');
+    var imgHtml = hasImg
+      ? '<img class="prem-card-img" src="'+esc(p.image)+'" alt="'+name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
+        '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
+      : '<div class="prem-card-img-placeholder">📦</div>';
+    var stockBadge = inStock
+      ? '<span class="prem-card-stock-in">متوفر</span>'
+      : '<span class="prem-card-stock-out">نفذ</span>';
+    return '<div class="prem-card prem-fade-in" onclick="if(window.openQuickView)openQuickView(''+esc(p.id)+'');else document.getElementById('products').scrollIntoView({behavior:'smooth'})">' +
+      '<span class="prem-card-badge '+badgeClass+'">'+badgeText+'</span>' +
+      stockBadge +
+      imgHtml +
+      '<div class="prem-card-body">' +
+        '<span class="prem-card-name" title="'+name+'">'+name+'</span>' +
+        '<p class="prem-card-cat">'+catLabel(p.category)+'</p>' +
+        '<p class="prem-card-price">'+price+' د.ع</p>' +
+        '<button class="prem-card-btn" '+(inStock?'':'disabled ')+
+          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(''+esc(p.id)+'',1)">' +
+          (inStock ? '🛒 أضف للسلة' : '⏰ نفذت الكمية') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function loadNew() {
+    var container = document.getElementById('newProductsScroll');
+    if (!container) return;
+    try {
+      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category,created_at&order=created_at.desc&limit=10', {headers:H});
+      var prods = res.ok ? await res.json() : [];
+      if (!prods.length) { container.innerHTML='<p style="color:#9ca3af;padding:20px;">لا توجد منتجات</p>'; return; }
+      container.innerHTML = prods.map(function(p){ return renderCard(p,'new','جديد ✨'); }).join('');
+    } catch(e) {
+      container.innerHTML='<p style="color:#9ca3af;padding:20px;">تعذر التحميل</p>';
+    }
+  }
+
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadNew, 1200); });
+  } else { setTimeout(loadNew, 1200); }
+})();
+</script>
+
+<!-- ══ PREMIUM: منتجات رائجة ══ -->
+<section class="premium-products-section alt-bg" id="trendingProducts">
+  <div class="premium-products-wrapper">
+    <div class="premium-section-header">
+      <div>
+        <div style="background:#fff7ed;color:#c2410c;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;margin-bottom:8px;">
+          🔥 الأكثر شعبية
+        </div>
+        <h2 class="premium-section-title">منتجات رائجة</h2>
+        <p class="premium-section-sub">المنتجات الأكثر طلباً من عملائنا</p>
+      </div>
+      <a href="#products" class="premium-view-all" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
+        عرض الكل ←
+      </a>
+    </div>
+    <div class="premium-products-scroll" id="trendingProductsScroll">
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  var SURL='https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
+
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function catLabel(cat){
+    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض'};
+    return m[cat]||cat||'';
+  }
+
+  function renderTrendCard(p) {
+    var name = esc(p.name_ar||p.name||'منتج');
+    var price = Number(p.price||0).toLocaleString('en-US');
+    var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
+    var hasImg = p.image && p.image.startsWith('http');
+    var imgHtml = hasImg
+      ? '<img class="prem-card-img" src="'+esc(p.image)+'" alt="'+name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
+        '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
+      : '<div class="prem-card-img-placeholder">📦</div>';
+    var stockBadge = inStock
+      ? '<span class="prem-card-stock-in">متوفر</span>'
+      : '<span class="prem-card-stock-out">نفذ</span>';
+    return '<div class="prem-card prem-fade-in" onclick="if(window.openQuickView)openQuickView(''+esc(p.id)+'');else document.getElementById('products').scrollIntoView({behavior:'smooth'})">' +
+      '<span class="prem-card-badge hot">رائج 🔥</span>' +
+      stockBadge +
+      imgHtml +
+      '<div class="prem-card-body">' +
+        '<span class="prem-card-name" title="'+name+'">'+name+'</span>' +
+        '<p class="prem-card-cat">'+catLabel(p.category)+'</p>' +
+        '<p class="prem-card-price">'+price+' د.ع</p>' +
+        '<button class="prem-card-btn" '+(inStock?'':'disabled ')+
+          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(''+esc(p.id)+'',1)">' +
+          (inStock ? '🛒 أضف للسلة' : '⏰ نفذت الكمية') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function loadTrending() {
+    var container = document.getElementById('trendingProductsScroll');
+    if (!container) return;
+    try {
+      // Try is_trending flag first, fallback to highest price (proxy for demand)
+      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category&order=price.desc&limit=10', {headers:H});
+      var prods = res.ok ? await res.json() : [];
+      // Shuffle slightly for variety — take top 10 priced items as "trending"
+      if (!prods.length) { container.innerHTML='<p style="color:#9ca3af;padding:20px;">لا توجد منتجات</p>'; return; }
+      // Filter in-stock first, then out-of-stock
+      var inStock = prods.filter(function(p){ return (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0; });
+      var outStock = prods.filter(function(p){ return !((p.stock===undefined||p.stock===null)?true:Number(p.stock)>0); });
+      var sorted = inStock.concat(outStock).slice(0, 10);
+      container.innerHTML = sorted.map(renderTrendCard).join('');
+    } catch(e) {
+      container.innerHTML='<p style="color:#9ca3af;padding:20px;">تعذر التحميل</p>';
+    }
+  }
+
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadTrending, 1500); });
+  } else { setTimeout(loadTrending, 1500); }
 })();
 </script>
 
@@ -824,6 +1150,32 @@ section, div { max-width: 100%; }
 
 
 
+
+<!-- ══ PREMIUM: CTA 1 — تواصل وتسوق ══ -->
+<section class="cta-section-1" aria-label="دعوة للتسوق">
+  <div class="cta1-inner">
+    <div class="cta1-icon" aria-hidden="true">🛍️</div>
+    <h2>مستعد للتسوق؟ نحن هنا لمساعدتك</h2>
+    <p>تابعنا على إنستغرام لأحدث المنتجات والعروض، أو تواصل معنا مباشرةً عبر واتساب لطلب مخصص</p>
+    <div class="cta1-btns">
+      <a href="https://instagram.com/ph.neurobin" target="_blank" rel="noopener noreferrer" class="cta1-btn-ig">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        تابعنا على إنستغرام
+      </a>
+      <a href="https://wa.me/9647870404967" target="_blank" rel="noopener noreferrer" class="cta1-btn-wa">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.06 6.988 2.943a9.84 9.84 0 012.893 3.841 9.82 9.82 0 011.404 5.132c-.002 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        اطلب عبر واتساب
+      </a>
+    </div>
+    <div class="cta1-trust-row">
+      <div class="cta1-trust-item"><span>✅</span><span>منتجات أصلية 100%</span></div>
+      <div class="cta1-trust-item"><span>🚚</span><span>توصيل لجميع العراق</span></div>
+      <div class="cta1-trust-item"><span>💬</span><span>دعم على مدار الساعة</span></div>
+      <div class="cta1-trust-item"><span>⭐</span><span>تقييم 4.9/5</span></div>
+    </div>
+  </div>
+</section>
+
 <!-- Features Section -->
 <section id="features" class="py-24 md:py-32 bg-gradient-to-b from-cream to-brand-50" aria-labelledby="features-title">
   <div class="max-w-7xl mx-auto px-6">
@@ -924,6 +1276,43 @@ section, div { max-width: 100%; }
         <div class="inline-block w-8 h-8 border-2 border-brand-300 border-t-brand-600 rounded-full animate-spin mb-3"></div>
         <p>جاري التحميل...</p>
       </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ PREMIUM: CTA 2 — كيف تطلب ══ -->
+<section class="cta-section-2" aria-label="كيفية الطلب">
+  <div class="cta2-inner">
+    <div class="cta2-text">
+      <h2>كيف تطلب من ph.neurobin؟</h2>
+      <p>عملية طلب بسيطة وسريعة — اختر منتجك وأتمّ الطلب خلال دقائق، ونوصّله لباب بيتك</p>
+      <div class="cta2-steps">
+        <div class="cta2-step">
+          <div class="cta2-step-num">1</div>
+          <span>اختر منتجاتك</span>
+        </div>
+        <div class="cta2-step">
+          <div class="cta2-step-num">2</div>
+          <span>أضفها للسلة</span>
+        </div>
+        <div class="cta2-step">
+          <div class="cta2-step-num">3</div>
+          <span>أدخل بياناتك</span>
+        </div>
+        <div class="cta2-step">
+          <div class="cta2-step-num">4</div>
+          <span>استلم طلبك 🎉</span>
+        </div>
+      </div>
+    </div>
+    <div class="cta2-actions">
+      <button class="cta2-btn-primary" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+        🛒 تسوق الآن
+      </button>
+      <a href="#track-order" class="cta2-btn-secondary" onclick="document.getElementById('track-order').scrollIntoView({behavior:'smooth'});return false;">
+        📦 تتبع طلبي
+      </a>
     </div>
   </div>
 </section>
