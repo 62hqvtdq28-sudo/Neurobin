@@ -449,11 +449,9 @@ async function checkAuth() {
           sessionStorage.setItem('adminLastActivity', Date.now().toString());
           sessionStorage.setItem('adminSessionToken', generateSecureId());
         }
-        // Record session-restore at most once every 30 minutes (localStorage-based,
-        // so it survives navigation within the same tab unlike sessionStorage)
-        var _lastRestore = parseInt(localStorage.getItem('_lastSessionRestoreLog') || '0', 10);
-        if (Date.now() - _lastRestore > 30 * 60 * 1000) {
-          localStorage.setItem('_lastSessionRestoreLog', String(Date.now()));
+        // SEC-FIX: Record session-restore once per browser session (sessionStorage resets on tab close)
+        if (!sessionStorage.getItem('_sessionRestoreLogged')) {
+          sessionStorage.setItem('_sessionRestoreLogged', '1');
           recordLoginEvent('session-restore', 'success');
         }
         showDashboard();
@@ -802,7 +800,19 @@ function recordLoginEvent(type, status) {
     logs.unshift(entry);
     if (logs.length > 100) logs.splice(100);
     localStorage.setItem('adminLoginLogs', JSON.stringify(logs));
-    // Async IP lookup — update the first entry once resolved
+    // حفظ في Supabase للوصول عبر أجهزة مختلفة (fire-and-forget)
+    (function _supabackup(e) {
+      setTimeout(async function() {
+        try {
+          if (typeof window.SupaDB === 'undefined' || !window.SupaDB.Settings) return;
+          var raw = await window.SupaDB.Settings.get('admin_login_events');
+          var arr = []; try { arr = JSON.parse(raw || '[]'); if (!Array.isArray(arr)) arr = []; } catch(_) {}
+          arr.unshift(e); if (arr.length > 200) arr.splice(200);
+          await window.SupaDB.Settings.set('admin_login_events', JSON.stringify(arr));
+        } catch(_) {}
+      }, 500);
+    })(entry);
+    // Async IP lookup — تحديث السجل بعد معرفة الموقع
     fetch('https://ipapi.co/json/', { cache: 'no-store' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
@@ -813,6 +823,18 @@ function recordLoginEvent(type, status) {
             saved[0].city = d.city || null;
             saved[0].country = d.country_name || null;
             localStorage.setItem('adminLoginLogs', JSON.stringify(saved));
+            // تحديث Supabase بعد جلب IP
+            setTimeout(async function() {
+              try {
+                if (typeof window.SupaDB === 'undefined' || !window.SupaDB.Settings) return;
+                var raw2 = await window.SupaDB.Settings.get('admin_login_events');
+                var arr2 = []; try { arr2 = JSON.parse(raw2 || '[]'); if (!Array.isArray(arr2)) arr2 = []; } catch(_) {}
+                if (arr2[0] && arr2[0].id === entry.id) {
+                  arr2[0].ip = d.ip || null; arr2[0].city = d.city || null; arr2[0].country = d.country_name || null;
+                  await window.SupaDB.Settings.set('admin_login_events', JSON.stringify(arr2));
+                }
+              } catch(_) {}
+            }, 200);
           }
         } catch(e2) {}
       })
@@ -859,15 +881,20 @@ async function sendTelegramAlert(msg) {
     var token = (_s.telegramBotToken || '').trim();
     var chatId = (_s.telegramChatId || '').trim();
     if (!token || !chatId) return;
-    // استخدام Replit API proxy بدلاً من استدعاء Telegram مباشرةً من المتصفح
-    var apiUrl = (_s.apiServerUrl || _API_SERVER_URL).replace(/\/$/, '');
-    var resp = await fetch(apiUrl + '/api/telegram/send', {
+    // SEC-FIX: Rate limit — تنبيه واحد فقط كل دقيقتين للمحاولات الفاشلة (منعاً للسبام)
+    if (msg && msg.indexOf('فاشل') !== -1) {
+      var _last = parseInt(sessionStorage.getItem('_tgFailedLast') || '0', 10);
+      if (Date.now() - _last < 2 * 60 * 1000) return;
+      sessionStorage.setItem('_tgFailedLast', String(Date.now()));
+    }
+    // استدعاء Telegram API مباشرةً من المتصفح (أسرع وأكثر موثوقية)
+    var resp = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ botToken: token, chatId: chatId, message: msg })
+      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML' })
     });
     var data = await resp.json();
-    if (!data.ok) console.warn('[Telegram] Error:', data.error);
+    if (!data.ok) console.warn('[Telegram] Error:', data.description);
   } catch(e) { console.warn('[Telegram] Send failed:', e.message); }
 }
 
