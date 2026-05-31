@@ -12,6 +12,7 @@ function saveSettings() {
   var telegramBotToken = ((document.getElementById('telegramBotToken') || {}).value || '').trim();
   var telegramChatId = ((document.getElementById('telegramChatId') || {}).value || '').trim();
   var imgbbApiKey = ((document.getElementById('imgbbApiKey') || {}).value || '').trim();
+  var apiServerUrl = ((document.getElementById('apiServerUrl') || {}).value || '').trim().replace(/\/$/, '');
 
   var prev = {};
   try { prev = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(e) {}
@@ -21,7 +22,8 @@ function saveSettings() {
     whatsappNumber: whatsappNumber,
     telegramBotToken: telegramBotToken,
     telegramChatId: telegramChatId,
-    imgbbApiKey: imgbbApiKey
+    imgbbApiKey: imgbbApiKey,
+    apiServerUrl: apiServerUrl
   });
   localStorage.setItem('phSettings', JSON.stringify(settings));
   if (typeof showToast === 'function') showToast('تم حفظ الإعدادات بنجاح ✓', 'success');
@@ -136,6 +138,8 @@ function loadSettings() {
     document.getElementById('telegramChatId').value = settings.telegramChatId || '';
   if (document.getElementById('imgbbApiKey'))
     document.getElementById('imgbbApiKey').value = settings.imgbbApiKey || '';
+  if (document.getElementById('apiServerUrl'))
+    document.getElementById('apiServerUrl').value = settings.apiServerUrl || '';
 }
 
 
