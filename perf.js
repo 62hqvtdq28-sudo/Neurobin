@@ -291,53 +291,11 @@
     });
   })();
 
-  /* ── 8. Image lazy loading — Intersection Observer blur-up ───── */
-  (function patchImageLoading() {
-    if (!('IntersectionObserver' in window)) return;
-
-    var imgObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        var img = entry.target;
-        if (img.dataset.src) {
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-        }
-        img.classList.remove('img-loading');
-        img.classList.add('img-loaded');
-        imgObserver.unobserve(img);
-      });
-    }, { rootMargin: '200px 0px', threshold: 0 });
-
-    // Observe images in product grid as they're added
-    var gridObserver = new MutationObserver(function (mutations) {
-      mutations.forEach(function (m) {
-        m.addedNodes.forEach(function (node) {
-          if (node.nodeType !== 1) return;
-          var imgs = node.tagName === 'IMG'
-            ? [node]
-            : Array.from(node.querySelectorAll('img[loading="lazy"]'));
-          imgs.forEach(function (img) {
-            if (!img.complete) {
-              img.classList.add('img-loading');
-              imgObserver.observe(img);
-            }
-          });
-        });
-      });
-    });
-
-    function attachGridObserver() {
-      var grid = document.getElementById('productsGrid');
-      if (grid) gridObserver.observe(grid, { childList: true, subtree: false });
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', attachGridObserver);
-    } else {
-      attachGridObserver();
-    }
-  })();
+  /* ── 8. Image loading — delegated to img-loader.js ─────────────
+     (img-loader.js loaded AFTER this file handles all image states
+      with onload + rAF + timeout fallback — no IntersectionObserver-
+      only approach that breaks on Safari cached images)              */
+  // Stub: img-loader.js takes over completely
 
   /* ── 9. content-visibility for off-screen sections ─────────── */
   (function applyContentVisibility() {
