@@ -247,7 +247,7 @@ function renderBundles() {
     }).filter(Boolean);
     var saving = b.originalPrice && b.originalPrice > b.bundlePrice ? b.originalPrice - b.bundlePrice : 0;
     var prodList = bundleProducts.map(function(n){ return '<span class="text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full">' + n + '</span>'; }).join('');
-    return '<div class="product-card-main scroll-animate-scale" role="listitem" style="animation-delay:' + (i*0.05) + 's">' +
+    return '<div class="product-card-main scroll-animate-scale" role="listitem">' +
       (saving > 0 ? '<span class="stock-badge in-stock z-10" style="background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;">توفير ' + saving.toLocaleString() + ' د.ع</span>' : '') +
       '<div class="product-image-wrapper" style="background:linear-gradient(135deg,#fef2f2,#fff7ed);display:flex;align-items:center;justify-content:center;">' +
         '<svg class="w-16 h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>' +
