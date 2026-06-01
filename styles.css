@@ -405,16 +405,22 @@ button, a, [role="button"], label,
 }
 
 /* ── Skeleton Loading (shimmer) ─────────────────────────── */
+/* shimmer removed from styles.css — all skeleton elements now use skPulse from homepage-premium.css */
+/* @keyframes shimmer kept below for admin-styles.css only (separate stylesheet) */
 @keyframes shimmer {
+  /* Kept for admin.html compatibility only (admin-styles.css references it) */
   0%   { background-position: -600px 0; }
   100% { background-position:  600px 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg,
-    #f0f2ee 25%, #e4e8de 50%, #f0f2ee 75%);
-  background-size: 1200px 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  /* background-position animation → opacity pulse (compositor-only, no repaint) */
+  background: linear-gradient(135deg, #e8eede 0%, #f0f4e8 100%);
+  animation: skPulse 1.4s ease-in-out infinite;
   border-radius: 10px;
+}
+@keyframes skPulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1.00; }
 }
 .skeleton-card {
   background: #fff;
@@ -422,6 +428,7 @@ button, a, [role="button"], label,
   overflow: hidden;
   border: 1px solid #E8EAD8;
   animation: fadeInPage 0.3s ease-out;
+  contain: layout style paint; /* isolate repaint to card */
 }
 .skeleton-img  { height: 185px; width: 100%; border-radius: 0; }
 .skeleton-body { padding: 10px 12px 12px; }
