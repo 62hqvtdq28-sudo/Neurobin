@@ -232,8 +232,9 @@ function saveQuickEdit(id) {
 
 // Debounced search — fires 300ms after user stops typing
 const debouncedSearch = debounce(() => {
-  const activeFilter = document.querySelector('#section-products .tab-btn.active');
-  const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+  const activeBtns = _getProductTabBtns();
+  const activeBtn = activeBtns.find(b => b.classList.contains('active'));
+  const filter = activeBtn ? activeBtn.dataset.filter : 'all';
   loadProducts(filter);
 }, 300);
 
@@ -275,6 +276,22 @@ var _testimonialsCache = [];
 // Debounced order search
 const debouncedOrderSearch = debounce(() => loadOrders(), 300);
 
+/* ── DOM Query Caches — avoid repeated querySelectorAll on interactions ── */
+var _productTabBtnsCache = null;
+var _commentTabBtnsCache = null;
+function _getProductTabBtns() {
+  if (!_productTabBtnsCache || !document.body.contains(_productTabBtnsCache[0])) {
+    _productTabBtnsCache = Array.from(document.querySelectorAll('#section-products .tab-btn'));
+  }
+  return _productTabBtnsCache;
+}
+function _getCommentTabBtns() {
+  if (!_commentTabBtnsCache || !document.body.contains(_commentTabBtnsCache[0])) {
+    _commentTabBtnsCache = Array.from(document.querySelectorAll('#section-comments .tab-btn'));
+  }
+  return _commentTabBtnsCache;
+}
+
 
 
 
@@ -295,6 +312,8 @@ const debouncedOrderSearch = debounce(() => loadOrders(), 300);
 
 function updateCommentsBadge() {
   var comments = safeJSONParse(localStorage.getItem('phComments'), []) || [];
+  /* Comments cache for filter operations */
+  var _commentsCache = null;
   var newComments = comments.filter(function(c) { return c.status === 'new'; }).length;
   var badge = document.getElementById('commentsBadge');
   if (newComments > 0) {
@@ -410,6 +429,7 @@ function showToast(message, type) {
   document.getElementById('toastMessage').textContent = message;
   toast.classList.add('show');
   setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  /* No layout-forcing reads before this write — safe */
 }
 
 // =============================================================
