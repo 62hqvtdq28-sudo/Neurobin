@@ -108,7 +108,9 @@ body { font-family: 'Cairo', sans-serif; background-color: #FDFCF8; color: #1E35
 .confetti-piece { position: absolute; width: 10px; height: 10px; animation: confetti 1s ease-out forwards; }
 
 /* Skeleton Loading */
-.skeleton { background: linear-gradient(90deg, #E8EAD8 25%, #F6F7F4 50%, #E8EAD8 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+/* Skeleton: opacity pulse instead of background-position shimmer (GPU-safe) */
+@keyframes skPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1.00; } }
+.skeleton { background: linear-gradient(135deg, #e8ecd8 0%, #f0f4e6 100%); animation: skPulse 1.4s ease-in-out infinite; will-change: opacity; }
 
 /* Sidebar */
 .sidebar-link { transition: all 0.2s ease; }
