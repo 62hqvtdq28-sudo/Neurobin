@@ -541,36 +541,38 @@ function initEventListeners() {
 }
 
 function initNavbarScroll() {
+  /* Guard: perf.js registers an optimized rAF-throttled scroll handler that handles
+     navbar + backToTop in one rAF. If it loaded, skip this unthrottled version to
+     prevent two scroll handlers fighting each other (causes jank on Safari). */
+  if (window.__perfScrollActive) return;
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
+  let _ticking = false;
+  let _wasScrolled = null;
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 100) {
-      navbar.classList.add('nav-scrolled');
-      navbar.querySelectorAll('.text-white').forEach(el => {
-        el.classList.remove('text-white', 'text-white/90');
-        el.classList.add('text-brand-900');
-      });
-    } else {
-      navbar.classList.remove('nav-scrolled');
-      navbar.querySelectorAll('.text-brand-900').forEach(el => {
-        el.classList.add('text-white');
-        if (el.classList.contains('text-brand-900')) el.classList.remove('text-brand-900');
-        const parent = el.closest('a') || el;
-        if (parent.tagName === 'A' || parent.classList.contains('brand-emblem')) {
-          el.classList.add('text-white');
-          if (el.classList.contains('text-brand-900')) el.classList.remove('text-brand-900');
-        }
-      });
-    }
-  });
+    if (_ticking) return; /* rAF throttle */
+    _ticking = true;
+    requestAnimationFrame(() => {
+      _ticking = false;
+      const scrolled = window.scrollY > 100;
+      if (scrolled === _wasScrolled) return; /* skip if unchanged */
+      _wasScrolled = scrolled;
+      if (scrolled) {
+        navbar.classList.add('nav-scrolled');
+      } else {
+        navbar.classList.remove('nav-scrolled');
+      }
+    });
+  }, { passive: true }); /* passive: no scroll blocking */
 }
 
 function initScrollAnimations() {
+  /* threshold:0 + large rootMargin → triggers earlier, prevents Safari IO "miss" */
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) entry.target.classList.add('visible');
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  }, { threshold: 0, rootMargin: '100px 0px 100px 0px' });
   document.querySelectorAll('.scroll-animate, .scroll-animate-left, .scroll-animate-right, .scroll-animate-scale').forEach(el => {
     observer.observe(el);
   });
@@ -1470,13 +1472,15 @@ function showToast(message, type = 'success') {
 
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-window.addEventListener('scroll', () => {
-  const backToTop = document.getElementById('backToTop');
-  if (backToTop) {
-    if (window.scrollY > 500) backToTop.classList.add('visible');
-    else backToTop.classList.remove('visible');
-  }
-});
+/* backToTop scroll: skip if perf.js is active (it handles this too) */
+if (!window.__perfScrollActive) {
+  window.addEventListener('scroll', () => {
+    const backToTop = document.getElementById('backToTop');
+    if (backToTop) {
+      backToTop.classList.toggle('visible', window.scrollY > 500);
+    }
+  }, { passive: true });
+}
 
 async function handleContactSubmit() {
   const nameInput = document.getElementById('contactName');
