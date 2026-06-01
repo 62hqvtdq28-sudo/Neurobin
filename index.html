@@ -3506,6 +3506,15 @@ setTimeout(_bootLate, 1200);
 (function(){
 'use strict';
 
+/* requestIdleCallback polyfill for Safari < 16.4 */
+if(!window.requestIdleCallback){
+  window.requestIdleCallback = function(cb, opts){
+    var timeout = (opts && opts.timeout) ? opts.timeout : 1000;
+    return setTimeout(function(){ cb({didTimeout:false, timeRemaining:function(){return 0;}}); }, Math.min(timeout, 100));
+  };
+  window.cancelIdleCallback = function(id){ clearTimeout(id); };
+}
+
 /* ─── 1. True dynamic viewport height ────────────
    iOS Safari: 100vh includes the address bar.
    We compute the actual visual viewport height.  */
@@ -3524,21 +3533,27 @@ if(window.visualViewport){
    When keyboard opens, `visualViewport.height` shrinks.
    Adjust fixed bottom elements so they stay visible. */
 var _kbdOffset = 0;
+/* Cache keyboard-adjusted elements once to avoid querySelectorAll on every viewport resize */
+var _kbdEls = null;
 function _handleKeyboard(){
   if(!window.visualViewport) return;
   var vvH = window.visualViewport.height;
   var wH  = window.innerHeight;
   _kbdOffset = Math.max(0, wH - vvH);
-  /* Adjust toast and floating buttons */
-  var fixedEls = [
-    document.querySelector('.whatsapp-float'),
-    document.querySelector('.back-to-top'),
-    document.getElementById('toast')
-  ];
-  fixedEls.forEach(function(el){
-    if(el) el.style.transform = _kbdOffset > 50
-      ? 'translateY(-' + (_kbdOffset - 20) + 'px)'
-      : '';
+  /* Cache elements (keyboard events fire often — avoid repeated DOM queries) */
+  if(!_kbdEls){
+    _kbdEls = [
+      document.querySelector('.whatsapp-float'),
+      document.querySelector('.back-to-top'),
+      document.getElementById('toast')
+    ].filter(Boolean);
+  }
+  var offset = _kbdOffset > 50 ? 'translateY(-' + (_kbdOffset - 20) + 'px)' : '';
+  /* Use rAF to batch DOM writes and avoid forced layout */
+  requestAnimationFrame(function(){
+    for(var i=0;i<_kbdEls.length;i++){
+      _kbdEls[i].style.transform = offset;
+    }
   });
 }
 if(window.visualViewport){
@@ -3599,42 +3614,32 @@ function _patchModalScrollLock(){
 
 /* ─── 4. Orientation change — recompute layout ── */
 window.addEventListener('orientationchange', function(){
-  /* Give iOS 300ms to settle before measuring */
+  /* iOS needs 400ms+ to settle after orientation change
+     (both address bar resize and layout reflow must complete) */
+  _kbdEls = null; /* invalidate cached elements after orientation */
   setTimeout(function(){
     _setDvh();
     _handleKeyboard();
-    /* Re-init scroll animations if visible */
     if(typeof initScrollAnimations === 'function') initScrollAnimations();
-  }, 350);
+  }, 450);
 }, {passive:true});
 
 /* ─── 5. Passive touch events — prevent scroll jank ─ */
-/* Ensure ALL touchstart/touchmove listeners are passive
-   to prevent scroll jank. Override any that aren't. */
-var _nativeAEL = EventTarget.prototype.addEventListener;
-/* Only wrap on iOS Safari where it matters */
-if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
-  EventTarget.prototype.addEventListener = function(type, fn, opts){
-    if(type === 'touchstart' || type === 'touchmove'){
-      if(opts === undefined || opts === false) opts = {passive:true};
-      else if(opts === true) opts = {capture:true, passive:true};
-      else if(typeof opts === 'object' && opts.passive === undefined) opts.passive = true;
-    }
-    return _nativeAEL.call(this, type, fn, opts);
-  };
-}
+/* EventTarget.prototype.addEventListener monkey-patch REMOVED:
+   - Breaks lucide.createIcons (uses touchstart for icon detection)
+   - Breaks Supabase realtime (uses non-passive listeners internally)
+   - CSS 'touch-action: manipulation' is the correct solution (already applied)
+   - perf.js section 7 adds passive wheel+touchstart+touchmove to window
+   
+   The correct approach is already in place:
+   1. CSS: touch-action: manipulation on all interactive elements
+   2. perf.js: passive listeners on window for wheel/touchmove */
 
-/* ─── 6. Fast tap — prevent 300ms click delay ─── */
-/* Modern: touch-action:manipulation handles this in CSS.
-   Belt-and-suspenders: prevent ghost clicks on iOS. */
-var _lastTouchEnd = 0;
-document.addEventListener('touchend', function(e){
-  var now = Date.now();
-  if(now - _lastTouchEnd < 300){
-    e.preventDefault(); /* prevent double-fire */
-  }
-  _lastTouchEnd = now;
-}, {passive:false});
+/* ─── 6. Fast tap — 300ms delay eliminated by CSS touch-action:manipulation ─
+   The touchend {passive:false} handler was REMOVED:
+   - passive:false on touchend blocks scroll on iOS WebKit
+   - CSS touch-action:manipulation already eliminates the 300ms delay correctly
+   - e.preventDefault() in touchend was preventing native scrolling in some cases */
 
 /* ─── 7. Input zoom fix — dynamic font-size check ─ */
 function _fixInputZoom(){
@@ -3649,14 +3654,16 @@ function _fixInputZoom(){
 
 /* ─── 8. Horizontal overflow audit on load ───── */
 function _fixHorizontalOverflow(){
-  /* Find elements wider than viewport and clip them */
-  var vw = document.documentElement.clientWidth;
-  document.querySelectorAll('section, .premium-products-section, header, footer').forEach(function(el){
-    if(el.scrollWidth > vw + 5){
-      el.style.overflowX = 'hidden';
-      el.style.maxWidth = '100vw';
-    }
-  });
+  /* Deferred to rAF to avoid blocking DOMContentLoaded paint */
+  requestIdleCallback(function(){
+    var vw = document.documentElement.clientWidth;
+    document.querySelectorAll('section, .premium-products-section, header, footer').forEach(function(el){
+      if(el.scrollWidth > vw + 5){
+        el.style.overflowX = 'hidden';
+        el.style.maxWidth = '100vw';
+      }
+    });
+  }, {timeout: 2000});
 }
 
 /* ─── 9. Snap scroll polyfill for horizontal carousels ─ */
@@ -3741,6 +3748,12 @@ window.addEventListener('load', function(){
   _fixHorizontalOverflow();
   _patchModalScrollLock();
   _adjustIPadModals();
+  /* Signal to app.js that perf.js scroll handler is active (perf.js loads as defer,
+     fires before window.load completes — flag is safe to check here) */
+  if(typeof window.__perfScrollActive === 'undefined'){
+    /* perf.js wasn't detected. Fall back: let app.js handle scroll */
+    window.__perfScrollActive = false;
+  }
 });
 
 window.addEventListener('resize', function(){
