@@ -131,8 +131,21 @@ function renderProductsList(products, filter) {
       '<div class="flex gap-1"><button data-action="edit-product" data-id="' + pid + '" class="quick-action bg-blue-100 text-blue-600 hover:bg-blue-200"><i data-lucide="edit" class="w-4 h-4"></i></button>' +
       '<button data-action="delete-product" data-id="' + pid + '" class="quick-action bg-red-100 text-red-500 hover:bg-red-200"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>' +
       img +
+      '<div id="product-view-' + pid + '">' +
       '<h3 class="font-bold text-brand-900 mb-1">' + escapeHTML(p.name_ar||p.name||'') + '</h3>' +
-      '<p class="text-brand-600 text-sm">' + (p.price||0).toLocaleString() + ' \u062F.\u0639</p>' +
+      (p.name && p.name !== p.name_ar ? '<p class="text-xs italic text-brand-400 mb-1">' + escapeHTML(p.name) + '</p>' : '') +
+      (p.description ? '<p class="text-xs text-brand-500 mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + escapeHTML(p.description) + '</p>' : '') +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:6px;font-size:11px">' +
+      '<div style="background:#fff7ed;border-radius:6px;padding:3px 7px"><span style="color:#f97316">الكوست: </span><b style="color:#c2410c">' + (p.cost_price ? Number(p.cost_price).toLocaleString() + ' د.ع' : '—') + '</b></div>' +
+      '<div style="background:#f0fdf4;border-radius:6px;padding:3px 7px"><span style="color:#22c55e">البيع: </span><b style="color:#15803d">' + (p.price != null ? Number(p.price).toLocaleString() + ' د.ع' : '—') + '</b></div>' +
+      '<div style="background:#eff6ff;border-radius:6px;padding:3px 7px"><span style="color:#3b82f6">قطعتين: </span><b style="color:#1d4ed8">' + (p.qty_2_price ? Number(p.qty_2_price).toLocaleString() + ' د.ع' : '—') + '</b></div>' +
+      '<div style="background:#faf5ff;border-radius:6px;padding:3px 7px"><span style="color:#a855f7">3 قطع: </span><b style="color:#7e22ce">' + (p.qty_3_price ? Number(p.qty_3_price).toLocaleString() + ' د.ع' : '—') + '</b></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:11px">' +
+      '<span style="color:' + (p.in_stock ? '#16a34a' : '#dc2626') + '">' + (p.in_stock ? '✓ متوفر' : '✗ غير متوفر') + ' (' + (p.stock||0) + ')</span>' +
+      (p.original_price ? '<span style="color:#9ca3af;text-decoration:line-through">' + Number(p.original_price).toLocaleString() + ' د.ع</span>' : '') +
+      '</div>' +
+      '</div>' +
       '</div></div>';
   }).join('');
   lucide.createIcons();
