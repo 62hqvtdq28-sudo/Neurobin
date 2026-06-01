@@ -3341,15 +3341,18 @@ window.showProductSkeletons = function(count){
   var grid = document.getElementById('productsGrid');
   if(!grid) return;
   grid.classList.add('grid-loading');
-  var n = count || 8, html = '';
+  /* Reduced 8→4: only above-fold cards need skeletons. Inline animation-delay removed
+     — CSS nth-child handles stagger without per-element style attributes (fewer GPU layers). */
+  var n = Math.min(count || 4, 4), html = '';
   for(var i=0;i<n;i++){
+    /* No style="animation-delay:..." — CSS :nth-child handles it, avoids inline style parsing */
     html +=
-      '<div class="skeleton-card" style="animation-delay:'+(i*0.055)+'s">'+
+      '<div class="skeleton-card">'+
         '<div class="skeleton skeleton-img"></div>'+
         '<div class="skeleton-body">'+
           '<div class="skeleton skeleton-tag"></div>'+
           '<div class="skeleton skeleton-title"></div>'+
-          '<div class="skeleton skeleton-sub" style="width:'+(55+Math.floor(i%3)*10)+'%"></div>'+
+          '<div class="skeleton skeleton-sub"></div>'+
           '<div class="skeleton-row">'+
             '<div class="skeleton skeleton-price"></div>'+
             '<div class="skeleton skeleton-btn"></div>'+
@@ -3370,13 +3373,12 @@ function _patchRender(){
     if(grid && grid.querySelector('.skeleton-card')){
       /* Fade out skeleton, then render real content */
       grid.classList.add('grid-fading-out');
+      /* Reduced 80ms→40ms: faster skeleton-to-content switch (was visually slow) */
       setTimeout(function(){
         grid.classList.remove('grid-loading','grid-fading-out');
         _origRender(list);
-        /* Do NOT add grid-fading-in — product cards have their own opacity reveal */
-        /* Image blur-up */
         _applyBlurUp(grid);
-      }, 80);
+      }, 40);
     } else {
       _origRender(list);
       if(grid) _applyBlurUp(grid);
@@ -3387,20 +3389,18 @@ function _patchRender(){
 
 /* ─── 3. Image Blur-Up ──────────────────────── */
 function _applyBlurUp(container){
+  /* img-loader.js already handles img-loading/img-loaded lifecycle.
+     Here we only do a fast scan for already-loaded images to skip animation. */
   var imgs = (container || document).querySelectorAll('.product-image-wrapper img');
-  imgs.forEach(function(img){
-    if(img.complete && img.naturalWidth > 0){
-      img.classList.add('img-loaded');
-      return;
+  /* Use requestAnimationFrame to avoid blocking the render-products DOM write */
+  requestAnimationFrame(function(){
+    for(var i=0;i<imgs.length;i++){
+      var img=imgs[i];
+      if(img.complete && img.naturalWidth>0){
+        img.classList.remove('img-loading');
+        img.classList.add('img-loaded');
+      }
     }
-    img.classList.add('img-loading');
-    img.addEventListener('load', function(){
-      img.classList.remove('img-loading');
-      img.classList.add('img-loaded');
-    }, {once:true});
-    img.addEventListener('error', function(){
-      img.classList.remove('img-loading');
-    }, {once:true});
   });
 }
 
@@ -3412,7 +3412,8 @@ function _showFilterSkeleton(){
   if(!parent || parent.querySelector('.sk-filter-wrap')) return;
   var sk = document.createElement('div');
   sk.className = 'sk-filter-wrap';
-  for(var i=0;i<7;i++){
+  /* Reduced 7→5 filter skeletons (typical visible count on iPad) */
+  for(var i=0;i<5;i++){
     sk.innerHTML +=
       '<div class="sk-filter">'+
         '<div class="sk-filter-circle"></div>'+
@@ -3444,9 +3445,10 @@ function _upgradeLoadingScreen(){
           '<path d="M14 16C14 16 18 14 22 16" stroke="white" stroke-width="1.8" stroke-linecap="round"/>'+
         '</svg>'+
       '</div>'+
+      /* Reduced load-bars 5→3 (fewer transforms = less GPU compositing during initial load) */
       '<div id="loadingBars">'+
-        '<div class="load-bar"></div><div class="load-bar"></div>'+
-        '<div class="load-bar"></div><div class="load-bar"></div>'+
+        '<div class="load-bar"></div>'+
+        '<div class="load-bar"></div>'+
         '<div class="load-bar"></div>'+
       '</div>'+
       '<p id="loadingText">ph.neurobin</p>'+
@@ -3455,11 +3457,9 @@ function _upgradeLoadingScreen(){
 
 /* ─── 6. Show skeletons for prem sections ─── */
 function _premSkeletonFadeIn(){
-  /* New Products & Trending already have prem-skeleton divs.
-     Just ensure they have the right animation on replace */
-  document.querySelectorAll('.prem-skeleton').forEach(function(el, i){
-    el.style.animationDelay = (i * 0.08) + 's';
-  });
+  /* Just verify they exist — animation-delay handled by CSS :nth-child now.
+     No inline style assignment needed. */
+  /* no-op: inline animationDelay removed, CSS handles stagger efficiently */
 }
 
 /* ─── 7. Section content-visibility fix ──── */
