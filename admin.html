@@ -5527,6 +5527,341 @@ window._pmRenderPagination = _renderPagination;
 })();
 </script>
 
+
+<script id="pm-bugfix-p8">
+/* ═══════════════════════════════════════════════════════════════════
+   PATCH 8 — Bug Fixes | admin.html
+   Fix 1: Orders (load, filter, status update, UI refresh)
+   Fix 2: Stats deletion (actual Supabase page_views delete)
+   Fix 3: Chat role (assistant not admin/system)
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+  /* ── Helpers ──────────────────────────────────────────────────── */
+
+  function _getSession() {
+    /* Return best available access token (authenticated > anon) */
+    try {
+      if (typeof SupaDB !== 'undefined' && SupaDB._db) {
+        var s = SupaDB._db.auth.getSession();
+        if (s && s.data && s.data.session && s.data.session.access_token)
+          return s.data.session.access_token;
+      }
+    } catch (e) {}
+    return SKEY; /* fall back to anon */
+  }
+
+  function _H(extra) {
+    var tok = _getSession();
+    return Object.assign({ apikey: SKEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, extra || {});
+  }
+
+  function _toast(msg, type) {
+    if (typeof showToast === 'function') showToast(msg, type || 'info');
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     FIX 1 — ORDERS
+     Problem: orders may not render if SupaDB session is not yet
+     hydrated; status buttons fail silently; filter tabs broken.
+     Solution: wrap loadOrders with session-ensure + clear error
+     display; fix updateOrderStatus to also refresh the badge.
+     ══════════════════════════════════════════════════════════════ */
+
+  /* 1-a: Ensure SupaDB session is active before any Supabase call */
+  async function _ensureSession() {
+    if (typeof SupaDB === 'undefined' || !SupaDB._db) return;
+    try {
+      var { data } = await SupaDB._db.auth.getSession();
+      if (!data || !data.session) {
+        await SupaDB._db.auth.refreshSession();
+      }
+    } catch (e) { /* ignore — best effort */ }
+  }
+
+  /* 1-b: Wrap loadOrders with session-ensure + unified error display */
+  var _origLoadOrders = window.loadOrders;
+  window.loadOrders = async function () {
+    var container = document.getElementById('ordersList');
+    var noOrders  = document.getElementById('noOrders');
+
+    /* Show loading skeleton if container is empty */
+    if (container && !container.children.length) {
+      container.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;justify-content:center;padding:32px 0;color:#6b7280;font-size:14px">' +
+        '<div style="width:20px;height:20px;border:2px solid #d1fae5;border-top-color:#16a34a;border-radius:50%;animation:spin 0.7s linear infinite"></div>' +
+        '<span>جاري تحميل الطلبات...</span></div>';
+    }
+
+    try {
+      await _ensureSession();
+      if (typeof _origLoadOrders === 'function') {
+        await _origLoadOrders();
+      }
+    } catch (e) {
+      console.error('[P8] loadOrders error:', e);
+      if (container) {
+        container.innerHTML =
+          '<div style="text-align:center;padding:32px 16px;background:#fff;border-radius:12px;color:#b91c1c;">' +
+          '<p style="font-size:20px;margin-bottom:8px">⚠️</p>' +
+          '<p style="font-weight:700;margin-bottom:4px">خطأ في تحميل الطلبات</p>' +
+          '<p style="font-size:13px;color:#6b7280;">' + (e.message || String(e)) + '</p>' +
+          '<button onclick="loadOrders()" style="margin-top:12px;padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">↺ إعادة المحاولة</button></div>';
+        if (noOrders) noOrders.classList.add('hidden');
+        container.classList.remove('hidden');
+      }
+    }
+
+    /* Update filter tab counts after render */
+    setTimeout(_updateFilterCounts, 200);
+  };
+
+  /* 1-c: Fix updateOrderStatus — session + cache invalidation + badge */
+  var _origUpdateOrderStatus = window.updateOrderStatus;
+  window.updateOrderStatus = async function (orderId, status) {
+    try {
+      await _ensureSession();
+      if (typeof _invalidateOrderCache === 'function') _invalidateOrderCache();
+      await SupaDB.Orders.updateStatus(orderId, status);
+      await window.loadOrders();
+      if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+      _toast('✅ تم تحديث حالة الطلب', 'success');
+    } catch (e) {
+      console.error('[P8] updateOrderStatus error:', e);
+      _toast('خطأ في تحديث الحالة: ' + (e.message || e), 'error');
+    }
+  };
+
+  /* 1-d: Fix filter tab clicks — re-bind onclick handlers robustly */
+  function _fixFilterTabs() {
+    var sec = document.getElementById('section-orders');
+    if (!sec) return;
+    sec.querySelectorAll('[onclick*="filterOrders"]').forEach(function (btn) {
+      var oc = btn.getAttribute('onclick') || '';
+      var m  = oc.match(/filterOrders\(['"]([^'"]+)['"]\)/);
+      if (!m) return;
+      var f = m[1];
+      btn.removeAttribute('onclick');
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (typeof filterOrders === 'function') filterOrders(f);
+        /* Visual active state */
+        sec.querySelectorAll('[data-filter]').forEach(function (b) {
+          b.classList.remove('active', 'bg-brand-700', 'text-white');
+          b.classList.add('text-brand-700', 'bg-brand-50');
+        });
+        btn.classList.add('active', 'bg-brand-700', 'text-white');
+        btn.classList.remove('text-brand-700', 'bg-brand-50');
+      });
+      btn.setAttribute('data-filter', f);
+    });
+  }
+
+  /* 1-e: Update filter tab count badges after each render */
+  function _updateFilterCounts() {
+    var cards = document.querySelectorAll('#ordersList [data-status]');
+    var counts = { all: 0, new: 0, preparing: 0, shipped: 0, on_the_way: 0, delivered: 0, cancelled: 0 };
+    cards.forEach(function (c) {
+      var s = c.getAttribute('data-status') || 'new';
+      counts.all++;
+      if (counts[s] !== undefined) counts[s]++;
+    });
+    document.querySelectorAll('#section-orders [data-filter]').forEach(function (btn) {
+      var f = btn.getAttribute('data-filter');
+      var badge = btn.querySelector('.pm-filter-count');
+      if (!badge) { badge = document.createElement('span'); badge.className = 'pm-filter-count'; btn.appendChild(badge); }
+      badge.textContent = counts[f] !== undefined ? counts[f] : '';
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     FIX 2 — STATS DELETION
+     Problem: resetAllStats shows error; deleteCurrentStats only
+     clears UI.
+     Solution: actually DELETE from page_views table via REST API.
+     ══════════════════════════════════════════════════════════════ */
+
+  async function _deletePageViews() {
+    await _ensureSession();
+    var tok = _getSession();
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + tok, Prefer: 'return=minimal' };
+    /* Use gte on a very old date to match all rows */
+    var r = await fetch(SURL + '/rest/v1/page_views?created_at=gte.2000-01-01T00:00:00Z', {
+      method: 'DELETE', headers: H
+    });
+    if (!r.ok && r.status !== 204) {
+      var errText = await r.text().catch(function () { return 'HTTP ' + r.status; });
+      throw new Error(errText);
+    }
+  }
+
+  function _clearStatsUI() {
+    var statsEl = document.getElementById('statsCardsContainer');
+    var compEl  = document.getElementById('comparisonContent');
+    var tableEl = document.getElementById('detailedStatsTable');
+    if (statsEl) statsEl.innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:24px 0;color:#6b7280;font-size:14px">📊 تم حذف جميع بيانات الإحصائيات بنجاح</div>';
+    if (compEl)  compEl.innerHTML  = '';
+    if (tableEl) tableEl.innerHTML = '';
+    try { if (window.visitorsChart) { window.visitorsChart.destroy(); window.visitorsChart = null; } } catch (e) {}
+    try { if (window.categoryChart) { window.categoryChart.destroy(); window.categoryChart = null; } } catch (e) {}
+    window._chartsData = null;
+    var undoBtn = document.getElementById('statsUndoBtn');
+    if (undoBtn) undoBtn.classList.add('hidden');
+  }
+
+  window.resetAllStats = async function () {
+    if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+      _toast('يرجى تسجيل الدخول أولاً', 'error'); return;
+    }
+    if (!confirm('⚠️ هذا الإجراء سيحذف جميع بيانات الزيارات والإحصائيات نهائياً من قاعدة البيانات.\n\nهل أنت متأكد؟ لا يمكن التراجع.')) return;
+    _toast('⏳ جاري حذف البيانات...', 'info');
+    try {
+      await _deletePageViews();
+      _clearStatsUI();
+      _toast('✅ تم حذف جميع بيانات الإحصائيات', 'success');
+    } catch (e) {
+      console.error('[P8] resetAllStats error:', e);
+      _toast('خطأ في الحذف: ' + (e.message || e), 'error');
+    }
+  };
+
+  window.deleteCurrentStats = async function () {
+    if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+      _toast('يرجى تسجيل الدخول أولاً', 'error'); return;
+    }
+    if (!confirm('⚠️ هذا الإجراء سيحذف جميع بيانات الإحصائيات من قاعدة البيانات.\n\nهل أنت متأكد؟')) return;
+    _toast('⏳ جاري حذف البيانات...', 'info');
+    try {
+      await _deletePageViews();
+      _clearStatsUI();
+      _toast('✅ تم حذف جميع بيانات الإحصائيات', 'success');
+    } catch (e) {
+      console.error('[P8] deleteCurrentStats error:', e);
+      _toast('خطأ في الحذف: ' + (e.message || e), 'error');
+    }
+  };
+
+  /* ══════════════════════════════════════════════════════════════
+     FIX 3 — CHAT MESSAGES ROLE
+     Problem: sendAdminReply inserts role:'admin' and
+     toggleAIForSession inserts role:'system' — both violate
+     chat_messages_role_check constraint (only user/assistant).
+     Solution:
+       sendAdminReply   → role:'assistant'
+       toggleAIForSession → PATCH chat_sessions.ai_enabled (no chat_messages insert)
+     ══════════════════════════════════════════════════════════════ */
+
+  window.sendAdminReply = function () {
+    var s = window._clCurrentSession;
+    if (!s) { _toast('يرجى اختيار محادثة', 'warning'); return; }
+    var input = document.getElementById('cl-reply-input');
+    var text  = (input ? input.value : '').trim();
+    if (!text) return;
+
+    var btn = document.getElementById('cl-send-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'جاري...'; }
+
+    var tok = _getSession();
+    fetch(SURL + '/rest/v1/chat_messages', {
+      method: 'POST',
+      headers: Object.assign({}, _H({ Prefer: 'return=minimal' })),
+      body: JSON.stringify({ session_id: s.id, role: 'assistant', message: text })
+    })
+    .then(function (r) {
+      if (btn) { btn.disabled = false; btn.textContent = 'إرسال'; }
+      if (r.ok || r.status === 201) {
+        if (input) input.value = '';
+        _toast('✅ تم إرسال الرد', 'success');
+        /* Reload sessions list then re-open the same session for immediate UI update */
+        var prevIdx = null;
+        if (window._clSessions) {
+          for (var i = 0; i < window._clSessions.length; i++) {
+            if (window._clSessions[i].id === s.id) { prevIdx = i; break; }
+          }
+        }
+        setTimeout(function () {
+          if (typeof loadChatSessions === 'function') loadChatSessions();
+          if (prevIdx !== null) {
+            setTimeout(function () {
+              if (typeof viewSession === 'function') viewSession(prevIdx);
+            }, 350);
+          }
+        }, 300);
+      } else {
+        r.json().then(function (e) { _toast('فشل الإرسال: ' + (e.message || r.status), 'error'); })
+         .catch(function () { _toast('فشل الإرسال', 'error'); });
+      }
+    })
+    .catch(function () {
+      if (btn) { btn.disabled = false; btn.textContent = 'إرسال'; }
+      _toast('خطأ في الإرسال', 'error');
+    });
+  };
+
+  window.toggleAIForSession = function () {
+    var s = window._clCurrentSession;
+    if (!s) return;
+
+    /* Read current ai_enabled state from the session object */
+    var currentlyEnabled = (typeof s.ai_enabled !== 'undefined') ? !!s.ai_enabled : true;
+    var newEnabled = !currentlyEnabled;
+
+    /* Update chat_sessions.ai_enabled — no chat_messages insert needed */
+    fetch(SURL + '/rest/v1/chat_sessions?id=eq.' + encodeURIComponent(s.id), {
+      method: 'PATCH',
+      headers: _H({ Prefer: 'return=minimal' }),
+      body: JSON.stringify({ ai_enabled: newEnabled })
+    })
+    .then(function (r) {
+      if (r.ok || r.status === 204) {
+        _toast(newEnabled ? '✅ تم تفعيل AI للعميل' : '⛔ تم تعطيل AI للعميل', 'warning');
+        setTimeout(function () { if (typeof loadChatSessions === 'function') loadChatSessions(); }, 400);
+      } else {
+        r.json().then(function (e) { _toast('خطأ: ' + (e.message || r.status), 'error'); })
+         .catch(function () { _toast('خطأ في تحديث الإعداد', 'error'); });
+      }
+    })
+    .catch(function () { _toast('خطأ في الاتصال', 'error'); });
+  };
+
+  /* ── Boot ──────────────────────────────────────────────────────── */
+  function _boot() {
+    _fixFilterTabs();
+
+    /* Hook showSection to re-apply filter tab fix when orders section opens */
+    var _origSS2 = window.showSection;
+    if (_origSS2 && !_origSS2.__p8Patched) {
+      window.showSection = function (s) {
+        _origSS2(s);
+        if (s === 'orders') { setTimeout(_fixFilterTabs, 300); }
+      };
+      window.showSection.__p8Patched = true;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _boot);
+  } else {
+    _boot();
+  }
+
+  /* Spin animation for loading skeleton */
+  if (!document.getElementById('p8-spin-css')) {
+    var style = document.createElement('style');
+    style.id = 'p8-spin-css';
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+  }
+
+  console.log('[P8] Admin bug fixes loaded ✓');
+})();
+
+</script>
 </body>
 </html>
 
