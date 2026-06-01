@@ -3769,6 +3769,126 @@ window.addEventListener('resize', function(){
 <script src="./seo.js" defer></script>
 <script src="./pwa-install.js"></script>
 <script src="./safari-ios-fix.js"></script>
+
+<script id="pm-contact-fix-p8">
+/* ═══════════════════════════════════════════════════════════════════
+   PATCH 8 — Complaints Fix | index.html
+   Problem: submitContactForm saves to Supabase BUT ALSO opens
+   WhatsApp. This breaks the UX for the complaints/suggestions form.
+   Solution: override submitContactForm to save ONLY to Supabase,
+   no WhatsApp redirect, with proper validation + feedback.
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+  /* Rate-limit key — 30 seconds between submissions */
+  var _RL_KEY = 'p8_contact_last_submit';
+
+  window.submitContactForm = async function () {
+    /* ── 1. Gather inputs ─────────────────────────────────────── */
+    var nameInput    = document.getElementById('contactName');
+    var infoInput    = document.getElementById('contactInfo');
+    var messageInput = document.getElementById('contactMessage');
+    var submitBtn    = document.querySelector('#contactForm [type="submit"], #contactForm button[onclick]');
+
+    if (!nameInput || !messageInput) { console.warn('[P8] contactForm elements not found'); return; }
+
+    /* ── 2. Rate limiting ─────────────────────────────────────── */
+    var lastSubmit = parseInt(localStorage.getItem(_RL_KEY) || '0', 10);
+    var diff = Math.ceil((30000 - (Date.now() - lastSubmit)) / 1000);
+    if (Date.now() - lastSubmit < 30000) {
+      if (typeof showToast === 'function') showToast('يرجى الانتظار ' + diff + ' ثانية قبل إرسال رسالة جديدة', 'error');
+      return;
+    }
+
+    /* ── 3. Sanitize & Validate ───────────────────────────────── */
+    var name, info, message;
+    if (typeof SecurityValidator !== 'undefined') {
+      name    = SecurityValidator.sanitizeInput(nameInput.value);
+      info    = infoInput ? SecurityValidator.sanitizeInput(infoInput.value) : '';
+      message = SecurityValidator.sanitizeInput(messageInput.value);
+
+      var nameV = SecurityValidator.validateName(name);
+      if (!nameV.valid) {
+        if (typeof showToast === 'function') showToast(nameV.message, 'error');
+        nameInput.focus(); return;
+      }
+      if (info) {
+        var phoneRe = /^07[0-9]{9}$/;
+        var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!phoneRe.test(info.replace(/\s/g, '')) && !emailRe.test(info)) {
+          if (typeof showToast === 'function') showToast('يرجى إدخال رقم هاتف أو بريد إلكتروني صحيح', 'error');
+          if (infoInput) infoInput.focus(); return;
+        }
+      }
+      var msgV = SecurityValidator.validateMessage(message);
+      if (!msgV.valid) {
+        if (typeof showToast === 'function') showToast(msgV.message, 'error');
+        messageInput.focus(); return;
+      }
+    } else {
+      name    = (nameInput.value || '').trim();
+      info    = infoInput ? (infoInput.value || '').trim() : '';
+      message = (messageInput.value || '').trim();
+      if (!name) {
+        if (typeof showToast === 'function') showToast('يرجى إدخال اسمك', 'error');
+        nameInput.focus(); return;
+      }
+      if (!message || message.length < 5) {
+        if (typeof showToast === 'function') showToast('يرجى إدخال رسالة لا تقل عن 5 أحرف', 'error');
+        messageInput.focus(); return;
+      }
+    }
+
+    /* ── 4. Disable button during request ──────────────────────── */
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.65'; }
+
+    try {
+      /* ── 5. Save to Supabase contact_messages ──────────────── */
+      var r = await fetch(SURL + '/rest/v1/contact_messages', {
+        method: 'POST',
+        headers: {
+          apikey: SKEY,
+          Authorization: 'Bearer ' + SKEY,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({
+          name: name,
+          contact_info: info,
+          message: message,
+          is_read: false
+        })
+      });
+
+      if (!r.ok && r.status !== 201) {
+        var errData = await r.json().catch(function () { return {}; });
+        throw new Error(errData.message || 'HTTP ' + r.status);
+      }
+
+      /* ── 6. Success ─────────────────────────────────────────── */
+      localStorage.setItem(_RL_KEY, String(Date.now()));
+      var form = document.getElementById('contactForm');
+      if (form) form.reset();
+      if (typeof showToast === 'function') {
+        showToast('✅ تم إرسال رسالتك بنجاح! سنتواصل معك قريباً.', 'success');
+      }
+
+    } catch (e) {
+      console.error('[P8] submitContactForm error:', e);
+      if (typeof showToast === 'function') showToast('حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقاً', 'error');
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+    }
+  };
+
+  console.log('[P8] Contact form fix loaded ✓ (Supabase-only, no WhatsApp)');
+})();
+
+</script>
 </body>
 </html>
 
