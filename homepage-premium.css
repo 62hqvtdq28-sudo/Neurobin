@@ -9,6 +9,7 @@
   overflow: hidden;
   background: #FDFCF8;
   padding: 48px 0 0;
+  contain: layout style; /* isolate slider from page flow */
 }
 .offers-slider-wrapper {
   max-width: 1200px;
@@ -53,8 +54,9 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 .slider-nav-btn:hover {
   background: #2D5016;
@@ -104,8 +106,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255,255,255,0.2);
-  backdrop-
+  background: rgba(255,255,255,0.25);
   border: 1px solid rgba(255,255,255,0.3);
   color: #fff;
   font-size: 12px;
@@ -141,7 +142,7 @@
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .offer-cta-btn:hover {
@@ -228,7 +229,8 @@
   background: #c3d9b0;
   border: none;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: width 0.25s ease, background-color 0.25s ease;
+  touch-action: manipulation;
 }
 .slider-dot.active {
   width: 28px;
@@ -239,6 +241,7 @@
 .premium-products-section {
   padding: 56px 0 40px;
   background: #FDFCF8;
+  contain: layout style; /* isolate section layout from page reflows */
 }
 .premium-products-section.alt-bg {
   background: linear-gradient(180deg, #f0fdf4 0%, #FDFCF8 100%);
@@ -300,8 +303,9 @@
   padding: 8px 20px;
   border: 2px solid #d1fae5;
   border-radius: 100px;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 .premium-view-all:hover {
   background: #2D5016;
@@ -318,6 +322,7 @@
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  overscroll-behavior-x: contain; /* prevent page scroll interference on horizontal swipe */
 }
 .premium-products-scroll::-webkit-scrollbar { display: none; }
 
@@ -332,12 +337,16 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.06);
   scroll-snap-align: start;
   cursor: pointer;
-  transition: transform 0.25s, box-shadow 0.25s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  contain: layout style;
+  touch-action: manipulation;
 }
-.prem-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(45,80,22,0.14);
+@media (hover: hover) {
+  .prem-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(45,80,22,0.10);
+  }
 }
 .prem-card-img {
   width: 100%;
@@ -389,12 +398,13 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
   font-family: 'Cairo', sans-serif;
+  touch-action: manipulation;
 }
 .prem-card-btn:hover {
   background: linear-gradient(135deg, #1e3a0e, #2D5016);
@@ -458,21 +468,19 @@
   flex-shrink: 0;
   width: 176px;
   height: 280px;
-  background: linear-gradient(90deg, #f0fdf4 25%, #e8f5e9 50%, #f0fdf4 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite; /* opacity-only = compositor-safe, no GPU texture re-upload */
+  will-change: opacity;
   border-radius: 18px;
 }
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+/* shimmer @keyframes removed — background-position animation requires full texture re-upload every frame */
 
 /* ── CTA Section 1 — Instagram/WhatsApp ──────────── */
 .cta-section-1 {
   padding: 64px 24px;
   background: linear-gradient(135deg, #1a2e0a 0%, #2D5016 50%, #3d6a1e 100%);
   position: relative;
+  contain: layout style paint; /* isolate gradient repaints */
   overflow: hidden;
 }
 .cta-section-1::before {
@@ -546,8 +554,10 @@
   padding: 14px 32px;
   border-radius: 100px;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .cta1-btn-ig:hover {
   transform: translateY(-3px);
@@ -564,8 +574,9 @@
   padding: 14px 32px;
   border-radius: 100px;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  touch-action: manipulation;
 }
 .cta1-btn-wa:hover {
   transform: translateY(-3px);
@@ -661,10 +672,11 @@
   padding: 14px 32px;
   border-radius: 14px;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease, transform 0.15s ease;
   border: none;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
+  touch-action: manipulation;
 }
 .cta2-btn-primary:hover {
   background: #1e3a0e;
@@ -683,7 +695,8 @@
   border-radius: 14px;
   text-decoration: none;
   border: 2px solid #2D5016;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  touch-action: manipulation;
 }
 .cta2-btn-secondary:hover {
   background: #2D5016;
@@ -698,7 +711,8 @@
   border: 1.5px solid #e8f5e9;
   box-shadow: 0 4px 24px rgba(0,0,0,0.05);
   position: relative;
-  transition: transform 0.25s, box-shadow 0.25s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  contain: layout style;
 }
 .testimonial-card-premium:hover {
   transform: translateY(-4px);
@@ -902,11 +916,10 @@
   padding: 8px 16px;
   border-radius: 100px;
   text-decoration: none;
-  transition: all 0.2s;
-  backdrop-
-  -webkit-backdrop-
+  transition: background-color 0.15s ease, color 0.15s ease;
   white-space: nowrap;
   font-family: 'Cairo', sans-serif;
+  touch-action: manipulation;
 }
 .nav-link-track:hover {
   background: rgba(255,255,255,0.24);
@@ -983,10 +996,11 @@
   border: none;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-  transition: all 0.2s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
   font-family: 'Cairo', sans-serif;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 @media (min-width: 768px) {
   .nav-follow-btn { display: flex; }
@@ -1076,9 +1090,7 @@
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  backdrop-
-  -webkit-backdrop-
-  opacity: 0;
+  opacity: 0; /* backdrop-filter removed from drawer overlay — page-wide GPU compositing cost not justified */
   transition: opacity 0.32s ease;
 }
 #mobileDrawer.open #drawerBackdrop { opacity: 1; }
@@ -1292,7 +1304,7 @@
   font-size: 0.84rem;
   font-weight: 700;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   -webkit-tap-highlight-color: transparent;
   flex: 1;
   justify-content: center;
@@ -1343,10 +1355,11 @@
   background: #fff !important;
   box-shadow: 0 2px 10px rgba(45,80,22,0.06) !important;
   transition:
-    transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1),
-    box-shadow 0.32s ease,
-    border-color 0.25s ease !important;
-  will-change: transform;
+    transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 0.28s ease,
+    border-color 0.2s ease !important;
+  will-change: auto; /* was: transform — pre-promotes ALL cards = VRAM overflow on iPad */
+  contain: layout style; /* isolate card repaints from siblings */
 }
 
 /* Top accent line — more polished */
@@ -1357,11 +1370,10 @@
 }
 
 .product-card-main:hover {
-  transform: translateY(-8px) scale(1.015) !important;
+  transform: translateY(-4px) !important; /* was translateY(-8px) scale(1.015) — lighter composite op */
   box-shadow:
-    0 20px 48px rgba(45,80,22,0.14),
-    0 4px 16px rgba(45,80,22,0.08),
-    0 0 0 1px rgba(45,80,22,0.06) !important;
+    0 10px 28px rgba(45,80,22,0.12),
+    0 2px 8px rgba(45,80,22,0.06) !important;
   border-color: #b8d4a0 !important;
 }
 
@@ -1386,12 +1398,14 @@
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important; /* was 0.5s — reduced for faster feel */
   padding: 8px !important;
 }
-.product-card-main:hover .product-img-animated,
-.product-card-main:hover .product-image-wrapper img {
-  transform: scale(1.1) !important;
+@media (hover: hover) {
+  .product-card-main:hover .product-img-animated,
+  .product-card-main:hover .product-image-wrapper img {
+    transform: scale(1.05) !important; /* only on true pointer devices */
+  }
 }
 
 /* ── Product Overlay (Quick View CTA) ────────── */
@@ -1403,7 +1417,7 @@
     rgba(45, 80, 22, 0.0) 100%
   ) !important;
   padding: 1.25rem !important;
-  transition: opacity 0.3s ease !important;
+  transition: opacity 0.2s ease !important;
 }
 .product-overlay button {
   background: rgba(255,255,255,0.95) !important;
@@ -1414,12 +1428,13 @@
   border-radius: 100px !important;
   border: none !important;
   cursor: pointer !important;
-  transition: all 0.2s !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
   font-family: 'Cairo', sans-serif !important;
+  touch-action: manipulation !important;
 }
 .product-overlay button::before {
   content: '👁';
@@ -1445,8 +1460,6 @@
   align-items: center !important;
   gap: 4px !important;
   z-index: 10 !important;
-  backdrop-
-  -webkit-backdrop-
   border: 1px solid rgba(255,255,255,0.3) !important;
   font-family: 'Cairo', sans-serif !important;
 }
@@ -1473,9 +1486,10 @@
   0%,100% { opacity:1; }
   50%      { opacity:0.5; }
 }
+/* lowStockPulse: was box-shadow animation (GPU paint per frame) → replaced with opacity pulse */
 @keyframes lowStockPulse {
-  0%,100% { box-shadow: 0 2px 8px rgba(245,158,11,0.4); }
-  50%     { box-shadow: 0 2px 16px rgba(245,158,11,0.7); }
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.7; }
 }
 
 /* ── Discount Badge ─────────────────────────── */
@@ -1494,7 +1508,7 @@
   border: 1.5px solid rgba(255,255,255,0.3) !important;
   letter-spacing: 0.01em !important;
   font-family: 'Cairo', sans-serif !important;
-  animation: discountBounce 3s ease-in-out infinite !important;
+  animation: discountBounce 3s ease-in-out 3 !important; /* was infinite — 3x = stops after 9s */
 }
 @keyframes discountBounce {
   0%,100% { transform: scale(1); }
@@ -1509,8 +1523,6 @@
   width: 36px !important;
   height: 36px !important;
   background: rgba(255,255,255,0.92) !important;
-  backdrop-
-  -webkit-backdrop-
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
@@ -1520,6 +1532,7 @@
   border: 1px solid rgba(255,255,255,0.5) !important;
   transition: transform 0.2s cubic-bezier(0.34,1.6,0.64,1), box-shadow 0.2s ease !important;
   z-index: 11 !important;
+  touch-action: manipulation !important;
 }
 .favorite-btn:hover {
   transform: scale(1.2) !important;
@@ -1585,7 +1598,7 @@
   letter-spacing: 0.01em !important;
   background: linear-gradient(135deg, #2D5016, #4a7c23) !important;
   border: none !important;
-  transition: all 0.22s cubic-bezier(0.34,1.4,0.64,1) !important;
+  transition: transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease !important;
   box-shadow: 0 2px 8px rgba(45,80,22,0.28) !important;
   -webkit-tap-highlight-color: transparent !important;
 }
@@ -1606,7 +1619,7 @@
   font-size: 0.72rem !important;
   font-weight: 800 !important;
   box-shadow: 0 2px 8px rgba(180,83,9,0.28) !important;
-  transition: all 0.22s ease !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
 }
 .product-card-body .bg-amber-600:hover {
   transform: translateY(-2px) !important;
@@ -1620,22 +1633,17 @@
   box-shadow: 0 4px 16px rgba(5,150,105,0.4) !important;
 }
 
-/* ── Card Entry Stagger Animation ───────────── */
-.product-card-main {
-  animation: cardEntry 0.4s ease both;
-}
+/* ── Card Entry Animation ─────────────────────
+   cardEntry removed from base .product-card-main — it conflicted with scroll-animate-scale
+   from perf.js (2 simultaneous animations on same element = visual glitch + doubled GPU cost).
+   perf.js IntersectionObserver handles the entry animation via CSS class reveal.
+   @keyframes kept for any explicit JS-driven application. */
 @keyframes cardEntry {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-/* Stagger via nth-child */
-.products-grid .product-card-main:nth-child(1)  { animation-delay: 0.03s; }
-.products-grid .product-card-main:nth-child(2)  { animation-delay: 0.06s; }
-.products-grid .product-card-main:nth-child(3)  { animation-delay: 0.09s; }
-.products-grid .product-card-main:nth-child(4)  { animation-delay: 0.12s; }
-.products-grid .product-card-main:nth-child(5)  { animation-delay: 0.15s; }
-.products-grid .product-card-main:nth-child(6)  { animation-delay: 0.18s; }
-.products-grid .product-card-main:nth-child(n+7){ animation-delay: 0.21s; }
+/* card-animate class: used only by JS when explicit entry animation is needed */
+.card-animate { animation: cardEntry 0.3s ease both; }
 
 /* ── Quick View Modal — Enhanced ───────────── */
 .quick-view-modal {
@@ -1686,11 +1694,11 @@
   width: 36px !important;
   height: 36px !important;
   background: rgba(255,255,255,0.9) !important;
-  backdrop-
   border-radius: 50% !important;
   box-shadow: 0 2px 10px rgba(0,0,0,0.12) !important;
   border: 1px solid rgba(255,255,255,0.5) !important;
-  transition: all 0.2s !important;
+  transition: transform 0.15s ease, background-color 0.15s ease !important;
+  touch-action: manipulation !important;
 }
 .quick-view-container .absolute.top-4.left-4:hover {
   transform: scale(1.1) rotate(90deg) !important;
@@ -1726,7 +1734,7 @@
   background: linear-gradient(135deg, #2D5016, #4a7c23) !important;
   box-shadow: 0 4px 16px rgba(45,80,22,0.3) !important;
   font-weight: 800 !important;
-  transition: all 0.22s ease !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
 }
 .quick-view-container .btn-primary:hover {
   background: linear-gradient(135deg, #1e3a0e, #2D5016) !important;
@@ -1735,7 +1743,7 @@
 }
 .quick-view-container .border-brand-200 {
   border-radius: 14px !important;
-  transition: all 0.2s !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease !important;
 }
 
 /* ── Responsive Mobile Card ─────────────────── */
@@ -1780,9 +1788,7 @@
   max-width: 600px !important;
   border-radius: 22px !important;
   background: rgba(255,255,255,0.98) !important;
-  backdrop-
-  -webkit-backdrop-
-  border: 1px solid rgba(200,220,190,0.4) !important;
+  border: 1px solid rgba(200,220,190,0.4) !important; /* backdrop-filter removed from search — 0.98 opacity makes it unnecessary */
   /* Simplified to single shadow — triple shadows cause extra GPU compositing */
   box-shadow: 0 20px 52px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.5) !important;
   opacity: 0 !important; transform: translateY(-20px) !important;
@@ -1832,8 +1838,9 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: all 0.2s cubic-bezier(0.34,1.6,0.64,1) !important;
+  transition: transform 0.15s cubic-bezier(0.34,1.6,0.64,1), background-color 0.15s ease !important;
   flex-shrink: 0 !important;
+  touch-action: manipulation !important;
 }
 .search-container button[aria-label="إغلاق البحث"]:hover,
 .search-container button[onclick="closeSearch()"]:hover {
@@ -1873,6 +1880,8 @@
 }
 .search-results::-webkit-scrollbar { width: 4px; }
 .search-results::-webkit-scrollbar-track { background: transparent; }
+/* Prevent search panel scroll from propagating to page */
+.search-results { overscroll-behavior: contain; }
 .search-results::-webkit-scrollbar-thumb { background: #d1d5b1; border-radius: 4px; }
 
 /* Individual result items */
@@ -2024,7 +2033,8 @@ mark, .search-result-item mark {
   font-family: 'Cairo', sans-serif;
   padding: 3px 8px;
   border-radius: 6px;
-  transition: all 0.2s;
+  transition: color 0.12s ease, background-color 0.12s ease;
+  touch-action: manipulation;
 }
 #recentSearchHeader button:hover {
   color: #ef4444;
@@ -2049,12 +2059,12 @@ mark, .search-result-item mark {
   color: #2D5016;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
-  transition: all 0.18s ease;
   max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .sr-pill:hover {
   background: #d4e8ba;
@@ -2073,7 +2083,7 @@ mark, .search-result-item mark {
   color: #4a7c23;
   line-height: 1;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 .sr-pill:hover .sr-pill-del {
   background: #ef4444;
@@ -2098,7 +2108,7 @@ mark, .search-result-item mark {
   color: #4a7c23;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
-  transition: all 0.18s;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .sr-cat-chip:hover {
