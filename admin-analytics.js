@@ -509,6 +509,50 @@ function undoDeleteAnalytics() {
   if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
 }
 
+// ═══ حذف عرض إحصائيات الزوار (section-stats) + تراجع ═══
+var _statsDeletedHtml = null; /* snapshot for undo */
+
+function deleteCurrentStats() {
+  if (!confirm('هل تريد مسح عرض إحصائيات الزوار؟ يمكنك التراجع لاحقاً\nملاحظة: البيانات محفوظة في Supabase ولن تُحذف')) return;
+  var statsSection = document.getElementById('section-stats');
+  if (!statsSection) { if(typeof showToast==='function') showToast('القسم غير موجود','error'); return; }
+  /* Save snapshot of inner content areas */
+  var visitorsChart = document.getElementById('visitorsChart');
+  var categoryChart = document.getElementById('categoryChart');
+  var detailedTable = document.getElementById('detailedStatsTable');
+  _statsDeletedHtml = {
+    visitorsChart: visitorsChart ? visitorsChart.parentElement.innerHTML : '',
+    categoryChart: categoryChart ? categoryChart.parentElement.innerHTML : '',
+    detailedTable: detailedTable ? detailedTable.innerHTML : ''
+  };
+  /* Clear charts */
+  if (visitorsChart) { var vc = visitorsChart.getContext('2d'); if(vc) vc.clearRect(0,0,visitorsChart.width,visitorsChart.height); visitorsChart.parentElement.innerHTML = '<canvas id="visitorsChart"></canvas>'; }
+  if (categoryChart) { var cc = categoryChart.getContext('2d'); if(cc) cc.clearRect(0,0,categoryChart.width,categoryChart.height); categoryChart.parentElement.innerHTML = '<canvas id="categoryChart"></canvas>'; }
+  if (detailedTable) detailedTable.innerHTML = '<div class="text-center py-10 text-brand-400"><p class="mb-4">تم مسح الإحصائيات من العرض</p><button onclick="window._reloadStats()" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل</button></div>';
+  /* Show undo button */
+  var undoBtn = document.getElementById('statsUndoBtn');
+  if (undoBtn) undoBtn.classList.remove('hidden');
+  sessionStorage.setItem('statsHidden','1');
+  if(typeof showToast==='function') showToast('تم مسح عرض الإحصائيات','info');
+}
+
+function undoDeleteStats() {
+  var undoBtn = document.getElementById('statsUndoBtn');
+  if (undoBtn) undoBtn.classList.add('hidden');
+  sessionStorage.removeItem('statsHidden');
+  if(typeof loadStats==='function') loadStats();
+  else if(typeof renderStats==='function') renderStats();
+  if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
+}
+
+window._reloadStats = function() {
+  sessionStorage.removeItem('statsHidden');
+  var undoBtn = document.getElementById('statsUndoBtn');
+  if (undoBtn) undoBtn.classList.add('hidden');
+  if(typeof loadStats==='function') loadStats();
+  else if(typeof renderStats==='function') renderStats();
+};
+
 // ════════════════════════════════════════════════════════════
 // قسم إحصائيات الزوار
 // ════════════════════════════════════════════════════════════

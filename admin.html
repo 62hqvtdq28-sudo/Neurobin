@@ -17,7 +17,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- Security: Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://i.ibb.co https://ibb.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org https://ipapi.co https://ipinfo.io https://api.imgbb.com https://*.replit.dev https://*.replit.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.telegram.org https://ipapi.co https://ipinfo.io https://*.replit.dev https://*.replit.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="لوحة تحكم صيدلية نيوروبين - إدارة المنتجات والطلبات والإحصائيات">
@@ -1396,11 +1396,6 @@
           <div>
             <label class="block text-sm font-semibold text-brand-700 mb-2 sm:mb-3">رقم واتساب</label>
             <input type="text" id="whatsappNumber" class="input-field" placeholder="9647870404967">
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-brand-700 mb-1">مفتاح imgBB API <span class="text-xs font-normal text-brand-400">(لرفع صور الأقسام)</span></label>
-            <p class="text-xs text-brand-400 mb-2">احصل عليه مجاناً من <a href="https://api.imgbb.com/" target="_blank" rel="noopener" class="text-blue-500 underline">api.imgbb.com</a> — يُستخدم فقط لرفع صور الأقسام بأمان</p>
-            <input type="text" id="imgbbApiKey" class="input-field font-mono text-sm" placeholder="أدخل مفتاح imgBB API هنا..." dir="ltr" autocomplete="off">
           </div>
           <div>
             <label class="block text-sm font-semibold text-brand-700 mb-1">رابط API Server <span class="text-xs font-normal text-brand-400">(لإشعارات تيليجرام)</span></label>

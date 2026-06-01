@@ -11,7 +11,6 @@ function saveSettings() {
 
   var telegramBotToken = ((document.getElementById('telegramBotToken') || {}).value || '').trim();
   var telegramChatId = ((document.getElementById('telegramChatId') || {}).value || '').trim();
-  var imgbbApiKey = ((document.getElementById('imgbbApiKey') || {}).value || '').trim();
   var apiServerUrl = ((document.getElementById('apiServerUrl') || {}).value || '').trim().replace(/\/$/, '');
 
   var prev = {};
@@ -22,7 +21,6 @@ function saveSettings() {
     whatsappNumber: whatsappNumber,
     telegramBotToken: telegramBotToken,
     telegramChatId: telegramChatId,
-    imgbbApiKey: imgbbApiKey,
     apiServerUrl: apiServerUrl
   });
   localStorage.setItem('phSettings', JSON.stringify(settings));
@@ -136,8 +134,6 @@ function loadSettings() {
     document.getElementById('telegramBotToken').value = settings.telegramBotToken || '';
   if (document.getElementById('telegramChatId'))
     document.getElementById('telegramChatId').value = settings.telegramChatId || '';
-  if (document.getElementById('imgbbApiKey'))
-    document.getElementById('imgbbApiKey').value = settings.imgbbApiKey || '';
   if (document.getElementById('apiServerUrl'))
     document.getElementById('apiServerUrl').value = settings.apiServerUrl || '';
 }
@@ -870,22 +866,7 @@ async function uploadCatImage(catFilter, fileInput) {
       reader.readAsDataURL(file);
     });
 
-    var formData = new FormData();
-    formData.append('image', base64);
-
-    var _phSettings = {};
-    try { _phSettings = JSON.parse(localStorage.getItem('phSettings') || '{}'); } catch(_e) {}
-    var _imgbbKey = (_phSettings.imgbbApiKey || '').trim();
-  if (!_imgbbKey) { showToast && showToast('يرجى إضافة مفتاح ImgBB في الإعدادات لرفع الصور', 'warning'); return null; }
-    var response = await fetch('https://api.imgbb.com/1/upload?key=' + _imgbbKey, {
-      method: 'POST',
-      body: formData
-    });
-
-    var data = await response.json();
-    if (!data.success) throw new Error(data.error ? data.error.message : 'فشل رفع الصورة');
-
-    var imageUrl = data.data.url;
+    var imageUrl = 'data:' + file.type + ';base64,' + base64;
 
     if (!supabaseClient) throw new Error('قاعدة البيانات غير متصلة');
     var key = 'cat_img_' + catFilter;
@@ -1094,7 +1075,7 @@ window.sendDirectMessageToCustomer = async function() {
     var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
     var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
     var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
-    var r = await fetch(SURL + '/rest/v1/chat_messages', { method: 'POST', headers: H, body: JSON.stringify({ session_id: sid, role: 'admin', message: msg }) });
+    var r = await fetch(SURL + '/rest/v1/chat_messages', { method: 'POST', headers: H, body: JSON.stringify({ session_id: sid, role: 'assistant', message: msg }) });
     if (!r.ok && r.status !== 201) { var e = await r.json().catch(function(){return{};}); throw new Error(e.message || 'HTTP ' + r.status); }
     if (msgEl) msgEl.value = '';
     if (typeof showToast === 'function') showToast('✅ تم إرسال الرسالة للعميل', 'success');

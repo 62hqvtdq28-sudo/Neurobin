@@ -147,7 +147,7 @@
     },
     hardDelete: (id) => del('orders', id)
   };
-  const Comments     = { list: () => all('contact_messages','created_at'), updateStatus: (id,s) => upd('contact_messages', id, { is_read: s==='read' }), delete: id => del('contact_messages', id) };
+  const Comments     = { list: () => all('contact_messages','created_at'), updateStatus: (id,s) => upd('contact_messages', id, { is_read: s==='read' || s==='replied' }), delete: id => del('contact_messages', id) };
   const Features     = { list: () => all('features','display_order'), save: (f,id) => id ? upd('features',id,f) : ins('features',f), delete: id => del('features',id) };
   const Testimonials = { list: () => all('testimonials'), save: (t,id) => id ? upd('testimonials',id,t) : ins('testimonials',t), delete: id => del('testimonials',id) };
 
