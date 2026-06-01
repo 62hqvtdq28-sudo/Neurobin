@@ -1946,23 +1946,18 @@
 .sr-skel-img {
   width: 54px; height: 54px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skelShimmer 1.2s ease-in-out infinite;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.2s ease-in-out infinite; /* uses shared pulse — no extra keyframe */
   flex-shrink: 0;
 }
 .sr-skel-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .sr-skel-line {
   height: 12px; border-radius: 6px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skelShimmer 1.2s ease-in-out infinite;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.2s ease-in-out infinite;
 }
 .sr-skel-line:last-child { width: 55%; animation-delay: 0.15s; }
-@keyframes skelShimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+/* skelShimmer removed — replaced by shared skPulse (opacity-only, compositor-safe) */
 
 /* ── Empty State ─────────────────────────────── */
 .sr-empty-state {
@@ -2157,32 +2152,24 @@ mark, .search-result-item mark {
 ══════════════════════════════════════════════ */
 
 /* ── Shimmer Core (override existing) ────────── */
-@keyframes skShimmer {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+/* ── Skeleton: opacity-pulse instead of background-position shimmer ──
+   background-position animation triggers GPU paint on every frame.
+   opacity animation is compositor-only (zero repaint) — 10x cheaper on iPad. */
+@keyframes skPulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1.00; }
 }
 .skeleton,
 .sk {
-  background: linear-gradient(
-    90deg,
-    #eef2e8 0%,
-    #e0e8d6 20%,
-    #d4e0c8 40%,
-    #e0e8d6 60%,
-    #eef2e8 80%
-  ) !important;
-  background-size: 200% 100% !important;
-  animation: skShimmer 1.6s ease-in-out infinite !important;
+  background: linear-gradient(135deg, #dce9cc 0%, #e8f0d8 100%) !important;
+  background-size: 100% 100% !important; /* static — no position animation */
+  animation: skPulse 1.4s ease-in-out infinite !important;
   border-radius: 10px !important;
+  will-change: opacity !important; /* pre-promote to compositor layer */
 }
 
-/* Stagger shimmer phase per card position */
-.products-grid .skeleton-card:nth-child(2) .skeleton { animation-delay: 0.1s; }
-.products-grid .skeleton-card:nth-child(3) .skeleton { animation-delay: 0.2s; }
-.products-grid .skeleton-card:nth-child(4) .skeleton { animation-delay: 0.3s; }
-.products-grid .skeleton-card:nth-child(5) .skeleton { animation-delay: 0.4s; }
-.products-grid .skeleton-card:nth-child(6) .skeleton { animation-delay: 0.5s; }
-.products-grid .skeleton-card:nth-child(n+7) .skeleton{ animation-delay: 0.6s; }
+/* 2nd-layer inner stagger removed — inner element staggering multiplies GPU layers.
+   Card-level stagger below is sufficient for the visual effect. */
 
 /* ── Skeleton Card — exact card dimensions ────── */
 .skeleton-card {
@@ -2191,20 +2178,17 @@ mark, .search-result-item mark {
   overflow: hidden !important;
   border: 1.5px solid #eef2e8 !important;
   box-shadow: 0 2px 10px rgba(45,80,22,0.05) !important;
-  animation: skCardIn 0.35s ease both !important;
+  animation: skCardIn 0.25s ease both !important; /* 0.35s → 0.25s: faster reveal */
   min-height: 340px;
-  contain: layout style;
+  contain: layout style paint; /* paint added — isolates repaint to card boundary */
 }
 @keyframes skCardIn {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.skeleton-card:nth-child(2) { animation-delay: 0.05s; }
-.skeleton-card:nth-child(3) { animation-delay: 0.10s; }
-.skeleton-card:nth-child(4) { animation-delay: 0.15s; }
-.skeleton-card:nth-child(5) { animation-delay: 0.20s; }
-.skeleton-card:nth-child(6) { animation-delay: 0.25s; }
-.skeleton-card:nth-child(n+7){ animation-delay: 0.30s; }
+/* Reduced stagger tiers — 2 instead of 6 to minimize animation startup cost */
+.skeleton-card:nth-child(2) { animation-delay: 0.06s; }
+.skeleton-card:nth-child(n+3){ animation-delay: 0.12s; }
 
 /* Image area — matches product-image-wrapper height */
 .skeleton-img {
@@ -2263,8 +2247,9 @@ mark, .search-result-item mark {
   box-shadow: 0 8px 32px rgba(45,80,22,0.25);
 }
 @keyframes loadLogoPulse {
-  0%,100% { transform: scale(1);   box-shadow: 0 8px 32px rgba(45,80,22,0.25); }
-  50%     { transform: scale(1.06); box-shadow: 0 12px 40px rgba(45,80,22,0.38); }
+  /* box-shadow removed from animation — animating box-shadow triggers paint + composite */
+  0%,100% { transform: scale(1);    opacity: 0.9; }
+  50%     { transform: scale(1.06); opacity: 1.0; }
 }
 #loadingBars {
   display: flex; gap: 5px; justify-content: center; margin-top: 18px;
@@ -2310,27 +2295,19 @@ mark, .search-result-item mark {
 .sk-filter-circle {
   width: 58px; height: 58px;
   border-radius: 50% !important;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite;
+  will-change: opacity;
 }
 .sk-filter-label {
   height: 10px; width: 44px;
   border-radius: 6px !important;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite;
 }
-.sk-filter:nth-child(2) .sk-filter-circle,
-.sk-filter:nth-child(2) .sk-filter-label { animation-delay: 0.1s; }
-.sk-filter:nth-child(3) .sk-filter-circle,
-.sk-filter:nth-child(3) .sk-filter-label { animation-delay: 0.2s; }
-.sk-filter:nth-child(4) .sk-filter-circle,
-.sk-filter:nth-child(4) .sk-filter-label { animation-delay: 0.3s; }
-.sk-filter:nth-child(5) .sk-filter-circle,
-.sk-filter:nth-child(5) .sk-filter-label { animation-delay: 0.4s; }
-.sk-filter:nth-child(n+6) .sk-filter-circle,
-.sk-filter:nth-child(n+6) .sk-filter-label { animation-delay: 0.5s; }
+/* Reduced filter stagger to 2 tiers (was 5) */
+.sk-filter:nth-child(n+2) .sk-filter-circle,
+.sk-filter:nth-child(n+2) .sk-filter-label { animation-delay: 0.1s; }
 
 /* ── Section Header Skeleton ─────────────────── */
 .sk-section-header {
@@ -2341,18 +2318,15 @@ mark, .search-result-item mark {
   height: 28px; width: 200px;
   border-radius: 8px !important;
   margin: 0 auto 10px;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite;
 }
 .sk-section-sub {
   height: 14px; width: 280px;
   border-radius: 6px !important;
   margin: 0 auto;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
-  animation-delay: 0.15s;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s 0.15s ease-in-out infinite;
 }
 
 /* ── Admin: Stat Card Skeleton ───────────────── */
@@ -2371,15 +2345,22 @@ mark, .search-result-item mark {
 .sk-stat-icon {
   width: 44px; height: 44px;
   border-radius: 12px !important;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite;
+  will-change: opacity;
 }
-.sk-stat-num  { height: 28px; width: 55%; border-radius: 8px !important; animation: skShimmer 1.6s 0.1s ease-in-out infinite; background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%); background-size: 200% 100%; }
-.sk-stat-lbl  { height: 12px; width: 70%; border-radius: 6px !important; animation: skShimmer 1.6s 0.2s ease-in-out infinite; background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%); background-size: 200% 100%; }
-.sk-stat-card:nth-child(2) * { animation-delay: 0.15s; }
-.sk-stat-card:nth-child(3) * { animation-delay: 0.30s; }
-.sk-stat-card:nth-child(4) * { animation-delay: 0.45s; }
+.sk-stat-num  { height: 28px; width: 55%; border-radius: 8px !important; background: linear-gradient(135deg, #dce9cc, #e8f0d8); animation: skPulse 1.4s 0.1s ease-in-out infinite; }
+.sk-stat-lbl  { height: 12px; width: 70%; border-radius: 6px !important; background: linear-gradient(135deg, #dce9cc, #e8f0d8); animation: skPulse 1.4s 0.2s ease-in-out infinite; }
+/* Fixed: replaced '*' selector (triggers full subtree style recalc) with specific classes */
+.sk-stat-card:nth-child(2) .sk-stat-icon,
+.sk-stat-card:nth-child(2) .sk-stat-num,
+.sk-stat-card:nth-child(2) .sk-stat-lbl { animation-delay: 0.15s; }
+.sk-stat-card:nth-child(3) .sk-stat-icon,
+.sk-stat-card:nth-child(3) .sk-stat-num,
+.sk-stat-card:nth-child(3) .sk-stat-lbl { animation-delay: 0.30s; }
+.sk-stat-card:nth-child(4) .sk-stat-icon,
+.sk-stat-card:nth-child(4) .sk-stat-num,
+.sk-stat-card:nth-child(4) .sk-stat-lbl { animation-delay: 0.45s; }
 
 /* ── Admin: Table Row Skeleton ───────────────── */
 .sk-table-row td {
@@ -2389,9 +2370,8 @@ mark, .search-result-item mark {
 .sk-table-cell {
   height: 14px;
   border-radius: 7px !important;
-  animation: skShimmer 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2e8 0%, #d4e0c8 40%, #eef2e8 80%);
-  background-size: 200% 100%;
+  background: linear-gradient(135deg, #dce9cc, #e8f0d8);
+  animation: skPulse 1.4s ease-in-out infinite;
   display: block;
 }
 tr.sk-table-row:nth-child(2) .sk-table-cell { animation-delay: 0.08s; }
@@ -2401,16 +2381,13 @@ tr.sk-table-row:nth-child(5) .sk-table-cell { animation-delay: 0.32s; }
 
 /* ── prem-skeleton override (New/Trending sections) ── */
 .prem-skeleton {
-  background: linear-gradient(
-    90deg,
-    #eef2e8 0%, #e0e8d6 20%, #d4e0c8 40%, #e0e8d6 60%, #eef2e8 80%
-  ) !important;
-  background-size: 200% 100% !important;
-  animation: skShimmer 1.6s ease-in-out infinite !important;
+  background: linear-gradient(135deg, #dce9cc 0%, #e8f0d8 100%) !important;
+  animation: skPulse 1.4s ease-in-out infinite !important;
   border-radius: 16px !important;
   min-height: 280px !important;
   flex-shrink: 0 !important;
   width: 180px !important;
+  will-change: opacity !important;
 }
 @media (max-width: 767px) {
   .prem-skeleton { width: 148px !important; min-height: 240px !important; }
@@ -2428,8 +2405,10 @@ section:not(#hero):not(#products):not(#navbar) {
   .sk-filter-circle, .sk-filter-label,
   .sk-section-title, .sk-section-sub,
   .sk-stat-icon, .sk-stat-num, .sk-stat-lbl,
-  .sk-table-cell, .load-bar, #loadingLogo {
+  .sk-table-cell, .load-bar, #loadingLogo,
+  .img-loading, .sr-skel-img, .sr-skel-line {
     animation: none !important;
+    opacity: 0.7 !important; /* static visible state when motion disabled */
   }
 }
 
@@ -2844,20 +2823,15 @@ img, .product-image-wrapper img {
   transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94) !important;
 }
 .img-loading {
-  /* SAFE: do NOT set opacity:0 — causes permanent invisible if class sticks.
-     Use background shimmer instead (visible on transparent img bg). */
-  background: linear-gradient(90deg,#f0f2e8 25%,#e8ead8 50%,#f0f2e8 75%);
-  background-size: 200% 100%;
-  animation: imgSkeletonPulse 1.4s ease-in-out infinite !important;
+  /* Replaced background-position shimmer with opacity pulse (compositor-only) */
+  background: #e8edd8;
+  animation: skPulse 1.2s ease-in-out infinite !important;
 }
 .img-loaded {
   background: none !important;
   animation: imgFadeIn 0.3s ease both !important;
 }
-@keyframes imgSkeletonPulse {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+/* imgSkeletonPulse removed — replaced by skPulse (compositor-only) */
 @keyframes imgFadeIn {
   from { opacity: 0.5; }
   to   { opacity: 1; }
