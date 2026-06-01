@@ -1,5 +1,15 @@
+/* requestIdleCallback polyfill for Safari < 16.4 */
+if (!window.requestIdleCallback) {
+  window.requestIdleCallback = function(cb, opts) {
+    var timeout = (opts && opts.timeout) ? Math.min(opts.timeout, 300) : 300;
+    return setTimeout(function(){ cb({didTimeout:false,timeRemaining:function(){return 0;}}); }, timeout);
+  };
+}
+
 // admin-analytics.js — v3 (weekly/monthly toggle, delete+undo, no status chart)
 var _analyticsChartMonthly = null;
+var _analyticsLastPeriod = null;    /* track active period to skip redundant re-renders */
+var _analyticsRenderedHash = null;  /* hash of last render input to skip if unchanged */
 var _analyticsPeriod = 'monthly'; // 'monthly' | 'weekly'
 var _lastAnalyticsSnapshot = null; // for undo
 var _profitBreakdownCache = null;
@@ -261,7 +271,8 @@ async function loadAnalytics() {
 // ═══ تبديل بين الأسبوعي والشهري ═══
 function switchAnalyticsPeriod(period) {
   _analyticsPeriod = period;
-  document.querySelectorAll('.analytics-period-btn').forEach(function(b){
+  var _analyticsPeriodBtns = Array.from(document.querySelectorAll('.analytics-period-btn'));
+  _analyticsPeriodBtns.forEach(function(b){
     b.classList.remove('bg-brand-700','text-white');
     b.classList.add('bg-brand-100','text-brand-700');
   });
@@ -272,6 +283,9 @@ function switchAnalyticsPeriod(period) {
   if (_lastAnalyticsSnapshot && typeof SupaDB !== 'undefined') {
     SupaDB.Orders.list().then(function(allOrders){
       var delivered = allOrders.filter(function(o){ return o.status==='delivered'; });
+      /* Guard: skip re-render if period unchanged */
+      if(_analyticsLastPeriod === period) return;
+      _analyticsLastPeriod = period;
       _renderSalesChart(allOrders, delivered);
     }).catch(function(){});
   }
@@ -318,7 +332,10 @@ function _renderSalesChart(allOrders, delivered) {
   // حساب المجموع والنسب لكل عمود
   var totalSales = vals.reduce(function(s,v){ return s+v; }, 0);
 
-  if (_analyticsChartMonthly) _analyticsChartMonthly.destroy();
+  if (_analyticsChartMonthly) {
+    try { _analyticsChartMonthly.destroy(); } catch(e) {}
+    _analyticsChartMonthly = null;
+  }
   _analyticsChartMonthly = new Chart(ctx2.getContext('2d'), {
     type:'bar',
     data:{ labels:labels,
