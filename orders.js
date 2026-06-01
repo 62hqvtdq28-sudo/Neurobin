@@ -5,17 +5,54 @@ var currentOrderFilter = 'all';
 var currentCommentFilter = 'all';
 var selectedCommentId = null;
 
+/* ── Order Cache — avoid re-fetching from Supabase on every filter/search ──
+   Supabase RTT is 200-800ms. Client-side filter is <1ms.
+   Cache is invalidated only after mutation (status change, delete, new order). */
+var _ordersCache = null;          /* full list from Supabase */
+var _ordersCacheTime = 0;         /* timestamp of last fetch */
+var _ordersCacheTTL = 30000;      /* 30s TTL — refresh if stale */
+var _ordersDeletedCache = null;   /* separate cache for deleted tab */
+var _phoneCountCache = null;      /* pre-computed phone→count map */
+var _numMapCache = null;          /* pre-computed id→ordernumber map */
+
+/* Invalidate cache after any mutation */
+function _invalidateOrderCache() {
+  _ordersCache = null;
+  _ordersDeletedCache = null;
+  _phoneCountCache = null;
+  _numMapCache = null;
+  _ordersCacheTime = 0;
+}
+window._invalidateOrderCache = _invalidateOrderCache;
+
 async function loadOrders() {
   var container = document.getElementById('ordersList');
   var noOrders  = document.getElementById('noOrders');
   try {
-    var allOrders = currentOrderFilter === 'deleted'
-      ? await SupaDB.Orders.listDeleted()
-      : await SupaDB.Orders.list();
+    /* ── Use cache when available (avoids 200-800ms Supabase RTT) ── */
+    var isDeleted = currentOrderFilter === 'deleted';
+    var now = Date.now();
+    var cacheValid = isDeleted
+      ? !!_ordersDeletedCache
+      : (_ordersCache && (now - _ordersCacheTime) < _ordersCacheTTL);
+
+    var allOrders;
+    if (cacheValid) {
+      allOrders = isDeleted ? _ordersDeletedCache : _ordersCache;
+    } else {
+      allOrders = isDeleted
+        ? await SupaDB.Orders.listDeleted()
+        : await SupaDB.Orders.list();
+      if (isDeleted) { _ordersDeletedCache = allOrders; }
+      else { _ordersCache = allOrders; _ordersCacheTime = now; }
+      /* Invalidate derived caches when data refreshes */
+      _phoneCountCache = null;
+      _numMapCache = null;
+    }
+
     var orders = allOrders;
     var q = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
-    if (currentOrderFilter !== 'all' && currentOrderFilter !== 'deleted') orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
-    // #30: Advanced date filter
+    if (currentOrderFilter !== 'all' && !isDeleted) orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
     var _df = (typeof window._orderDateFrom !== 'undefined') ? window._orderDateFrom : '';
     var _dt = (typeof window._orderDateTo !== 'undefined') ? window._orderDateTo : '';
     var _rg = (typeof window._orderRegion !== 'undefined') ? window._orderRegion : '';
@@ -28,16 +65,23 @@ async function loadOrders() {
     var statusLabels={new:'✅ تم التثبيت',pending:'✅ تم التثبيت',preparing:'📦 جاري التجهيز',shipped:'🚐 مع المندوب',progress:'🚚 في الطريق',on_the_way:'🚚 في الطريق',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
     var statusClasses={new:'order-new',pending:'order-new',preparing:'order-progress',shipped:'order-progress',progress:'order-progress',on_the_way:'order-progress',delivered:'order-delivered',cancelled:'order-cancelled'};
     var html = '';
-    // ── VIP: count orders per phone (excluding cancelled) ──────────────────
-    var _phoneCount = {};
-    (allOrders||[]).filter(function(o){ return o.status!=='cancelled'&&o.status!=='deleted'; }).forEach(function(o){
-      var ph = (o.customer_phone||o.phone||'').trim();
-      if (ph) _phoneCount[ph] = (_phoneCount[ph]||0)+1;
-    });
-    // Sequential numbering
-    var _numberedOrders = (allOrders||[]).filter(function(o){ return o.status!=='cancelled' && !o.deleted_at; }).slice().sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
-    var _numMap = {};
-    _numberedOrders.forEach(function(o,i){ _numMap[String(o.id)] = i+1; });
+    /* ── Pre-compute VIP phone counts ONCE per cache load (not per render) ── */
+    if (!_phoneCountCache) {
+      _phoneCountCache = {};
+      (allOrders||[]).filter(function(o){ return o.status!=='cancelled'&&o.status!=='deleted'; }).forEach(function(o){
+        var ph = (o.customer_phone||o.phone||'').trim();
+        if (ph) _phoneCountCache[ph] = (_phoneCountCache[ph]||0)+1;
+      });
+    }
+    var _phoneCount = _phoneCountCache;
+    /* ── Pre-compute numbering map ONCE per cache load ── */
+    if (!_numMapCache) {
+      _numMapCache = {};
+      var _numbered = (allOrders||[]).filter(function(o){ return o.status!=='cancelled' && !o.deleted_at; })
+        .slice().sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
+      _numbered.forEach(function(o,i){ _numMapCache[String(o.id)] = i+1; });
+    }
+    var _numMap = _numMapCache;
     orders.forEach(function(order) {
       var oid = escapeHTML(String(order.id));
       var status = order.status || 'new';
@@ -70,7 +114,8 @@ async function loadOrders() {
       }
 
       // ─── بناء HTML الكارد بشكل صحيح ───
-      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100 animate-fade-in">';
+      /* animate-fade-in removed from per-card — animates container instead (1 vs N animations) */
+      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100">';
 
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
@@ -123,20 +168,30 @@ async function loadOrders() {
       html += cardHtml;
     });
     container.innerHTML = html;
+    /* Single container animation instead of N per-card animations */
+    container.classList.add('orders-loaded');
+    setTimeout(function(){ container.classList.remove('orders-loaded'); }, 300);
     lucide.createIcons();
   } catch(e) {
     if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">خطأ في تحميل الطلبات: ' + escapeHTML(e.message) + '</div>';
   }
 }
 
+var _orderTabBtns = null; /* cache tab buttons — never changes after init */
 function filterOrders(filter) {
   currentOrderFilter = filter;
-  document.querySelectorAll('#section-orders .tab-btn').forEach(function(b){ b.classList.remove('active','bg-brand-700','text-white'); b.classList.add('bg-brand-100','text-brand-700'); });
+  if (!_orderTabBtns) _orderTabBtns = Array.from(document.querySelectorAll('#section-orders .tab-btn'));
+  _orderTabBtns.forEach(function(b){ b.classList.remove('active','bg-brand-700','text-white'); b.classList.add('bg-brand-100','text-brand-700'); });
   var ab = document.querySelector('#section-orders [data-filter="' + filter + '"]');
   if (ab) { ab.classList.add('active','bg-brand-700','text-white'); ab.classList.remove('bg-brand-100','text-brand-700'); }
   loadOrders();
 }
-function searchOrders() { loadOrders(); }
+/* Debounce search — avoid hitting Supabase (or even client filter) on every keystroke */
+var _searchOrdersTimer = null;
+function searchOrders() {
+  clearTimeout(_searchOrdersTimer);
+  _searchOrdersTimer = setTimeout(function(){ loadOrders(); }, 250);
+}
 
 async function updateOrderStatus(orderId, status) {
   // Validate inputs directly (no sessionStorage dependency)
