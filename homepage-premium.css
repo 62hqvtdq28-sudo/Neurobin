@@ -2484,6 +2484,12 @@ body.modal-open {
   overflow: hidden !important;
   /* preserve scroll position via JS top property */
 }
+/* Scroll chaining prevention — stops document scroll when modal scrollable area hits end */
+.cart-sidebar,
+.checkout-container,
+.quick-view-container {
+  overscroll-behavior: contain !important;
+}
 
 /* ─── 6. Sticky/fixed nav — prevent Safari flicker ─ */
 #navbar {
@@ -2576,6 +2582,16 @@ button.back-to-top,
   min-width: 44px !important;
 }
 
+/* ─── 10b. touch-action: manipulation — eliminates 300ms tap delay on iOS ─
+   This is the correct CSS solution (no JS ghost-click hacks needed) */
+.btn-primary, .btn-secondary, .filter-btn, .cat-icon-btn,
+.nav-icon-btn, .nav-hamburger, .cart-badge,
+button.back-to-top, .whatsapp-float, .favorite-btn,
+.product-card-main, .search-result-item, .prem-card,
+button, [role="button"], a {
+  touch-action: manipulation !important;
+}
+
 /* ─── 11. Forms — iOS prevent zoom + appearance ─ */
 input[type="text"],
 input[type="tel"],
@@ -2624,19 +2640,20 @@ textarea#customerNotes { border-radius: 12px !important; }
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
-  /* Modals: blur ONLY when active — prevents black layer on pinch-zoom */
+  /* Modals: 4px blur on iOS (was 8px → 10px in styles.css). 4px is visually sufficient
+     and ~4x cheaper than 8px (blur cost scales quadratically with radius) */
   .quick-view-modal.active,
   #quickViewModal.active {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
   }
   .checkout-modal.active {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
   }
   #searchModal.active {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   #mobileDrawer {
     backdrop-filter: none !important;
@@ -2650,7 +2667,7 @@ textarea#customerNotes { border-radius: 12px !important; }
 
   /* Disable heavy animations on iOS */
   .product-card-main { will-change: auto !important; }
-  @keyframes skShimmer { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
+  /* skShimmer removed — all skeleton animations now use skPulse (opacity-only) */
 
   /* Fix Safari gradient text rendering */
   .stat-number {
@@ -2717,8 +2734,8 @@ section, .premium-products-section { overflow-x: hidden !important; }
 .scroll-animate-left,
 .scroll-animate-right,
 .scroll-animate-scale {
-  will-change: opacity, transform;
-  contain: layout style;
+  /* will-change removed from base — perf.js adds JIT. CSS pre-allocation = too many layers */
+  contain: layout; /* style removed — style containment prevents ::before animations from working */
 }
 .scroll-animate.visible,
 .scroll-animate-left.visible,
@@ -2784,33 +2801,32 @@ img, .product-image-wrapper img {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 2. GPU compositing only for animated elements */
-.product-card-main,
-.prem-card,
-.scroll-animate,
-.scroll-animate-left,
-.scroll-animate-right,
-.scroll-animate-scale {
-  will-change: opacity, transform;
-}
-/* Release will-change after animation (done via JS in perf.js) */
+/* 2. will-change removed from base state — 20+ simultaneous GPU layers crashes iPad VRAM.
+   perf.js adds will-change just-in-time (IntersectionObserver rootMargin=200px) then
+   releases it 650ms after .visible is applied. CSS pre-allocation is NOT needed. */
 .product-card-main.visible,
 .prem-card.visible,
 .scroll-animate.visible,
 .scroll-animate-left.visible,
 .scroll-animate-right.visible,
 .scroll-animate-scale.visible {
-  will-change: auto;
+  will-change: auto; /* explicit release after animation completes */
 }
 
 /* 3. contain on heavy UI sections to reduce reflow scope */
 #products,
 #features,
-#testimonials,
+#testimonials {
+  contain: layout style;
+}
+/* Modals: paint isolation prevents bleed into page compositor */
 .cart-panel,
 .checkout-panel,
-.quick-view-modal {
-  contain: layout style;
+.quick-view-modal,
+.cart-sidebar,
+.checkout-modal,
+#checkoutModal {
+  contain: layout style paint;
 }
 
 /* 4. Image loading transitions */
@@ -2819,8 +2835,15 @@ img, .product-image-wrapper img {
    Fade-in happens via img-loaded animation, not from opacity:0 start. */
 .product-img-animated,
 .product-image-wrapper img {
-  /* Only transform transition — opacity handled by img-loaded animation */
-  transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94) !important;
+  /* Removed blanket transition on all product images — creates GPU layer per image
+     (20+ layers). Only apply on hover (desktop) via @media hover:hover */
+  transition: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .product-img-animated,
+  .product-image-wrapper img {
+    transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94) !important;
+  }
 }
 .img-loading {
   /* Replaced background-position shimmer with opacity pulse (compositor-only) */
@@ -2872,9 +2895,11 @@ img, .product-image-wrapper img {
   transform: translateZ(0);
 }
 
-/* 9. Navbar — own compositing layer for scroll */
+/* 9. Navbar — compositor layer for scroll hide/show animation */
 #navbar {
-  will-change: background-color, box-shadow;
+  /* background-color/box-shadow are NOT compositable — removed from will-change.
+     transform is compositable and matches the translate3d show/hide animation. */
+  will-change: transform;
   transform: translateZ(0);
 }
 
