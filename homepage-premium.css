@@ -323,6 +323,7 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   overscroll-behavior-x: contain; /* prevent page scroll interference on horizontal swipe */
+  touch-action: pan-x; /* allow vertical page scroll when swiping over this area on iOS */
 }
 .premium-products-scroll::-webkit-scrollbar { display: none; }
 

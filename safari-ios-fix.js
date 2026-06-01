@@ -205,22 +205,36 @@
     }, { passive: true });
   }
 
-  /* ── 14. Scroll — detect stuck body lock ────────────────── */
+  /* ── 14. Detect stuck body lock ─────────────────────────── */
+  /* Note: scroll events don't fire when body is position:fixed (iOS).
+     We use touchstart as the primary detector so it fires even when stuck. */
+  function _checkAndUnstickBody() {
+    var isStuck = document.body.style.position === 'fixed' ||
+                  document.body.style.overflow === 'hidden';
+    if (!isStuck) return;
+    var anyOpen = document.querySelector(
+      '#searchModal.active, #checkoutModal.active, ' +
+      '#quickViewModal.active, #cartSidebar.active, #mobileDrawer.open'
+    );
+    if (!anyOpen) {
+      resetBodyScroll();
+      fixStuckImageBlur();
+    }
+  }
+
+  /* touchstart fires even when page is stuck — primary recovery path */
+  var _touchUnstickTimer;
+  document.addEventListener('touchstart', function () {
+    clearTimeout(_touchUnstickTimer);
+    _touchUnstickTimer = setTimeout(_checkAndUnstickBody, 300);
+  }, { passive: true });
+
+  /* scroll event fallback — still useful when overflow:hidden only */
   var _scrollTimer;
   document.addEventListener('scroll', function () {
     if (document.body.style.overflow !== 'hidden') return;
     clearTimeout(_scrollTimer);
-    _scrollTimer = setTimeout(function () {
-      // Any modal actually visible?
-      var anyOpen = document.querySelector(
-        '#searchModal.active, #checkoutModal.active, ' +
-        '#quickViewModal.active, #cartSidebar.active, #mobileDrawer.open'
-      );
-      if (!anyOpen) {
-        resetBodyScroll();
-        fixStuckImageBlur();
-      }
-    }, 250);
+    _scrollTimer = setTimeout(_checkAndUnstickBody, 250);
   }, { passive: true });
 
   /* ── 15. Visibility change — repaint after resume ───────── */
