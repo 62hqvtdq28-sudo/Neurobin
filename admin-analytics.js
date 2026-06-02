@@ -44,6 +44,18 @@ async function loadAnalytics() {
     '<p>جاري تحليل البيانات...</p></div>';
   try {
     var allOrders = await SupaDB.Orders.list();
+    /* تطبيق فلتر تاريخ إعادة التعيين إذا كان موجوداً */
+    try {
+      var _H0 = { apikey: '', Authorization: 'Bearer ' + '' };
+      var _rstR = await fetch('/rest/v1/settings?key=eq.analytics_reset_at&select=value', { headers: _H0 });
+      if (_rstR.ok) {
+        var _rstD = await _rstR.json();
+        if (_rstD[0] && _rstD[0].value) {
+          var _rstAt = new Date(_rstD[0].value);
+          allOrders = allOrders.filter(function(o){ return new Date(o.created_at||0) > _rstAt; });
+        }
+      }
+    } catch(e) { /* ignore */ }
     var delivered = allOrders.filter(function(o){ return o.status === 'delivered'; });
 
     // ── تحميل بيانات التكلفة والمنتجات لحساب الأرباح ──────────────────
@@ -500,6 +512,47 @@ function deleteAnalyticsView() {
   if (undoBtn) { undoBtn.classList.remove('hidden'); }
   if(typeof showToast==='function') showToast('تم مسح الإحصائيات','info');
 }
+
+// ═══ إعادة تعيين الإحصائيات من قاعدة البيانات (دائم) ═══
+window.resetAnalyticsFromDB = async function() {
+  if (!confirm('⚠️ تحذير: هذا الإجراء سيحذف إحصائيات المبيعات بشكل دائم من قاعدة البيانات.
+
+سيتم تصفير كميات المبيعات لجميع المنتجات، وستبدأ الإحصائيات من تاريخ اليوم.
+
+هل أنت متأكد؟')) return;
+  try {
+    var SURL = '';
+    var SKEY = '';
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
+    /* 1. حفظ تاريخ إعادة التعيين */
+    await fetch(SURL + '/rest/v1/settings', {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ key: 'analytics_reset_at', value: new Date().toISOString() })
+    });
+    /* 2. تصفير quantity_sold لجميع المنتجات */
+    var prodR = await fetch(SURL + '/rest/v1/products?select=id&limit=500', { headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY } });
+    if (prodR.ok) {
+      var products = await prodR.json();
+      if (products && products.length) {
+        await fetch(SURL + '/rest/v1/products?id=gte.0', {
+          method: 'PATCH',
+          headers: H,
+          body: JSON.stringify({ quantity_sold: 0 })
+        });
+      }
+    }
+    /* 3. مسح العرض المرئي */
+    sessionStorage.setItem('analyticsHidden','1');
+    sessionStorage.removeItem('analyticsHidden');
+    _lastAnalyticsSnapshot = null;
+    _profitBreakdownCache = null;
+    _productQtyCache = {};
+    if(typeof showToast==='function') showToast('✅ تم إعادة تعيين الإحصائيات من قاعدة البيانات', 'success');
+    setTimeout(function(){ if(typeof loadAnalytics==='function') loadAnalytics(); }, 800);
+  } catch(e) {
+    if(typeof showToast==='function') showToast('خطأ: ' + (e.message||''), 'error');
+  }
+};
 
 function undoDeleteAnalytics() {
   var undoBtn=document.getElementById('analyticsUndoBtn');
