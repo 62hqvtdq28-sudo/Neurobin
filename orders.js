@@ -563,3 +563,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 800);
 });
+
+/* Self-register so P8 wrapper can find the real loadOrders reliably */
+window._loadOrdersReal = loadOrders;
