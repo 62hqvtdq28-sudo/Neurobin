@@ -2828,7 +2828,8 @@ window.submitProductRequest = async function() {
     drawer.classList.add('open');
     hamburger && hamburger.classList.add('open');
     hamburger && hamburger.setAttribute('aria-expanded','true');
-    document.body.style.overflow = 'hidden';
+    if (typeof window._lockScroll === 'function') window._lockScroll();
+    else document.body.style.overflow = 'hidden';
     // focus first link for a11y
     setTimeout(function(){
       var first = drawer.querySelector('.drawer-nav-link');
@@ -2841,7 +2842,7 @@ window.submitProductRequest = async function() {
     drawer.classList.remove('open');
     hamburger && hamburger.classList.remove('open');
     hamburger && hamburger.setAttribute('aria-expanded','false');
-    document.body.style.overflow = '';
+    if (typeof window._unlockScroll !== 'function') document.body.style.overflow = '';
   };
 
   // Keep backward-compat with old toggleMobileMenu()
@@ -3591,7 +3592,7 @@ function _patchModalScrollLock(){
   if(!_isIOS) return;
 
   /* Patch all open* functions that set overflow hidden */
-  ['openCart','openCheckout','openQuickView','openSearch'].forEach(function(fn){
+  ['openCart','openCheckout','openQuickView','openSearch','openMobileDrawer'].forEach(function(fn){
     if(typeof window[fn] !== 'function' || window[fn].__iosPatch) return;
     var _orig = window[fn];
     window[fn] = function(){
