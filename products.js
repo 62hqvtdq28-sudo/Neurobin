@@ -175,7 +175,7 @@ function renderCategoryStats(products) {
     { key:'dental',   label:'عناية بالأسنان',    icon:'smile',    c1:'#06b6d4',c2:'#0369a1' },
     { key:'packages', label:'بكجات',              icon:'gift',     c1:'#f59e0b',c2:'#d97706' },
     { key:'handcare',  label:'عناية باليدين',     icon:'hand',     c1:'#f43f5e',c2:'#be123c' },
-    { key:'footcare',  label:'عناية بالقدم',      icon:'footprints',c1:'#14b8a6',c2:'#0f766e' }
+    { key:'footcare',  label:'عناية بالقدم',      icon:'move',      c1:'#14b8a6',c2:'#0f766e' }
   ];
   var counts = {};
   products.forEach(function(p){ var c=p.category||'other'; counts[c]=(counts[c]||0)+1; });
@@ -183,7 +183,7 @@ function renderCategoryStats(products) {
     var n = c.key==='all' ? products.length : (counts[c.key]||0);
     return '<div onclick="filterProductsAdmin(\'' + c.key + '\')" style="cursor:pointer;background:linear-gradient(135deg,'+c.c1+','+c.c2+');border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;color:white;transition:transform 0.15s;box-shadow:0 2px 8px '+c.c1+'40;" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'"><div style="width:38px;height:38px;background:rgba(255,255,255,0.22);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="'+c.icon+'" style="width:18px;height:18px;"></i></div><div><div style="font-size:22px;font-weight:800;line-height:1;">'+n+'</div><div style="font-size:11px;opacity:0.88;margin-top:2px;white-space:nowrap;">'+c.label+'</div></div></div>';
   }).join('');
-  if(typeof lucide!=='undefined') lucide.createIcons();
+  if(typeof lucide!=='undefined') { try { lucide.createIcons(); } catch(e){} }
   cats.forEach(function(c){
     var btn=document.querySelector('#section-products [data-filter="'+c.key+'"]');
     if(!btn) return;
