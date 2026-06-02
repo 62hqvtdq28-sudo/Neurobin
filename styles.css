@@ -1036,3 +1036,102 @@ nav:not(.nav-scrolled) {
   }
 }
 
+
+
+/* ══════════════════════════════════════════════════════════
+   🔧 PWA / WebView SCROLL FIX — ph.neurobin
+   Fixes scroll freeze in PWA (standalone), iOS Safari,
+   Android WebView, and all mobile browsers.
+   ══════════════════════════════════════════════════════════ */
+
+/* 1. Base scroll — html & body must ALWAYS allow vertical scroll */
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: auto !important;
+  min-height: 100%;
+}
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  min-height: 100%;
+  height: auto !important;
+  /* Never set position:fixed or overflow:hidden here globally */
+}
+
+/* 2. PWA standalone — smooth scroll, safe area, no pull-to-refresh */
+@media (display-mode: standalone) {
+  html, body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 3. Scrollable containers inside modals/sidebar — must use touch scroll */
+.cart-sidebar {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain;
+}
+.checkout-container,
+.quick-view-container,
+.checkout-modal,
+.quick-view-modal,
+.search-results,
+#cartSidebar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 4. Cart overlay — must NOT intercept scroll events on the page */
+.cart-overlay,
+.cart-overlay.active {
+  touch-action: none; /* blocks touch on overlay only */
+}
+/* Allow scroll inside sidebar even when overlay is active */
+.cart-sidebar,
+#cartSidebar {
+  touch-action: pan-y; /* allow vertical scroll inside */
+  pointer-events: auto;
+}
+
+/* 5. Modals: scroll inside the container, not page behind */
+.checkout-modal,
+.quick-view-modal,
+.search-modal,
+#checkoutModal,
+#quickViewModal,
+#searchModal {
+  touch-action: none; /* block scroll-through on backdrop */
+}
+.checkout-container,
+.quick-view-container,
+.search-container {
+  touch-action: pan-y; /* allow scroll inside modal content */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 6. Mobile drawer — scrollable */
+#mobileDrawer,
+#drawerPanel {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 7. Scrollable horizontal sections */
+#topSellingGrid,
+.offers-slider-track {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* 8. Prevent double-bounce on iOS when page has no scroll */
+@supports (-webkit-touch-callout: none) {
+  html {
+    /* Use dynamic viewport height on iOS */
+    min-height: -webkit-fill-available;
+  }
+}
