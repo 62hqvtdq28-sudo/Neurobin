@@ -676,7 +676,7 @@ function renderProducts(productsToRender) {
         <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? '\u0625\u0632\u0627\u0644\u0629 \u0645\u0646 \u0627\u0644\u0645\u0641\u0636\u0644\u0629' : '\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0645\u0641\u0636\u0644\u0629'}">
           <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : ''}"></i>
         </button>
-        <div class="product-image-wrapper cursor-pointer" onclick="openQuickView('${safeId}')">
+        <div class="product-image-wrapper cursor-pointer" onclick="event.preventDefault();openQuickView('${safeId}')">
           ${product.image
             ? `<img src="${SecurityValidator.escapeHtml(product.image)}" alt="${safeName}" class="w-full h-full object-contain bg-white product-img-animated" loading="lazy" decoding="async">`
             : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50"><svg class="w-16 h-16 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
@@ -713,7 +713,7 @@ function renderProducts(productsToRender) {
 }
 
 function getCategoryLabel(category) {
-  const labels = { medicines: 'أدوية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة', perfumes: 'عطور' };
+  const labels = { medicines: 'أدوية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة', perfumes: 'عطور', haircare: 'عناية بالشعر', dental: 'عناية بالفم', handcare: 'عناية باليدين', footcare: 'عناية بالقدم', packages: 'بكجات' };
   return labels[category] || category;
 }
 
@@ -1073,7 +1073,9 @@ function showTrackingCodeModal(code){
   ov.appendChild(bx);document.body.appendChild(ov);
 }
 
+var _savedScrollY = 0;
 function openQuickView(productId) {
+  _savedScrollY = window.scrollY;
   const product = products.find(p => p.id === productId);
   if (!product) return;
   const modal = document.getElementById('quickViewModal');
@@ -1089,8 +1091,8 @@ function openQuickView(productId) {
   const isFavorite = favorites.includes(product.id);
   content.innerHTML = `
     ${product.image
-      ? `<div class="h-64 bg-white flex items-center justify-center overflow-hidden"><img src="${SecurityValidator.escapeHtml(product.image)}" alt="" class="max-w-full max-h-full object-contain" loading="lazy" style="max-height:256px"></div>`
-      : `<div class="bg-gradient-to-br from-brand-100 to-brand-50 h-64 flex items-center justify-center"><svg class="w-24 h-24 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
+      ? `<div class="bg-white flex items-center justify-center overflow-hidden" style="height:320px"><img src="${SecurityValidator.escapeHtml(product.image)}" alt="" class="max-w-full max-h-full" style="max-height:320px;object-fit:contain;width:100%;" loading="lazy"></div>`
+      : `<div class="bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center" style="height:320px"><svg class="w-24 h-24 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
     }
     <div class="p-2.5 product-card-body">
       <span class="inline-block bg-brand-50 text-brand-600 text-sm font-medium px-3 py-1 rounded-full mb-3">${safeCategory}</span>
@@ -1120,6 +1122,8 @@ function openQuickView(productId) {
 function closeQuickView() {
   document.getElementById('quickViewModal').classList.remove('active');
   document.body.style.overflow = '';
+  // Restore exact scroll position
+  requestAnimationFrame(function() { window.scrollTo(0, _savedScrollY); });
 }
 
 function closeQuickViewOnBackdrop(e) {
