@@ -1017,12 +1017,26 @@ window.loadAICustomerSessions = async function() {
   if (!el) return;
   el.innerHTML = '<p class="text-center text-brand-400 text-sm py-4">جاري التحميل...</p>';
   try {
-    var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
-    var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+    var SURL = '';
+    var SKEY = '';
     var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY };
-    var r = await fetch(SURL + '/rest/v1/chat_sessions?select=id,user_id,ai_enabled,created_at&order=created_at.desc&limit=20', { headers: H });
+    /* جلب المحادثات من chat_messages (grouped by session_id) */
+    var r = await fetch(SURL + '/rest/v1/chat_messages?select=session_id,created_at&order=created_at.desc&limit=500', { headers: H });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    var sessions = await r.json();
+    var messages = await r.json();
+    /* جلب إعدادات AI من جدول settings */
+    var cfgR = await fetch(SURL + '/rest/v1/settings?key=eq.ai_sessions_config&select=value', { headers: H });
+    var cfgData = cfgR.ok ? await cfgR.json() : [];
+    var aiConfig = {};
+    try { aiConfig = JSON.parse((cfgData[0] && cfgData[0].value) || '{}'); } catch(e) {}
+    /* بناء قائمة جلسات فريدة */
+    var seen = {};
+    var sessions = [];
+    (messages||[]).forEach(function(m) {
+      if (!m.session_id || seen[m.session_id]) return;
+      seen[m.session_id] = true;
+      sessions.push({ id: m.session_id, created_at: m.created_at, ai_enabled: aiConfig[m.session_id] !== false });
+    });
     if (!sessions || !sessions.length) { el.innerHTML = '<p class="text-center text-brand-400 text-sm py-4">لا توجد محادثات بعد</p>'; return; }
     function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     el.innerHTML = sessions.map(function(s) {
@@ -1052,11 +1066,22 @@ window.loadAICustomerSessions = async function() {
 
 window.toggleAIForCustomerSession = async function(sessionId, enableAI) {
   try {
-    var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
-    var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
-    var r = await fetch(SURL + '/rest/v1/chat_sessions?id=eq.' + encodeURIComponent(sessionId), { method: 'PATCH', headers: H, body: JSON.stringify({ ai_enabled: enableAI }) });
-    if (!r.ok && r.status !== 204) { var e = await r.json().catch(function(){return{};}); throw new Error(e.message || 'HTTP ' + r.status); }
+    var SURL = '';
+    var SKEY = '';
+    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json' };
+    /* جلب الإعداد الحالي */
+    var cfgR = await fetch(SURL + '/rest/v1/settings?key=eq.ai_sessions_config&select=value', { headers: H });
+    var cfgData = cfgR.ok ? await cfgR.json() : [];
+    var aiConfig = {};
+    try { aiConfig = JSON.parse((cfgData[0] && cfgData[0].value) || '{}'); } catch(e) {}
+    /* تحديث الإعداد */
+    aiConfig[sessionId] = enableAI;
+    /* حفظ في جدول settings */
+    await fetch(SURL + '/rest/v1/settings', {
+      method: 'POST',
+      headers: Object.assign({}, H, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify({ key: 'ai_sessions_config', value: JSON.stringify(aiConfig) })
+    });
     if (typeof showToast === 'function') showToast(enableAI ? '✅ تم تفعيل AI للعميل' : '🚫 تم إيقاف AI للعميل', enableAI ? 'success' : 'warning');
     window.loadAICustomerSessions();
   } catch(e) {
