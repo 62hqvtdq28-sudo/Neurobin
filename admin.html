@@ -994,7 +994,7 @@
       </button>
       <button onclick="showSection('offers'); setTimeout(loadOffersAdmin, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="offers">
         <i data-lucide="percent" class="w-5 h-5"></i>
-        <span class="font-semibold text-sm sm:text-base">عروض وتخفيضات</span>
+        <span class="font-semibold text-sm sm:text-base">عروض</span>
       </button>
 
       <button onclick="showSection('ai')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="ai">
@@ -1677,7 +1677,7 @@
   <div class="p-4 sm:p-6 md:p-8">
     <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
       <div>
-        <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">عروض وتخفيضات</h1>
+        <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">العروض</h1>
         <p class="text-brand-600 text-xs sm:text-sm">إدارة العروض والخصومات على المنتجات</p>
       </div>
       <button onclick="openOfferModal()" class="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm shadow-lg">
@@ -1727,7 +1727,7 @@
         <div class="mb-4">
           <label class="block text-sm font-semibold text-brand-800 mb-1">اختر المنتج</label>
           <select id="offerProductSelect" onchange="onOfferProductChange(this.value)"
-            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" dir="rtl">
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" dir="rtl" style="color:#111827!important;background:#fff!important;">
             <option value="">-- اختر منتج --</option>
           </select>
         </div>
@@ -1740,7 +1740,7 @@
           <label class="block text-sm font-semibold text-brand-800 mb-1">السعر الأصلي (قبل الخصم) - د.ع</label>
           <input type="number" id="offerOriginalPrice" placeholder="مثال: 20000" min="0"
             oninput="calcOfferDiscount()"
-            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" style="color:#111827!important;background:#fff!important;">
         </div>
 
         <!-- Sale price -->
@@ -1748,7 +1748,7 @@
           <label class="block text-sm font-semibold text-brand-800 mb-1">سعر البيع (بعد الخصم) - د.ع</label>
           <input type="number" id="offerSalePrice" placeholder="مثال: 15000" min="0"
             oninput="calcOfferDiscount()"
-            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" style="color:#111827!important;background:#fff!important;">
         </div>
 
         <!-- Discount preview -->
