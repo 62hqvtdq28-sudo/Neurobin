@@ -509,7 +509,7 @@ async function saveManualOrder() {
 
   try {
     if (!_moItems.length) { showToast('يرجى إضافة منتج واحد على الأقل', 'error'); if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="save" class="w-5 h-5 inline-block ml-1"></i> حفظ الطلب';if(typeof lucide!=='undefined')lucide.createIcons();} return; }
-    var result = // Rate limit: prevent rapid order creation
+    // Rate limit: prevent rapid order creation
   var _adminOrderRl = sessionStorage.getItem('nb_admin_order_rl');
   if (_adminOrderRl && Date.now() - parseInt(_adminOrderRl) < 5000) {
     showToast && showToast('يرجى الانتظار قبل إنشاء طلب جديد', 'warning');
@@ -517,7 +517,7 @@ async function saveManualOrder() {
     return;
   }
   sessionStorage.setItem('nb_admin_order_rl', String(Date.now()));
-  await SupaDB._db.from('orders').insert({
+  var result = await SupaDB._db.from('orders').insert({
       customer_name:    name,
       customer_phone:   phone,
       customer_address: address  || null,
