@@ -678,7 +678,7 @@ function renderProducts(productsToRender) {
         </button>
         <div class="product-image-wrapper cursor-pointer" onclick="event.preventDefault();openQuickView('${safeId}')">
           ${product.image
-            ? `<img src="${SecurityValidator.escapeHtml(product.image)}" alt="${safeName}" class="w-full h-full object-contain bg-white product-img-animated" loading="lazy" decoding="async">`
+            ? `<img src="${SecurityValidator.escapeHtml(product.image)}" alt="${safeName}" class="w-full h-full product-img-animated" style="object-fit:cover;" loading="lazy" decoding="async">`
             : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50"><svg class="w-16 h-16 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
           }
           <div class="product-overlay">
@@ -1115,15 +1115,23 @@ function openQuickView(productId) {
       </div>
     </div>`;
   modal.classList.add('active');
+  // iOS-safe scroll lock: use position fixed instead of overflow:hidden
+  document.body.style.position = 'fixed';
+  document.body.style.top = '-' + _savedScrollY + 'px';
+  document.body.style.width = '100%';
   document.body.style.overflow = 'hidden';
   lucide.createIcons();
 }
 
 function closeQuickView() {
   document.getElementById('quickViewModal').classList.remove('active');
+  // Restore position (iOS-safe)
+  var sy = _savedScrollY;
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
   document.body.style.overflow = '';
-  // Restore exact scroll position
-  requestAnimationFrame(function() { window.scrollTo(0, _savedScrollY); });
+  window.scrollTo(0, sy);
 }
 
 function closeQuickViewOnBackdrop(e) {
