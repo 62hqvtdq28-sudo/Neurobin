@@ -446,3 +446,299 @@ async function startStatsAutoRefresh() {
     } catch(e) { console.warn('[Charts] auto-refresh error:', e); }
   }, 60000);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// loadAnalytics — الدالة الرئيسية لقسم التحليلات (كانت مفقودة)
+// ════════════════════════════════════════════════════════════════════════════
+
+var _analyticsChart   = null;
+var _analyticsPeriod  = 'monthly';
+
+async function loadAnalytics(forceRefresh) {
+  var cardsEl  = document.getElementById('analyticsCards');
+  var topEl    = document.getElementById('topProductsList');
+  var statusEl = document.getElementById('analyticsStatusSummary');
+  var salesEl  = document.getElementById('analyticsSalesSummary');
+
+  var spinnerHtml = '<div style="text-align:center;padding:32px 0;color:#AABF89;">' +
+    '<div style="width:28px;height:28px;border:3px solid #E8EAD8;border-top-color:#5C933B;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>' +
+    '<p style="font-size:13px;">جاري التحميل...</p></div>';
+
+  if (cardsEl) cardsEl.innerHTML = '<div class="col-span-2 lg:col-span-4">' + spinnerHtml + '</div>';
+  if (topEl)    topEl.innerHTML    = spinnerHtml;
+  if (statusEl) statusEl.innerHTML = spinnerHtml;
+
+  try {
+    var data   = await _loadChartsData(!!forceRefresh);
+    var orders = Array.isArray(data.orders) ? data.orders : [];
+
+    // ── 1. بطاقات الملخص ──────────────────────────────────────────────────
+    var nonCancelled = orders.filter(function(o){ return o.status !== 'cancelled'; });
+    var totalOrders  = nonCancelled.length;
+    var delivered    = nonCancelled.filter(function(o){ return o.status === 'delivered'; }).length;
+    var pending      = nonCancelled.filter(function(o){ return ['new','pending','preparing','shipped','on_the_way'].includes(o.status); }).length;
+    var totalRevenue = nonCancelled.reduce(function(s,o){ return s + Number(o.total_amount || o.total || 0); }, 0);
+    var avgOrder     = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+    if (cardsEl) {
+      cardsEl.innerHTML = [
+        { icon:'shopping-bag',  label:'إجمالي الطلبات',  val: totalOrders,                                    color:'blue'   },
+        { icon:'package-check', label:'تم التسليم',       val: delivered,                                      color:'green'  },
+        { icon:'clock',         label:'قيد التنفيذ',      val: pending,                                        color:'amber'  },
+        { icon:'banknote',      label:'إجمالي المبيعات',  val: totalRevenue.toLocaleString('en-US') + ' د.ع', color:'purple' },
+      ].map(function(c) {
+        var bg  = { blue:'#eff6ff', green:'#f0fdf4', amber:'#fff7ed', purple:'#faf5ff' }[c.color] || '#f9fafb';
+        var bdr = { blue:'#bfdbfe', green:'#bbf7d0', amber:'#fde68a', purple:'#ddd6fe' }[c.color] || '#e5e7eb';
+        var ico = { blue:'#2563eb', green:'#16a34a', amber:'#d97706', purple:'#7c3aed' }[c.color] || '#6b7280';
+        return '<div style="background:' + bg + ';border:1px solid ' + bdr + ';border-radius:16px;padding:16px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:' + bdr + ';display:flex;align-items:center;justify-content:center;">' +
+          '<i data-lucide="' + c.icon + '" style="width:16px;height:16px;color:' + ico + ';"></i></div>' +
+          '<span style="font-size:11px;font-weight:700;color:#5C933B;">' + c.label + '</span></div>' +
+          '<p style="font-size:20px;font-weight:800;color:#1E350F;margin:0;">' + c.val + '</p></div>';
+      }).join('');
+    }
+
+    // ── 2. حالات الطلبات ──────────────────────────────────────────────────
+    if (statusEl) {
+      var statuses = [
+        { key:'new',        label:'جديد',         color:'#2563eb' },
+        { key:'pending',    label:'قيد المراجعة', color:'#7c3aed' },
+        { key:'preparing',  label:'تجهيز',        color:'#d97706' },
+        { key:'shipped',    label:'مع المندوب',   color:'#0891b2' },
+        { key:'on_the_way', label:'في الطريق',    color:'#059669' },
+        { key:'delivered',  label:'تم التسليم',   color:'#16a34a' },
+        { key:'cancelled',  label:'ملغى',         color:'#dc2626' },
+      ];
+      var countMap = {};
+      orders.forEach(function(o){ countMap[o.status] = (countMap[o.status]||0) + 1; });
+      var totalAll = orders.length || 1;
+      var rows = statuses.map(function(s) {
+        var cnt = countMap[s.key] || 0;
+        if (!cnt) return '';
+        var pct = Math.round(cnt / totalAll * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+          '<div style="width:10px;height:10px;border-radius:50%;background:' + s.color + ';flex-shrink:0;"></div>' +
+          '<span style="font-size:13px;color:#3D6B2D;flex:1;">' + s.label + '</span>' +
+          '<span style="font-weight:700;font-size:13px;color:#1E350F;width:28px;text-align:left;">' + cnt + '</span>' +
+          '<div style="flex:1;max-width:90px;background:#E8EAD8;border-radius:99px;height:5px;">' +
+          '<div style="height:5px;border-radius:99px;background:' + s.color + ';width:' + pct + '%;"></div></div>' +
+          '<span style="font-size:11px;color:#AABF89;width:30px;text-align:left;">' + pct + '%</span>' +
+          '</div>';
+      }).filter(Boolean).join('');
+      statusEl.innerHTML = rows || '<p style="text-align:center;color:#AABF89;font-size:13px;padding:16px;">لا توجد طلبات</p>';
+    }
+
+    // ── 3. أكثر المنتجات مبيعاً ───────────────────────────────────────────
+    if (topEl) {
+      var pCnt = {};
+      nonCancelled.forEach(function(o) {
+        var items = [];
+        if (Array.isArray(o.order_items) && o.order_items.length) items = o.order_items;
+        else if (Array.isArray(o.items)) items = o.items;
+        else if (typeof o.items === 'string') { try { items = JSON.parse(o.items); } catch(e){} }
+        items.forEach(function(it) {
+          var nm = it.product_name || it.name || 'غير معروف';
+          pCnt[nm] = (pCnt[nm] || 0) + Number(it.quantity || it.qty || 1);
+        });
+      });
+      var tops = Object.entries(pCnt).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+      if (!tops.length) {
+        topEl.innerHTML = '<p style="text-align:center;color:#AABF89;font-size:13px;padding:16px;">لا توجد بيانات منتجات في الطلبات</p>';
+      } else {
+        var mx = tops[0][1];
+        topEl.innerHTML = tops.map(function(p, i) {
+          var medals = ['🥇','🥈','🥉'];
+          var pct = Math.round(p[1]/mx*100);
+          return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+            '<span style="width:20px;text-align:center;font-size:14px;">' + (medals[i]||'•') + '</span>' +
+            '<span style="font-size:13px;color:#2D5016;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + p[0] + '</span>' +
+            '<span style="font-weight:700;font-size:13px;color:#1E350F;width:28px;text-align:left;">' + p[1] + '</span>' +
+            '<div style="flex:1;max-width:80px;background:#E8EAD8;border-radius:99px;height:5px;">' +
+            '<div style="height:5px;border-radius:99px;background:#5C933B;width:' + pct + '%;"></div></div>' +
+            '</div>';
+        }).join('');
+      }
+    }
+
+    // ── 4. رسم بياني ──────────────────────────────────────────────────────
+    _renderAnalyticsChart(orders, _analyticsPeriod);
+
+    // ── 5. سطر الملخص ─────────────────────────────────────────────────────
+    if (salesEl) {
+      var rate = totalOrders ? Math.round(delivered / totalOrders * 100) : 0;
+      salesEl.innerHTML =
+        '<div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:16px;padding-top:16px;border-top:1px solid #E8EAD8;">' +
+        _anaKpi(totalRevenue.toLocaleString('en-US') + ' د.ع', 'إجمالي المبيعات') +
+        _anaKpi(String(delivered),                              'طلب مكتمل') +
+        _anaKpi(rate + '%',                                     'معدل الإنجاز') +
+        _anaKpi(avgOrder.toLocaleString('en-US') + ' د.ع',     'متوسط الطلب') +
+        '</div>';
+    }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch(e) {
+    console.error('[loadAnalytics]', e);
+    var errHtml = '<div style="text-align:center;padding:24px;color:#dc2626;">' +
+      '<p style="font-size:16px;margin-bottom:6px;">⚠️ خطأ في تحميل التحليلات</p>' +
+      '<p style="font-size:12px;color:#6b7280;">' + (e.message || String(e)) + '</p>' +
+      '<button onclick="loadAnalytics(true)" style="margin-top:12px;padding:8px 20px;background:#5C933B;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:Cairo,sans-serif;">↺ إعادة المحاولة</button></div>';
+    if (cardsEl) cardsEl.innerHTML = '<div class="col-span-2 lg:col-span-4">' + errHtml + '</div>';
+    if (topEl)    topEl.innerHTML    = errHtml;
+    if (statusEl) statusEl.innerHTML = errHtml;
+  }
+}
+
+function _anaKpi(val, label) {
+  return '<div style="text-align:center;">' +
+    '<p style="font-size:20px;font-weight:800;color:#1E350F;margin:0;">' + val + '</p>' +
+    '<p style="font-size:11px;color:#AABF89;margin-top:2px;">' + label + '</p>' +
+    '</div>';
+}
+
+function _renderAnalyticsChart(orders, period) {
+  var canvas = document.getElementById('analyticsMonthlyChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  var labels = [], buckets = {};
+  var now = new Date();
+
+  if (period === 'weekly') {
+    for (var w = 3; w >= 0; w--) {
+      var lbl = 'الأسبوع ' + (4-w);
+      var end = new Date(now); end.setHours(23,59,59,999);
+      end.setDate(end.getDate() - w * 7);
+      var start = new Date(end); start.setDate(start.getDate() - 6); start.setHours(0,0,0,0);
+      buckets[lbl] = { revenue:0, count:0, start:start, end:end };
+      labels.push(lbl);
+    }
+    orders.filter(function(o){ return o.status!=='cancelled'; }).forEach(function(o) {
+      var d = new Date(o.created_at || o.date);
+      labels.forEach(function(lbl) {
+        var b = buckets[lbl];
+        if (d >= b.start && d <= b.end) { b.revenue += Number(o.total_amount||o.total||0); b.count++; }
+      });
+    });
+  } else {
+    for (var m = 5; m >= 0; m--) {
+      var md = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      var key = md.toLocaleDateString('ar-EG', { month: 'short', year:'numeric' });
+      buckets[key] = { revenue:0, count:0, month:md.getMonth(), year:md.getFullYear() };
+      labels.push(key);
+    }
+    orders.filter(function(o){ return o.status!=='cancelled'; }).forEach(function(o) {
+      var d  = new Date(o.created_at || o.date);
+      var k2 = d.toLocaleDateString('ar-EG', { month:'short', year:'numeric' });
+      if (buckets[k2]) { buckets[k2].revenue += Number(o.total_amount||o.total||0); buckets[k2].count++; }
+    });
+  }
+
+  if (_analyticsChart) { try { _analyticsChart.destroy(); } catch(e){} _analyticsChart = null; }
+  _analyticsChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label:'المبيعات (د.ع)', data:labels.map(function(l){return buckets[l].revenue;}),
+          backgroundColor:'rgba(92,147,59,0.7)', borderColor:'#3D6B2D', borderWidth:1.5, borderRadius:6, yAxisID:'y' },
+        { label:'عدد الطلبات',   data:labels.map(function(l){return buckets[l].count;}),
+          backgroundColor:'rgba(245,158,11,0.7)', borderColor:'#D97706', borderWidth:2, borderRadius:0,
+          type:'line', yAxisID:'y1', tension:0.4, fill:false, pointRadius:5, pointBackgroundColor:'#D97706' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins: {
+        legend:  { position:'top', labels:{ font:{family:'Cairo',size:11} } },
+        tooltip: { callbacks:{ label:function(ctx){ return ctx.dataset.label+': '+ctx.raw.toLocaleString('en-US')+(ctx.datasetIndex===0?' د.ع':''); } } }
+      },
+      scales: {
+        y:  { type:'linear', position:'right', ticks:{callback:function(v){return v>=1000?(v/1000)+'k':v;},font:{family:'Cairo'}}, grid:{color:'#f1f5f9'} },
+        y1: { type:'linear', position:'left',  ticks:{stepSize:1,font:{family:'Cairo'}}, grid:{drawOnChartArea:false} },
+        x:  { ticks:{font:{family:'Cairo',size:11}}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+function switchAnalyticsPeriod(period) {
+  _analyticsPeriod = period;
+  document.querySelectorAll('.analytics-period-btn').forEach(function(b) {
+    if (b.dataset.period === period) {
+      b.className = 'analytics-period-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-brand-700 text-white';
+    } else {
+      b.className = 'analytics-period-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-brand-100 text-brand-700';
+    }
+  });
+  if (_chartsData && _chartsData.orders) _renderAnalyticsChart(_chartsData.orders, period);
+}
+
+function toggleProfitDetails() {
+  var panel = document.getElementById('profitDetailsPanel');
+  if (!panel) return;
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden'); _renderProfitDetails();
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+function _renderProfitDetails() {
+  var el = document.getElementById('profitDetailsList');
+  if (!el) return;
+  var data = _chartsData;
+  if (!data || !data.orders) {
+    el.innerHTML = '<p style="font-size:12px;text-align:center;color:#AABF89;padding:12px;">اضغط تحديث أولاً</p>';
+    return;
+  }
+  var rev = {};
+  data.orders.filter(function(o){ return o.status!=='cancelled'; }).forEach(function(o) {
+    var items = [];
+    if (Array.isArray(o.order_items) && o.order_items.length) items = o.order_items;
+    else if (Array.isArray(o.items)) items = o.items;
+    else if (typeof o.items === 'string') { try { items = JSON.parse(o.items); } catch(e){} }
+    items.forEach(function(it) {
+      var nm  = it.product_name || it.name || 'غير معروف';
+      var tot = Number(it.price || it.unit_price || 0) * Number(it.quantity || 1);
+      rev[nm] = (rev[nm]||0) + tot;
+    });
+  });
+  var sorted = Object.entries(rev).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 10);
+  if (!sorted.length) {
+    el.innerHTML = '<p style="font-size:12px;text-align:center;color:#AABF89;padding:12px;">لا توجد بيانات أسعار في الطلبات</p>';
+    return;
+  }
+  el.innerHTML = sorted.map(function(p) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0fdf4;">' +
+      '<span style="font-size:12px;color:#2D5016;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-left:8px;">' + p[0] + '</span>' +
+      '<span style="font-size:12px;font-weight:700;color:#16a34a;white-space:nowrap;">' + p[1].toLocaleString('en-US') + ' د.ع</span></div>';
+  }).join('');
+}
+
+function deleteAnalyticsView() {
+  if (!confirm('هل تريد مسح عرض التحليلات؟')) return;
+  ['analyticsCards','topProductsList','analyticsStatusSummary','analyticsSalesSummary'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '<p style="text-align:center;color:#AABF89;font-size:13px;padding:16px;">تم المسح — اضغط تحديث لإعادة التحميل</p>';
+  });
+  if (_analyticsChart) { try { _analyticsChart.destroy(); } catch(e){} _analyticsChart = null; }
+  _chartsData = null;
+  var undoBtn = document.getElementById('analyticsUndoBtn');
+  if (undoBtn) undoBtn.classList.remove('hidden');
+  if (typeof showToast === 'function') showToast('تم مسح التحليلات — اضغط تحديث لإعادة التحميل', 'info');
+}
+
+function resetAnalyticsFromDB() {
+  if (!confirm('سيتم إعادة تحميل جميع التحليلات من قاعدة البيانات. تأكيد؟')) return;
+  _chartsData = null;
+  loadAnalytics(true);
+  var undoBtn = document.getElementById('analyticsUndoBtn');
+  if (undoBtn) undoBtn.classList.add('hidden');
+}
+
+function undoDeleteAnalytics() {
+  _chartsData = null;
+  loadAnalytics(true);
+  var undoBtn = document.getElementById('analyticsUndoBtn');
+  if (undoBtn) undoBtn.classList.add('hidden');
+}
