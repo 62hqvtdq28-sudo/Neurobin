@@ -4671,7 +4671,7 @@ function renderCustomers(data) {
         '<div><p class="text-lg font-bold text-red-500">'+cancelled+'</p><p class="text-xs text-brand-400">ملغى</p></div>'+
         '<div><p class="text-sm font-bold text-brand-900">'+c.totalSpend.toLocaleString()+'</p><p class="text-xs text-brand-400">د.ع</p></div>'+
       '</div>'+
-      '<button onclick="openCustomerDetails('+i+')" style="margin-top:8px;width:100%;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">👁️ تفاصيل العميل</button>'+
+      '<button onclick="openCustomerDetails('+i+')" style="margin-top:8px;width:100%;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'#f0fdf4\'">👁️ تفاصيل العميل</button>'+
     '</div>';
   }).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -5605,6 +5605,11 @@ window._pmRenderPagination = _renderPagination;
       await _ensureSession();
       if (typeof _origLoadOrders === 'function') {
         await _origLoadOrders();
+      } else {
+        if (container) container.innerHTML =
+          '<div style="text-align:center;padding:32px 16px;color:#b91c1c;">' +
+          '<p style="font-weight:700;margin-bottom:8px">⚠️ تعذر تحميل الطلبات</p>' +
+          '<button onclick="location.reload()" style="padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">↺ إعادة تحميل الصفحة</button></div>';
       }
     } catch (e) {
       console.error('[P8] loadOrders error:', e);
