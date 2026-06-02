@@ -6,6 +6,33 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let supabaseClient = null;
 
+
+/* ─── PWA/WebView Scroll Lock — centralised fix ───────────────────────────
+   Uses overflow:hidden on <html> only (NOT position:fixed on body).
+   position:fixed causes page to jump to top in PWA/WebView and scroll
+   gets permanently stuck on iOS. This approach is safe for all platforms. */
+var _scrollLockDepth = 0;
+var _scrollLockY = 0;
+function _lockScroll() {
+  if (_scrollLockDepth === 0) {
+    _scrollLockY = window.scrollY || window.pageYOffset;
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
+  }
+  _scrollLockDepth++;
+}
+function _unlockScroll() {
+  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
+  if (_scrollLockDepth === 0) {
+    document.documentElement.style.overflow = '';
+    document.documentElement.style.height = '';
+    // Ensure body is clean too
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+  }
+}
 function initSupabase() {
   try {
     if (typeof supabase !== 'undefined') {
@@ -613,11 +640,11 @@ function openNotifyModal(pid,pname){
   var p=document.getElementById('notifyPhone');
   if(t) t.textContent=pname;
   if(p) p.value='';
-  if(m){m.classList.add('active');document.body.style.overflow='hidden';}
+  if(m){m.classList.add('active');_lockScroll();}
 }
 function closeNotifyModal(){
   var m=document.getElementById('notifyModal');
-  if(m){m.classList.remove('active');document.body.style.overflow='';}
+  if(m){m.classList.remove('active');_unlockScroll();}
 }
 async function submitNotifyRequest(){
   var ph=document.getElementById('notifyPhone');
@@ -879,13 +906,13 @@ function updateCartUI() {
 function openCart() {
   document.getElementById('cartSidebar').classList.add('active');
   document.getElementById('cartOverlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
+  _lockScroll();
 }
 
 function closeCart() {
   document.getElementById('cartSidebar').classList.remove('active');
   document.getElementById('cartOverlay').classList.remove('active');
-  document.body.style.overflow = '';
+  _unlockScroll();
 }
 
 function toggleFavorite(productId) {
@@ -917,7 +944,7 @@ function openFavorites() {
 function openCheckout() {
   closeCart();
   document.getElementById('checkoutModal').classList.add('active');
-  document.body.style.overflow = 'hidden';
+  _lockScroll();
   const checkoutItems = document.getElementById('checkoutItems');
   let total = 0;
   checkoutItems.innerHTML = cart.map(item => {
@@ -940,7 +967,7 @@ function openCheckout() {
 
 function closeCheckout() {
   document.getElementById('checkoutModal').classList.remove('active');
-  document.body.style.overflow = '';
+  _unlockScroll();
 }
 
 function closeCheckoutOnBackdrop(e) {
@@ -1115,23 +1142,13 @@ function openQuickView(productId) {
       </div>
     </div>`;
   modal.classList.add('active');
-  // iOS-safe scroll lock: use position fixed instead of overflow:hidden
-  document.body.style.position = 'fixed';
-  document.body.style.top = '-' + _savedScrollY + 'px';
-  document.body.style.width = '100%';
-  document.body.style.overflow = 'hidden';
+  _lockScroll();
   lucide.createIcons();
 }
 
 function closeQuickView() {
   document.getElementById('quickViewModal').classList.remove('active');
-  // Restore position (iOS-safe) - read from body.style.top for reliability
-  var sy = Math.abs(parseInt(document.body.style.top || '0')) || _savedScrollY;
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, sy);
+  _unlockScroll();
 }
 
 function closeQuickViewOnBackdrop(e) {
@@ -1192,14 +1209,14 @@ function openSearch() {
   document.getElementById('searchModal').classList.add('active');
   var input = document.getElementById('searchInput');
   if (input) { input.focus(); if (!input.value.trim()) _showRecentSearches(); }
-  document.body.style.overflow = 'hidden';
+  _lockScroll();
 }
 
 function closeSearch() {
   document.getElementById('searchModal').classList.remove('active');
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '';
-  document.body.style.overflow = '';
+  _unlockScroll();
 }
 
 function closeSearchOnBackdrop(e) {
