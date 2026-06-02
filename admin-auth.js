@@ -931,14 +931,16 @@ function showSection(section) {
   if (section !== 'stats') {
     if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
   }
-  if (section === 'comments') loadComments();
-  if (section === 'orders') loadOrders();
-  if (section === 'products') loadProducts();
-  if (section === 'features') loadFeatures();
+  if (section === 'comments')    loadComments();
+  if (section === 'orders')      loadOrders();
+  if (section === 'products')    loadProducts();
+  if (section === 'features')    loadFeatures();
   if (section === 'testimonials') loadTestimonials();
-  if (section === 'categories') loadCategoryImages();
-  if (section === 'bundles') loadBundles();
-  if (section === 'loginlogs') { setTimeout(function() { if (typeof loadLoginLogs === 'function') loadLoginLogs(); }, 50); }
+  if (section === 'categories')  loadCategoryImages();
+  if (section === 'bundles')     loadBundles();
+  if (section === 'loginlogs')   { setTimeout(function() { if (typeof loadLoginLogs    === 'function') loadLoginLogs();    }, 50);  }
+  if (section === 'analytics')   { setTimeout(function() { if (typeof loadAnalytics    === 'function') loadAnalytics();    }, 100); }
+  if (section === 'customers')   { setTimeout(function() { if (typeof loadCustomersPage === 'function') loadCustomersPage(); }, 100); }
 
   closeMobileMenu();
   // Close all open modals when switching sections
