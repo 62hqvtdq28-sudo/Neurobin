@@ -98,6 +98,40 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* Prevent all overflow */
 section, div { max-width: 100%; }
+
+/* ── تكبير صور المنتجات ─────────────────────── */
+.product-image-wrapper {
+  height: 200px !important;
+  min-height: 200px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fff;
+}
+.product-image-wrapper img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  padding: 6px;
+}
+/* تقليل الحشو الداخلي في الكارد */
+.product-card-main .p-2\.5 { padding: 8px 10px !important; }
+/* بطاقات جوال متجاوبة */
+@media (max-width: 480px) {
+  .product-image-wrapper { height: 170px !important; min-height: 170px !important; }
+}
+@media (min-width: 768px) {
+  .product-image-wrapper { height: 220px !important; min-height: 220px !important; }
+}
+
+/* ── تحسين بطاقات القسم البريميوم ─────────── */
+.prem-card-img {
+  height: 160px !important;
+  object-fit: contain !important;
+  background: #fff;
+  padding: 6px;
+}
 </style>
 
 <link rel="canonical" href="https://62hqvtdq28-sudo.github.io/Neurobin/">
@@ -997,6 +1031,105 @@ img.img-loaded{opacity:1!important}
 })();
 </script>
 
+<!-- ══ قسم عروض وتخفيضات ══ -->
+<section class="premium-products-section" id="offersProductsSection" style="background:linear-gradient(180deg,#fff7ed 0%,#fff 100%);">
+  <div class="premium-products-wrapper">
+    <div class="premium-section-header">
+      <div>
+        <div style="background:#fee2e2;color:#dc2626;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;margin-bottom:8px;">
+          🏷️ عروض حصرية
+        </div>
+        <h2 class="premium-section-title">عروض وتخفيضات</h2>
+        <p class="premium-section-sub">أفضل الأسعار والخصومات لعملائنا</p>
+      </div>
+      <a href="#products" class="premium-view-all" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
+        عرض الكل ←
+      </a>
+    </div>
+    <div class="premium-products-scroll" id="offersProductsScroll">
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+      <div class="prem-skeleton"></div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  var SURL='https://hczsskviliuqyayylutv.supabase.co';
+  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+  var H={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
+
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function catLabel(cat){
+    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
+    return m[cat]||cat||'';
+  }
+
+  function renderOfferCard(p) {
+    var name = esc(p.name_ar||p.name||'منتج');
+    var price = Number(p.price||0).toLocaleString('en-US');
+    var origPrice = p.original_price ? Number(p.original_price).toLocaleString('en-US') : null;
+    var discPct = (p.original_price && p.original_price > p.price) ? Math.round((1 - p.price/p.original_price)*100) : 0;
+    var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
+    var img = p.image_url||p.image||'';
+    var hasImg = img && img.startsWith('http');
+    var imgHtml = hasImg
+      ? '<img class="prem-card-img" src="'+esc(img)+'" alt="'+name+'" loading="lazy" style="object-fit:contain;background:#fff;padding:6px;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+        '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
+      : '<div class="prem-card-img-placeholder">📦</div>';
+    var stockBadge = inStock
+      ? '<span class="prem-card-stock-in">متوفر</span>'
+      : '<span class="prem-card-stock-out">نفذ</span>';
+    return '<div class="prem-card prem-fade-in" style="cursor:pointer;" onclick="if(window.openQuickView)openQuickView(\''+esc(p.id)+'\');else document.getElementById(\'products\').scrollIntoView({behavior:\'smooth\'})">' +
+      '<span class="prem-card-badge" style="background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;">' + (discPct >= 5 ? '-'+discPct+'%' : '🏷️ عرض') + '</span>' +
+      stockBadge +
+      imgHtml +
+      '<div class="prem-card-body">' +
+        '<span class="prem-card-name" title="'+name+'">'+name+'</span>' +
+        '<p class="prem-card-cat">'+catLabel(p.category)+'</p>' +
+        (origPrice ? '<p style="font-size:11px;color:#9ca3af;text-decoration:line-through;margin:2px 0 0;">'+origPrice+' د.ع</p>' : '') +
+        '<p class="prem-card-price" style="color:#dc2626;">'+price+' د.ع</p>' +
+        '<button class="prem-card-btn" '+(inStock?'':'disabled ')+
+          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(\''+esc(p.id)+'\',1)">' +
+          (inStock ? '🛒 أضف للسلة' : '⏰ نفذت الكمية') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function loadOffers() {
+    var container = document.getElementById('offersProductsScroll');
+    if (!container) return;
+    try {
+      // جلب المنتجات التي تملك original_price (أي خصم) أو is_offer=true
+      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,original_price,image_url,stock,category&original_price=not.is.null&order=created_at.desc&limit=12', {headers:H});
+      var prods = res.ok ? await res.json() : [];
+      // فلترة المنتجات التي السعر الأصلي فعلاً أكبر من سعر البيع
+      prods = prods.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price); });
+      if (!prods.length) {
+        // fallback: جلب أحدث المنتجات
+        var res2 = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,original_price,image_url,stock,category&order=price.asc&limit=8', {headers:H});
+        prods = res2.ok ? await res2.json() : [];
+      }
+      if (!prods.length) {
+        container.closest('section').style.display='none';
+        return;
+      }
+      container.innerHTML = prods.map(renderOfferCard).join('');
+    } catch(e) {
+      container.closest('section').style.display='none';
+    }
+  }
+
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadOffers, 800); });
+  } else { setTimeout(loadOffers, 800); }
+})();
+</script>
+
 <!-- ✅ Feature #16: الأكثر مبيعاً Section -->
 <section id="topSelling" class="py-14 bg-gradient-to-b from-white to-brand-50/40" style="border-bottom:1px solid #e8f5e9;">
   <div class="max-w-7xl mx-auto px-6">
@@ -1033,7 +1166,7 @@ img.img-loaded{opacity:1!important}
     if (!grid) return;
     try {
       // Load delivered orders
-      var ordRes = await fetch(SURL+'/rest/v1/orders?select=items,order_items,cart_items&status=eq.delivered', {headers:H});
+      var ordRes = await fetch(SURL+'/rest/v1/orders?select=items,order_items,cart_items&status=neq.cancelled&deleted_at=is.null', {headers:H});
       var orders = ordRes.ok ? await ordRes.json() : [];
       // Count product names
       var countMap = {};
@@ -1048,10 +1181,10 @@ img.img-loaded{opacity:1!important}
       if (!topNames.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد بيانات مبيعات بعد</p>'; return; }
 
       // Load product details
-      var prodRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category&order=name_ar.asc', {headers:H});
+      var prodRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&order=name_ar.asc', {headers:H});
       var prods = prodRes.ok ? await prodRes.json() : [];
       var prodMap = {};
-      (prods||[]).forEach(function(p){ prodMap[(p.name_ar||p.name||'').trim()] = p; });
+      (prods||[]).forEach(function(p){ p.image = p.image_url || p.image || ''; prodMap[(p.name_ar||p.name||'').trim()] = p; });
 
       var topProds = topNames.map(function(n,i){ return {rank:i+1, name:n, count:countMap[n], product:prodMap[n]||null}; })
         .filter(function(x){ return x.product; });
@@ -1069,8 +1202,8 @@ img.img-loaded{opacity:1!important}
           ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">متوفر</span>'
           : '<span style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">نفذ</span>';
         var rank = medals[i] || ('#'+(i+1));
-        return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="window.location.hash='#products'">' +
-          '<div style="position:relative;height:150px;background:#f0fdf4;">' + img + stockBadge +
+        return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView&&\''+escH(String(p.id))+'\'&&\''+escH(String(p.id))+'\'.trim())openQuickView(\''+escH(String(p.id))+'\');">' +
+          '<div style="position:relative;height:180px;background:#f0fdf4;">' + img + stockBadge +
           '<span style="position:absolute;top:8px;right:8px;font-size:18px;" title="'+(medals[i]?'الأكثر مبيعاً':'')+'">'+rank+'</span>' +
           '</div>' +
           '<div style="padding:10px 10px 12px;">' +
@@ -1130,7 +1263,7 @@ img.img-loaded{opacity:1!important}
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   function catLabel(cat){
-    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض'};
+    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
     return m[cat]||cat||'';
   }
 
@@ -1138,7 +1271,7 @@ img.img-loaded{opacity:1!important}
     var name = esc(p.name_ar||p.name||'منتج');
     var price = Number(p.price||0).toLocaleString('en-US');
     var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
-    var hasImg = p.image && p.image.startsWith('http');
+    p.image = p.image_url || p.image || ''; var hasImg = p.image && p.image.startsWith('http');
     var imgHtml = hasImg
       ? '<img class="prem-card-img" src="'+esc(p.image)+'" alt="'+name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
         '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
@@ -1166,7 +1299,7 @@ img.img-loaded{opacity:1!important}
     var container = document.getElementById('newProductsScroll');
     if (!container) return;
     try {
-      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category,created_at&order=created_at.desc&limit=10', {headers:H});
+      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category,created_at&order=created_at.desc&limit=10', {headers:H});
       var prods = res.ok ? await res.json() : [];
       if (!prods.length) { container.innerHTML='<p style="color:#9ca3af;padding:20px;">لا توجد منتجات</p>'; return; }
       container.innerHTML = prods.map(function(p){ return renderCard(p,'new','جديد ✨'); }).join('');
@@ -1181,95 +1314,6 @@ img.img-loaded{opacity:1!important}
 })();
 </script>
 
-<!-- ══ PREMIUM: منتجات رائجة ══ -->
-<section class="premium-products-section alt-bg" id="trendingProducts">
-  <div class="premium-products-wrapper">
-    <div class="premium-section-header">
-      <div>
-        <div style="background:#fff7ed;color:#c2410c;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;margin-bottom:8px;">
-          🔥 الأكثر شعبية
-        </div>
-        <h2 class="premium-section-title">منتجات رائجة</h2>
-        <p class="premium-section-sub">المنتجات الأكثر طلباً من عملائنا</p>
-      </div>
-      <a href="#products" class="premium-view-all" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
-        عرض الكل ←
-      </a>
-    </div>
-    <div class="premium-products-scroll" id="trendingProductsScroll">
-      <div class="prem-skeleton"></div>
-      <div class="prem-skeleton"></div>
-      <div class="prem-skeleton"></div>
-      <div class="prem-skeleton"></div>
-      <div class="prem-skeleton"></div>
-    </div>
-  </div>
-</section>
-<script>
-(function(){
-  var SURL='https://hczsskviliuqyayylutv.supabase.co';
-  var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var H={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
-
-  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-  function catLabel(cat){
-    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض'};
-    return m[cat]||cat||'';
-  }
-
-  function renderTrendCard(p) {
-    var name = esc(p.name_ar||p.name||'منتج');
-    var price = Number(p.price||0).toLocaleString('en-US');
-    var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
-    var hasImg = p.image && p.image.startsWith('http');
-    var imgHtml = hasImg
-      ? '<img class="prem-card-img" src="'+esc(p.image)+'" alt="'+name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
-        '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
-      : '<div class="prem-card-img-placeholder">📦</div>';
-    var stockBadge = inStock
-      ? '<span class="prem-card-stock-in">متوفر</span>'
-      : '<span class="prem-card-stock-out">نفذ</span>';
-    return '<div class="prem-card prem-fade-in" onclick="if(window.openQuickView)openQuickView(''+esc(p.id)+'');else document.getElementById('products').scrollIntoView({behavior:'smooth'})">' +
-      '<span class="prem-card-badge hot">رائج 🔥</span>' +
-      stockBadge +
-      imgHtml +
-      '<div class="prem-card-body">' +
-        '<span class="prem-card-name" title="'+name+'">'+name+'</span>' +
-        '<p class="prem-card-cat">'+catLabel(p.category)+'</p>' +
-        '<p class="prem-card-price">'+price+' د.ع</p>' +
-        '<button class="prem-card-btn" '+(inStock?'':'disabled ')+
-          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(''+esc(p.id)+'',1)">' +
-          (inStock ? '🛒 أضف للسلة' : '⏰ نفذت الكمية') +
-        '</button>' +
-      '</div>' +
-    '</div>';
-  }
-
-  async function loadTrending() {
-    var container = document.getElementById('trendingProductsScroll');
-    if (!container) return;
-    try {
-      // Try is_trending flag first, fallback to highest price (proxy for demand)
-      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image,stock,category&order=price.desc&limit=10', {headers:H});
-      var prods = res.ok ? await res.json() : [];
-      // Shuffle slightly for variety — take top 10 priced items as "trending"
-      if (!prods.length) { container.innerHTML='<p style="color:#9ca3af;padding:20px;">لا توجد منتجات</p>'; return; }
-      // Filter in-stock first, then out-of-stock
-      var inStock = prods.filter(function(p){ return (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0; });
-      var outStock = prods.filter(function(p){ return !((p.stock===undefined||p.stock===null)?true:Number(p.stock)>0); });
-      var sorted = inStock.concat(outStock).slice(0, 10);
-      container.innerHTML = sorted.map(renderTrendCard).join('');
-    } catch(e) {
-      container.innerHTML='<p style="color:#9ca3af;padding:20px;">تعذر التحميل</p>';
-    }
-  }
-
-  if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadTrending, 1500); });
-  } else { setTimeout(loadTrending, 1500); }
-})();
-</script>
 
 <!-- Products Section -->
 <section id="products" class="py-24 md:py-32 bg-cream" aria-labelledby="products-title">
@@ -1307,6 +1351,16 @@ img.img-loaded{opacity:1!important}
         <button onclick="filterProducts(event, 'dental')" class="cat-icon-btn" data-filter="dental" role="tab" aria-selected="false">
           <div class="cat-icon-circle ci-teeth" id="cat_circle_dental"><img loading="lazy" alt="عناية بالفم" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display='none'"><i class="fa-solid fa-tooth"></i></div>
           <span class="cat-icon-label">عناية بالفم</span>
+        </button>
+
+        <button onclick="filterProducts(event, 'handcare')" class="cat-icon-btn" data-filter="handcare" role="tab" aria-selected="false">
+          <div class="cat-icon-circle" id="cat_circle_handcare" style="background:linear-gradient(135deg,#ffe4e6,#fecdd3);"><img loading="lazy" alt="عناية باليدين" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display='none'"><i class="fa-solid fa-hand-holding-heart" style="color:#f43f5e;"></i></div>
+          <span class="cat-icon-label">عناية باليدين</span>
+        </button>
+
+        <button onclick="filterProducts(event, 'footcare')" class="cat-icon-btn" data-filter="footcare" role="tab" aria-selected="false">
+          <div class="cat-icon-circle" id="cat_circle_footcare" style="background:linear-gradient(135deg,#ccfbf1,#99f6e4);"><img loading="lazy" alt="عناية بالقدم" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display='none'"><i class="fa-solid fa-shoe-prints" style="color:#14b8a6;"></i></div>
+          <span class="cat-icon-label">عناية بالقدم</span>
         </button>
 
         <button onclick="filterProducts(event, 'makeup')" class="cat-icon-btn" data-filter="makeup" role="tab" aria-selected="false">
@@ -2801,7 +2855,7 @@ window.submitProductRequest = async function() {
   }, {passive:true});
 
   // ── Active section highlight ──
-  var sections = ['about','products','features','comments','track-order','offersSlider','newProducts','trendingProducts'];
+  var sections = ['about','products','features','comments','track-order','offersSlider','offersProductsSection','newProducts'];
   var navLinks = document.querySelectorAll('.nav-link[data-section]');
 
   function updateActiveLink(){
