@@ -992,6 +992,10 @@
         <i data-lucide="gift" class="w-5 h-5"></i>
         <span class="font-semibold text-sm sm:text-base">عروض التوفير</span>
       </button>
+      <button onclick="showSection('offers'); setTimeout(loadOffersAdmin, 150);" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="offers">
+        <i data-lucide="percent" class="w-5 h-5"></i>
+        <span class="font-semibold text-sm sm:text-base">عروض وتخفيضات</span>
+      </button>
 
       <button onclick="showSection('ai')" class="sidebar-link w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-right" data-section="ai">
         <i data-lucide="bot" class="w-5 h-5"></i>
@@ -1668,6 +1672,109 @@
     <!-- ══════════════════════════════════════════
          📸 Category Images Section
     ══════════════════════════════════════════ -->
+
+<section id="section-offers" class="section-content hidden">
+  <div class="p-4 sm:p-6 md:p-8">
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div>
+        <h1 class="font-bold text-xl sm:text-2xl md:text-3xl text-brand-900 mb-1">عروض وتخفيضات</h1>
+        <p class="text-brand-600 text-xs sm:text-sm">إدارة العروض والخصومات على المنتجات</p>
+      </div>
+      <button onclick="openOfferModal()" class="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm shadow-lg">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>إضافة عرض جديد</span>
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6" id="offersStatsCards"></div>
+
+    <!-- Filter tabs -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="filterOffersAdmin('all')" class="tab-btn active px-4 py-2 rounded-full bg-brand-700 text-white font-medium text-sm" data-offerfilter="all">الكل</button>
+      <button onclick="filterOffersAdmin('active')" class="tab-btn px-4 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-sm" data-offerfilter="active">🔥 عروض فعالة</button>
+      <button onclick="filterOffersAdmin('no-offer')" class="tab-btn px-4 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-sm" data-offerfilter="no-offer">المنتجات بدون عرض</button>
+    </div>
+
+    <!-- Search -->
+    <div class="relative mb-4">
+      <i data-lucide="search" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400"></i>
+      <input type="text" id="offersSearchInput" placeholder="ابحث عن منتج..." oninput="filterOffersSearch(this.value)"
+        class="w-full pr-9 pl-4 py-2.5 border border-brand-200 rounded-xl text-sm focus:outline-none focus:border-brand-500" dir="rtl">
+    </div>
+
+    <!-- Offers grid -->
+    <div id="offersAdminGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div class="col-span-full text-center py-12 text-brand-400">
+        <div style="width:32px;height:32px;border:3px solid #d1fae5;border-top-color:#059669;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>
+        جاري التحميل...
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Offer Modal -->
+  <div id="offerModal" class="fixed inset-0 z-50 hidden" style="background:rgba(0,0,0,0.5)">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" dir="rtl">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-xl text-brand-900" id="offerModalTitle">إضافة عرض جديد</h2>
+          <button onclick="closeOfferModal()" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Product selector -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-brand-800 mb-1">اختر المنتج</label>
+          <select id="offerProductSelect" onchange="onOfferProductChange(this.value)"
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" dir="rtl">
+            <option value="">-- اختر منتج --</option>
+          </select>
+        </div>
+
+        <!-- Current price display -->
+        <div id="offerCurrentPriceBox" class="hidden mb-4 p-3 bg-brand-50 rounded-xl text-sm text-brand-700"></div>
+
+        <!-- Original price -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-brand-800 mb-1">السعر الأصلي (قبل الخصم) - د.ع</label>
+          <input type="number" id="offerOriginalPrice" placeholder="مثال: 20000" min="0"
+            oninput="calcOfferDiscount()"
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+        </div>
+
+        <!-- Sale price -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-brand-800 mb-1">سعر البيع (بعد الخصم) - د.ع</label>
+          <input type="number" id="offerSalePrice" placeholder="مثال: 15000" min="0"
+            oninput="calcOfferDiscount()"
+            class="w-full border border-brand-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+        </div>
+
+        <!-- Discount preview -->
+        <div id="offerDiscountPreview" class="hidden mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-center">
+          <span class="text-2xl font-black text-red-600" id="offerDiscountPct">-0%</span>
+          <span class="text-sm text-red-500 mr-2">خصم</span>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex gap-3">
+          <button onclick="saveOffer()" id="offerSaveBtn"
+            class="flex-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white py-3 rounded-xl font-semibold transition-all">
+            💾 حفظ العرض
+          </button>
+          <button onclick="removeOfferFromProduct()" id="offerRemoveBtn"
+            class="hidden px-4 py-3 border-2 border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-all text-sm">
+            🗑️ حذف العرض
+          </button>
+          <button onclick="closeOfferModal()" class="px-4 py-3 border border-brand-200 rounded-xl text-brand-600 hover:bg-brand-50 transition-all text-sm">
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
     <section id="section-categories" class="section-content hidden">
       <div class="mb-4 sm:mb-6 md:mb-8">
         <div class="flex items-center gap-3">
@@ -5945,6 +6052,281 @@ window.openCustomerDetails = function(idx) {
 window.closeCustomerDetailsModal = function() {
   document.getElementById('customerDetailsModal').style.display = 'none';
   document.body.style.overflow = '';
+};
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 🏷️ OFFERS & DISCOUNTS MANAGEMENT — admin.html
+// ══════════════════════════════════════════════════════════════
+var _offersAllProducts = [];
+var _offersCurrentFilter = 'all';
+var _offersSearchQuery = '';
+var _offerEditingProductId = null;
+
+var OFFERS_SURL = 'https://hczsskviliuqyayylutv.supabase.co';
+var OFFERS_SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
+
+function offerH() {
+  var key = (typeof SUPABASE_ROLE_KEY !== 'undefined' && SUPABASE_ROLE_KEY) ? SUPABASE_ROLE_KEY : OFFERS_SKEY;
+  return {'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
+}
+
+async function loadOffersAdmin() {
+  var grid = document.getElementById('offersAdminGrid');
+  var stats = document.getElementById('offersStatsCards');
+  if (!grid) return;
+  grid.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400"><div style="width:32px;height:32px;border:3px solid #d1fae5;border-top-color:#059669;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>جاري التحميل...</div>';
+  try {
+    var res = await fetch(OFFERS_SURL + '/rest/v1/products?select=id,name_ar,name,price,original_price,image_url,category,in_stock,stock&order=name_ar.asc', {headers: offerH()});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _offersAllProducts = await res.json();
+
+    // Stats
+    var withOffer = _offersAllProducts.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price||0); });
+    var totalSavings = withOffer.reduce(function(sum, p){ return sum + (Number(p.original_price) - Number(p.price||0)); }, 0);
+    var avgDiscount = withOffer.length ? Math.round(withOffer.reduce(function(s,p){ return s+(1-Number(p.price||0)/Number(p.original_price))*100; },0)/withOffer.length) : 0;
+
+    if (stats) stats.innerHTML = [
+      { label: 'إجمالي المنتجات', value: _offersAllProducts.length, icon: '📦', color: 'bg-blue-50 text-blue-700' },
+      { label: 'منتجات بعروض فعالة', value: withOffer.length, icon: '🏷️', color: 'bg-red-50 text-red-700' },
+      { label: 'متوسط نسبة الخصم', value: avgDiscount + '%', icon: '💰', color: 'bg-green-50 text-green-700' },
+    ].map(function(s) {
+      return '<div class="'+s.color+' rounded-2xl p-4 flex items-center gap-3"><span class="text-2xl">'+s.icon+'</span><div><p class="text-2xl font-black">'+s.value+'</p><p class="text-xs font-medium opacity-70">'+s.label+'</p></div></div>';
+    }).join('');
+
+    // Populate product selector in modal
+    var sel = document.getElementById('offerProductSelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">-- اختر منتج --</option>' +
+        _offersAllProducts.map(function(p) {
+          var hasOffer = p.original_price && Number(p.original_price) > Number(p.price||0);
+          return '<option value="'+p.id+'">'+(hasOffer ? '🏷️ ' : '')+(p.name_ar||p.name||'منتج')+'</option>';
+        }).join('');
+    }
+
+    renderOffersGrid();
+  } catch(e) {
+    grid.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">❌ خطأ في التحميل: ' + e.message + '</div>';
+  }
+}
+
+function getFilteredOffers() {
+  var prods = _offersAllProducts;
+  if (_offersCurrentFilter === 'active') {
+    prods = prods.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price||0); });
+  } else if (_offersCurrentFilter === 'no-offer') {
+    prods = prods.filter(function(p){ return !p.original_price || Number(p.original_price) <= Number(p.price||0); });
+  }
+  if (_offersSearchQuery) {
+    var q = _offersSearchQuery.toLowerCase();
+    prods = prods.filter(function(p){ return (p.name_ar||'').toLowerCase().includes(q) || (p.name||'').toLowerCase().includes(q); });
+  }
+  return prods;
+}
+
+function renderOffersGrid() {
+  var grid = document.getElementById('offersAdminGrid');
+  if (!grid) return;
+  var prods = getFilteredOffers();
+  if (!prods.length) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400"><p class="text-4xl mb-3">🔍</p><p>لا توجد نتائج</p></div>';
+    return;
+  }
+  grid.innerHTML = prods.map(function(p) {
+    var hasOffer = p.original_price && Number(p.original_price) > Number(p.price||0);
+    var discPct = hasOffer ? Math.round((1 - Number(p.price||0)/Number(p.original_price))*100) : 0;
+    var img = p.image_url && p.image_url.startsWith('http') ? p.image_url : '';
+    var inStock = p.in_stock !== false && (p.stock === null || p.stock === undefined || Number(p.stock) > 0);
+    return '<div class="bg-white rounded-2xl border '+(hasOffer?'border-red-200 shadow-md':'border-brand-100 shadow-sm')+' overflow-hidden transition-all hover:shadow-lg">' +
+      '<div class="relative" style="height:140px;background:#f8fafc;overflow:hidden;">' +
+        (img ? '<img src="'+img+'" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:36px;">📦</div>') +
+        (hasOffer ? '<span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-'+discPct+'% خصم</span>' : '') +
+        (!inStock ? '<span class="absolute top-2 left-2 bg-gray-500 text-white text-xs px-2 py-1 rounded-full">نفذ</span>' : '') +
+      '</div>' +
+      '<div class="p-3">' +
+        '<p class="font-bold text-sm text-brand-900 mb-1 leading-snug" title="'+(p.name_ar||p.name)+'">' + (p.name_ar||p.name||'منتج').substring(0,35) + '</p>' +
+        (hasOffer
+          ? '<div class="flex items-center gap-2 mb-2"><span class="text-xs text-gray-400 line-through">'+Number(p.original_price).toLocaleString('en-US')+'</span><span class="text-base font-black text-red-600">'+Number(p.price||0).toLocaleString('en-US')+' د.ع</span></div>'
+          : '<p class="text-base font-black text-brand-700 mb-2">'+Number(p.price||0).toLocaleString('en-US')+' د.ع</p>'
+        ) +
+        '<button onclick="openOfferModal('+JSON.stringify(p.id)+')" class="w-full '+(hasOffer?'bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100':'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100')+' py-2 rounded-xl text-xs font-semibold transition-all">' +
+          (hasOffer ? '✏️ تعديل العرض' : '➕ إضافة عرض') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+window.filterOffersAdmin = function(filter) {
+  _offersCurrentFilter = filter;
+  document.querySelectorAll('[data-offerfilter]').forEach(function(btn) {
+    var isActive = btn.getAttribute('data-offerfilter') === filter;
+    btn.className = 'tab-btn px-4 py-2 rounded-full font-medium text-sm ' + (isActive ? 'bg-brand-700 text-white' : 'bg-brand-100 text-brand-700');
+  });
+  renderOffersGrid();
+};
+
+window.filterOffersSearch = function(q) {
+  _offersSearchQuery = q;
+  renderOffersGrid();
+};
+
+window.openOfferModal = function(productId) {
+  var modal = document.getElementById('offerModal');
+  if (!modal) return;
+  _offerEditingProductId = productId || null;
+
+  var titleEl = document.getElementById('offerModalTitle');
+  var sel = document.getElementById('offerProductSelect');
+  var origEl = document.getElementById('offerOriginalPrice');
+  var saleEl = document.getElementById('offerSalePrice');
+  var removeBtn = document.getElementById('offerRemoveBtn');
+  var currentPriceBox = document.getElementById('offerCurrentPriceBox');
+  var discPrev = document.getElementById('offerDiscountPreview');
+
+  // Reset
+  if (origEl) origEl.value = '';
+  if (saleEl) saleEl.value = '';
+  if (discPrev) discPrev.classList.add('hidden');
+  if (currentPriceBox) currentPriceBox.classList.add('hidden');
+
+  if (productId) {
+    var p = _offersAllProducts.find(function(x){ return String(x.id) === String(productId); });
+    if (p) {
+      if (titleEl) titleEl.textContent = 'تعديل عرض: ' + (p.name_ar||p.name||'');
+      if (sel) sel.value = String(p.id);
+      var hasOffer = p.original_price && Number(p.original_price) > Number(p.price||0);
+      if (hasOffer) {
+        if (origEl) origEl.value = p.original_price;
+        if (saleEl) saleEl.value = p.price || '';
+        if (removeBtn) removeBtn.classList.remove('hidden');
+        calcOfferDiscount();
+      } else {
+        if (saleEl) saleEl.value = p.price || '';
+        if (removeBtn) removeBtn.classList.add('hidden');
+      }
+      if (currentPriceBox) {
+        currentPriceBox.innerHTML = '💰 السعر الحالي: <strong>' + Number(p.price||0).toLocaleString('en-US') + ' د.ع</strong>' +
+          (hasOffer ? ' — السعر الأصلي: <strong>' + Number(p.original_price).toLocaleString('en-US') + ' د.ع</strong>' : '');
+        currentPriceBox.classList.remove('hidden');
+      }
+    }
+  } else {
+    if (titleEl) titleEl.textContent = 'إضافة عرض جديد';
+    if (removeBtn) removeBtn.classList.add('hidden');
+  }
+
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons({ nodes: [modal] });
+};
+
+window.closeOfferModal = function() {
+  var modal = document.getElementById('offerModal');
+  if (modal) modal.classList.add('hidden');
+  _offerEditingProductId = null;
+};
+
+window.onOfferProductChange = function(productId) {
+  _offerEditingProductId = productId || null;
+  var p = _offersAllProducts.find(function(x){ return String(x.id) === String(productId); });
+  var saleEl = document.getElementById('offerSalePrice');
+  var currentPriceBox = document.getElementById('offerCurrentPriceBox');
+  var removeBtn = document.getElementById('offerRemoveBtn');
+  if (p) {
+    if (saleEl) saleEl.value = p.price || '';
+    var hasOffer = p.original_price && Number(p.original_price) > Number(p.price||0);
+    if (hasOffer && document.getElementById('offerOriginalPrice')) {
+      document.getElementById('offerOriginalPrice').value = p.original_price;
+      calcOfferDiscount();
+    }
+    if (removeBtn) removeBtn.classList.toggle('hidden', !hasOffer);
+    if (currentPriceBox) {
+      currentPriceBox.innerHTML = '💰 السعر الحالي: <strong>' + Number(p.price||0).toLocaleString('en-US') + ' د.ع</strong>';
+      currentPriceBox.classList.remove('hidden');
+    }
+  }
+};
+
+window.calcOfferDiscount = function() {
+  var orig = Number(document.getElementById('offerOriginalPrice')?.value||0);
+  var sale = Number(document.getElementById('offerSalePrice')?.value||0);
+  var prev = document.getElementById('offerDiscountPreview');
+  var pctEl = document.getElementById('offerDiscountPct');
+  if (orig > 0 && sale > 0 && orig > sale) {
+    var pct = Math.round((1 - sale/orig)*100);
+    if (pctEl) pctEl.textContent = '-' + pct + '%';
+    if (prev) prev.classList.remove('hidden');
+  } else {
+    if (prev) prev.classList.add('hidden');
+  }
+};
+
+window.saveOffer = async function() {
+  var productId = _offerEditingProductId || (document.getElementById('offerProductSelect')?.value);
+  if (!productId) { if(typeof showToast==='function') showToast('⚠️ اختر منتجاً أولاً', 'error'); return; }
+  var orig = Number(document.getElementById('offerOriginalPrice')?.value||0);
+  var sale = Number(document.getElementById('offerSalePrice')?.value||0);
+  if (!orig || !sale) { if(typeof showToast==='function') showToast('⚠️ أدخل السعرين', 'error'); return; }
+  if (orig <= sale) { if(typeof showToast==='function') showToast('⚠️ السعر الأصلي يجب أن يكون أكبر من سعر البيع', 'error'); return; }
+
+  var btn = document.getElementById('offerSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ...'; }
+  try {
+    var payload = JSON.stringify({ original_price: orig, price: sale });
+    var H = offerH();
+    H['Prefer'] = 'return=minimal';
+    var res = await fetch(OFFERS_SURL + '/rest/v1/products?id=eq.' + encodeURIComponent(productId), {
+      method: 'PATCH', headers: H, body: payload
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    // Update local cache
+    var idx = _offersAllProducts.findIndex(function(x){ return String(x.id) === String(productId); });
+    if (idx >= 0) { _offersAllProducts[idx].original_price = orig; _offersAllProducts[idx].price = sale; }
+
+    if(typeof showToast==='function') showToast('✅ تم حفظ العرض بنجاح!', 'success');
+    closeOfferModal();
+    renderOffersGrid();
+    // Refresh stats
+    var withOffer = _offersAllProducts.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price||0); });
+    var stats = document.getElementById('offersStatsCards');
+    if (stats) {
+      var avgDiscount = withOffer.length ? Math.round(withOffer.reduce(function(s,p){ return s+(1-Number(p.price||0)/Number(p.original_price))*100; },0)/withOffer.length) : 0;
+      stats.children[1] && (stats.children[1].querySelector('p:first-child').textContent = withOffer.length);
+      stats.children[2] && (stats.children[2].querySelector('p:first-child').textContent = avgDiscount + '%');
+    }
+  } catch(e) {
+    if(typeof showToast==='function') showToast('❌ خطأ: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 حفظ العرض'; }
+  }
+};
+
+window.removeOfferFromProduct = async function() {
+  var productId = _offerEditingProductId || (document.getElementById('offerProductSelect')?.value);
+  if (!productId) return;
+  if (!confirm('هل تريد إزالة هذا العرض؟ سيتم مسح السعر الأصلي.')) return;
+  var btn = document.getElementById('offerRemoveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    var H = offerH();
+    H['Prefer'] = 'return=minimal';
+    var res = await fetch(OFFERS_SURL + '/rest/v1/products?id=eq.' + encodeURIComponent(productId), {
+      method: 'PATCH', headers: H, body: JSON.stringify({ original_price: null })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var idx = _offersAllProducts.findIndex(function(x){ return String(x.id) === String(productId); });
+    if (idx >= 0) _offersAllProducts[idx].original_price = null;
+    if(typeof showToast==='function') showToast('✅ تم إزالة العرض', 'success');
+    closeOfferModal();
+    renderOffersGrid();
+  } catch(e) {
+    if(typeof showToast==='function') showToast('❌ خطأ: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ حذف العرض'; }
+  }
 };
 </script>
 </body>
