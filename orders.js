@@ -115,7 +115,7 @@ async function loadOrders() {
 
       // ─── بناء HTML الكارد بشكل صحيح ───
       /* animate-fade-in removed from per-card — animates container instead (1 vs N animations) */
-      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100">';
+      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100" data-status="' + escapeHTML(status) + '">';
 
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
