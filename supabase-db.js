@@ -117,23 +117,51 @@
   const Products     = { list: () => all('products'), create: p => ins('products', p), update: (id,p) => upd('products', id, p), delete: id => del('products', id) };
   const Bundles      = { list: () => all('bundles'),  create: b => ins('bundles', b),  update: (id,b) => upd('bundles', id, b),  delete: id => del('bundles', id)  };
   const Packages     = { list: () => all('packages'),  create: p => ins('packages', p),  update: (id,p) => upd('packages', id, p), delete: id => del('packages', id) };
+  /* ── Parse items helper (handles JSON string or array) ── */
+  function _parseOrderItems(rows) {
+    return (rows || []).map(function(o) {
+      if (!Array.isArray(o.order_items) || !o.order_items.length) {
+        if (!Array.isArray(o.items)) {
+          if (typeof o.items === 'string') {
+            try { o.items = JSON.parse(o.items); } catch(e) { o.items = []; }
+          } else {
+            o.items = [];
+          }
+        }
+      }
+      return o;
+    });
+  }
+
+  /* ── Robust query: try join, fall back to plain select ── */
+  async function _queryOrders(isDeleted) {
+    var col = isDeleted ? 'deleted_at' : null;
+    /* Attempt 1: with order_items join */
+    try {
+      var q = _db.from('orders').select('*, order_items(*)');
+      if (isDeleted) q = q.not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
+      else           q = q.is('deleted_at', null).order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (!error) return _parseOrderItems(data);
+      /* Fall through only on join/RLS errors */
+      if (!error.message || !error.message.includes('order_items')) throw error;
+      console.warn('[SupaDB] order_items join failed, using fallback:', error.message);
+    } catch(e) {
+      if (!String(e.message || e).includes('order_items')) throw e;
+      console.warn('[SupaDB] order_items join error, fallback:', e.message);
+    }
+    /* Attempt 2: plain select without join */
+    var q2 = _db.from('orders').select('*');
+    if (isDeleted) q2 = q2.not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
+    else           q2 = q2.is('deleted_at', null).order('created_at', { ascending: false });
+    const { data: d2, error: e2 } = await q2;
+    if (e2) throw e2;
+    return _parseOrderItems(d2);
+  }
+
   const Orders = {
-    async list() {
-      const { data, error } = await _db.from('orders')
-        .select('*, order_items(*)')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    async listDeleted() {
-      const { data, error } = await _db.from('orders')
-        .select('*, order_items(*)')
-        .not('deleted_at', 'is', null)
-        .order('deleted_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    async list()        { return _queryOrders(false); },
+    async listDeleted() { return _queryOrders(true);  },
     updateStatus: (id,s) => upd('orders', id, { status:s, updated_at: new Date().toISOString() }),
     softDelete: async (id) => {
       await _requireSession();
