@@ -1513,6 +1513,8 @@
         <button onclick="filterProductsAdmin('perfumes')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="perfumes">عطور</button>
         <button onclick="filterProductsAdmin('haircare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="haircare">✂️ شعر</button>
         <button onclick="filterProductsAdmin('dental')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="dental">😊 أسنان</button>
+        <button onclick="filterProductsAdmin('handcare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="handcare">🤲 عناية باليدين</button>
+        <button onclick="filterProductsAdmin('footcare')" class="tab-btn px-3 sm:px-4 md:px-6 py-2 rounded-full bg-brand-100 text-brand-700 font-medium text-xs sm:text-sm" data-filter="footcare">🦶 عناية بالقدم</button>
         </div>
 
       <!-- نوع البشرة sub-filter -->
@@ -2395,6 +2397,8 @@
           <button type="button" class="chip-pill chip-cat" data-chip="productCategory" data-value="haircare">💇 عناية بالشعر</button>
           <button type="button" class="chip-pill chip-cat" data-chip="productCategory" data-value="dental">🦷 عناية بالفم</button>
           <button type="button" class="chip-pill chip-cat" data-chip="productCategory" data-value="packages">🎁 بكجات</button>
+          <button type="button" class="chip-pill chip-cat" data-chip="productCategory" data-value="handcare">🤲 عناية باليدين</button>
+          <button type="button" class="chip-pill chip-cat" data-chip="productCategory" data-value="footcare">🦶 عناية بالقدم</button>
         </div>
       </div>
 
@@ -3139,7 +3143,9 @@ var ADMIN_CAT_DEFS = [
   { key:'makeup',    label:'مكياج',            icon:'fa-wand-magic-sparkles', bg:'bg-purple-50',  iconColor:'text-purple-500' },
   { key:'devices',   label:'أجهزة',       icon:'fa-heart-pulse',         bg:'bg-red-50',     iconColor:'text-red-500' },
   { key:'perfumes',  label:'عطور',             icon:'fa-spray-can-sparkles',  bg:'bg-brand-50',   iconColor:'text-brand-600' },
-  { key:'bundles',   label:'عروض التوفير',     icon:'fa-tags',               bg:'bg-red-50',     iconColor:'text-red-500'   }
+  { key:'bundles',   label:'عروض التوفير',     icon:'fa-tags',               bg:'bg-red-50',     iconColor:'text-red-500'   },
+  { key:'handcare',  label:'عناية باليدين',    icon:'fa-hand-holding-heart', bg:'bg-rose-50',    iconColor:'text-rose-500'  },
+  { key:'footcare',  label:'عناية بالقدم',     icon:'fa-shoe-prints',        bg:'bg-teal-50',    iconColor:'text-teal-500'  }
 ];
 
 async function loadCategoryImages() {
