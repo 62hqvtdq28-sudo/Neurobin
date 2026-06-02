@@ -133,30 +133,36 @@
     });
   }
 
-  /* ── Robust query: try join, fall back to plain select ── */
+  /* ── Robust query: uses anon key via fetch to bypass RLS auth-session issues ── */
   async function _queryOrders(isDeleted) {
-    var col = isDeleted ? 'deleted_at' : null;
+    var _baseUrl = SUPABASE_URL + '/rest/v1/orders';
+    var _h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Accept': 'application/json' };
+    var _q = isDeleted
+      ? 'deleted_at=not.is.null&order=deleted_at.desc'
+      : 'deleted_at=is.null&order=created_at.desc';
+
     /* Attempt 1: with order_items join */
     try {
-      var q = _db.from('orders').select('*, order_items(*)');
-      if (isDeleted) q = q.not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
-      else           q = q.is('deleted_at', null).order('created_at', { ascending: false });
-      const { data, error } = await q;
-      if (!error) return _parseOrderItems(data);
-      /* Fall through only on join/RLS errors */
-      if (!error.message || !error.message.includes('order_items')) throw error;
-      console.warn('[SupaDB] order_items join failed, using fallback:', error.message);
+      var r1 = await fetch(_baseUrl + '?select=*,order_items(*)&' + _q, { headers: _h });
+      if (r1.ok) return _parseOrderItems(await r1.json());
+      var e1 = {};
+      try { e1 = await r1.json(); } catch(_e) {}
+      var e1msg = e1.message || e1.hint || ('HTTP ' + r1.status);
+      if (!e1msg.includes('order_items')) throw new Error(e1msg);
+      console.warn('[SupaDB] order_items join failed, fallback:', e1msg);
     } catch(e) {
       if (!String(e.message || e).includes('order_items')) throw e;
-      console.warn('[SupaDB] order_items join error, fallback:', e.message);
+      console.warn('[SupaDB] order_items join catch, fallback:', e.message);
     }
+
     /* Attempt 2: plain select without join */
-    var q2 = _db.from('orders').select('*');
-    if (isDeleted) q2 = q2.not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
-    else           q2 = q2.is('deleted_at', null).order('created_at', { ascending: false });
-    const { data: d2, error: e2 } = await q2;
-    if (e2) throw e2;
-    return _parseOrderItems(d2);
+    var r2 = await fetch(_baseUrl + '?' + _q, { headers: _h });
+    if (!r2.ok) {
+      var e2 = {};
+      try { e2 = await r2.json(); } catch(_e) {}
+      throw new Error(e2.message || ('HTTP ' + r2.status));
+    }
+    return _parseOrderItems(await r2.json());
   }
 
   const Orders = {
@@ -308,3 +314,4 @@
   window.SupaDB = { Auth, Products, Bundles, Packages, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
   console.log('[SupaDB] v2.3 \u2713 (iPad Fix + Mobile RLS Fix + Auto Session Refresh)');
 })();
+
