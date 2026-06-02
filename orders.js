@@ -171,7 +171,9 @@ async function loadOrders() {
     /* Single container animation instead of N per-card animations */
     container.classList.add('orders-loaded');
     setTimeout(function(){ container.classList.remove('orders-loaded'); }, 300);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      try { lucide.createIcons(); } catch(e) { /* fallback: no icons rendered */ }
+    }
   } catch(e) {
     if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">خطأ في تحميل الطلبات: ' + escapeHTML(e.message) + '</div>';
   }
