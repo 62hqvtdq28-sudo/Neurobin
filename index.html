@@ -325,6 +325,11 @@ section, div { max-width: 100%; }
 img.img-loading{opacity:1!important;filter:none!important;-webkit-filter:none!important}
 img.img-loaded{opacity:1!important}
 </style>
+
+<style>
+body, html { -webkit-overflow-scrolling: touch; }
+main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 <body>
 <!-- Navigation -->
@@ -1032,7 +1037,7 @@ img.img-loaded{opacity:1!important}
 })();
 </script>
 
-<!-- ══ قسم عروض وتخفيضات ══ -->
+<!-- ══ قسم العروض ══ -->
 <section class="premium-products-section" id="offersProductsSection" style="background:linear-gradient(180deg,#fff7ed 0%,#fff 100%);">
   <div class="premium-products-wrapper">
     <div class="premium-section-header">
@@ -1040,7 +1045,7 @@ img.img-loaded{opacity:1!important}
         <div style="background:#fee2e2;color:#dc2626;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;margin-bottom:8px;">
           🏷️ عروض حصرية
         </div>
-        <h2 class="premium-section-title">عروض وتخفيضات</h2>
+        <h2 class="premium-section-title">عروض</h2>
         <p class="premium-section-sub">أفضل الأسعار والخصومات لعملائنا</p>
       </div>
       <a href="#products" class="premium-view-all" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
@@ -1183,7 +1188,7 @@ img.img-loaded{opacity:1!important}
       var topNames = Object.entries(countMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
       if (!topNames.length) {
         // Fallback: show most popular products (newest)
-        var fallRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&in_stock=eq.true&order=created_at.desc&limit=8', {headers:H});
+        var fallRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&order=created_at.desc&limit=8', {headers:H});
         var fallProds = fallRes.ok ? await fallRes.json() : [];
         if (!fallProds.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد منتجات بعد</p>'; return; }
         grid.innerHTML = fallProds.map(function(p, i) {
@@ -1192,7 +1197,7 @@ img.img-loaded{opacity:1!important}
             ? '<img src="'+escH(p.image)+'" alt="'+escH(p.name_ar||p.name)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">'
             : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">📦</div>';
           var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
-          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(''+escH(String(p.id))+'')">' +
+          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(\''+escH(String(p.id))+'\');">' +
             '<div style="position:relative;height:180px;background:#f0fdf4;">' + img +
             (inStock ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">متوفر</span>' : '') +
             '</div>' +
@@ -1222,7 +1227,7 @@ img.img-loaded{opacity:1!important}
         grid.innerHTML = fallProds2.map(function(p) {
           p.image = p.image_url || '';
           var img = p.image && p.image.startsWith('http') ? '<img src="'+escH(p.image)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' : '<div style="display:flex;align-items:center;height:100%;justify-content:center;font-size:32px;">📦</div>';
-          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(''+escH(String(p.id))+'')">' +
+          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(\''+escH(String(p.id))+'\');">' +
             '<div style="position:relative;height:180px;background:#f0fdf4;">'+ img +'</div>' +
             '<div style="padding:10px;">' +
               '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escH(p.name_ar||p.name)+'</p>' +
@@ -1314,13 +1319,13 @@ img.img-loaded{opacity:1!important}
     var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
     var imgUrl = p.image_url || p.image || ''; var hasImg = imgUrl && imgUrl.startsWith('http');
     var imgHtml = hasImg
-      ? '<img class="prem-card-img" src="'+esc(p.image)+'" alt="'+name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">' +
+      ? '<img class="prem-card-img" src="'+esc(imgUrl)+'" alt="'+name+'" loading="lazy" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
         '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
       : '<div class="prem-card-img-placeholder">📦</div>';
     var stockBadge = inStock
       ? '<span class="prem-card-stock-in">متوفر</span>'
       : '<span class="prem-card-stock-out">نفذ</span>';
-    return '<div class="prem-card prem-fade-in" onclick="if(window.openQuickView)openQuickView(''+esc(p.id)+'');else document.getElementById('products').scrollIntoView({behavior:'smooth'})">' +
+    return '<div class="prem-card prem-fade-in" onclick="if(window.openQuickView)openQuickView(\''+esc(p.id)+'\');else document.getElementById(\'products\').scrollIntoView({behavior:\'smooth\'})">' +
       '<span class="prem-card-badge '+badgeClass+'">'+badgeText+'</span>' +
       stockBadge +
       imgHtml +
@@ -1329,7 +1334,7 @@ img.img-loaded{opacity:1!important}
         '<p class="prem-card-cat">'+catLabel(p.category)+'</p>' +
         '<p class="prem-card-price">'+price+' د.ع</p>' +
         '<button class="prem-card-btn" '+(inStock?'':'disabled ')+
-          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(''+esc(p.id)+'',1)">' +
+          'onclick="event.stopPropagation();if(window.addToCart&&'+inStock+')addToCart(\''+esc(p.id)+'\'\,1)">' +
           (inStock ? '🛒 أضف للسلة' : '⏰ نفذت الكمية') +
         '</button>' +
       '</div>' +
@@ -1350,8 +1355,8 @@ img.img-loaded{opacity:1!important}
   }
 
   if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadNew, 1200); });
-  } else { setTimeout(loadNew, 1200); }
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadNew, 300); });
+  } else { setTimeout(loadNew, 300); }
 })();
 </script>
 
