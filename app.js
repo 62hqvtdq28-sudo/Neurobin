@@ -746,7 +746,7 @@ function filterProducts(e, category) {
 }
 
 function addToCart(productId) {
-  const product = products.find(p => p.id === productId);
+  const product = products.find(p => String(p.id) === String(productId));
   if (!product || !product.inStock) return;
   const existingItem = cart.find(item => item.productId === productId);
   if (existingItem) {
@@ -1125,8 +1125,8 @@ function openQuickView(productId) {
 
 function closeQuickView() {
   document.getElementById('quickViewModal').classList.remove('active');
-  // Restore position (iOS-safe)
-  var sy = _savedScrollY;
+  // Restore position (iOS-safe) - read from body.style.top for reliability
+  var sy = Math.abs(parseInt(document.body.style.top || '0')) || _savedScrollY;
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.width = '';
