@@ -5588,7 +5588,7 @@ window._pmRenderPagination = _renderPagination;
   }
 
   /* 1-b: Wrap loadOrders with session-ensure + unified error display */
-  var _origLoadOrders = window.loadOrders;
+  var _origLoadOrders = window._loadOrdersReal || window.loadOrders;
   window.loadOrders = async function () {
     var container = document.getElementById('ordersList');
     var noOrders  = document.getElementById('noOrders');
@@ -5604,6 +5604,10 @@ window._pmRenderPagination = _renderPagination;
     try {
       await _ensureSession();
       if (typeof _origLoadOrders === 'function') {
+        await _origLoadOrders();
+      } else if (typeof window._loadOrdersReal === 'function') {
+        /* Lazy fallback: orders.js loaded after P8 IIFE — use saved reference */
+        _origLoadOrders = window._loadOrdersReal;
         await _origLoadOrders();
       } else {
         if (container) container.innerHTML =
