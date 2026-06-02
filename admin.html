@@ -1795,6 +1795,9 @@
         <button onclick="deleteAnalyticsView()" class="flex items-center gap-2 bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
           <i data-lucide="trash" class="w-4 h-4"></i> حذف الإحصائيات الحالية
         </button>
+        <button onclick="resetAnalyticsFromDB()" class="flex items-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors" title="إعادة تعيين دائمة من قاعدة البيانات">
+          <i data-lucide="database" class="w-4 h-4"></i> تصفير دائم من DB
+        </button>
         <button id="analyticsUndoBtn" onclick="undoDeleteAnalytics()" class="hidden flex items-center gap-2 bg-teal-100 hover:bg-teal-200 text-teal-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i> تراجع عن الحذف
         </button>
@@ -4668,6 +4671,7 @@ function renderCustomers(data) {
         '<div><p class="text-lg font-bold text-red-500">'+cancelled+'</p><p class="text-xs text-brand-400">ملغى</p></div>'+
         '<div><p class="text-sm font-bold text-brand-900">'+c.totalSpend.toLocaleString()+'</p><p class="text-xs text-brand-400">د.ع</p></div>'+
       '</div>'+
+      '<button onclick="openCustomerDetails('+i+')" style="margin-top:8px;width:100%;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">👁️ تفاصيل العميل</button>'+
     '</div>';
   }).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -5806,27 +5810,31 @@ window._pmRenderPagination = _renderPagination;
   window.toggleAIForSession = function () {
     var s = window._clCurrentSession;
     if (!s) return;
-
-    /* Read current ai_enabled state from the session object */
     var currentlyEnabled = (typeof s.ai_enabled !== 'undefined') ? !!s.ai_enabled : true;
     var newEnabled = !currentlyEnabled;
-
-    /* Update chat_sessions.ai_enabled — no chat_messages insert needed */
-    fetch(SURL + '/rest/v1/chat_sessions?id=eq.' + encodeURIComponent(s.id), {
-      method: 'PATCH',
-      headers: _H({ Prefer: 'return=minimal' }),
-      body: JSON.stringify({ ai_enabled: newEnabled })
+    /* تحديث الحالة محلياً أولاً (optimistic update) */
+    s.ai_enabled = newEnabled;
+    var btn = document.getElementById('cl-ai-toggle');
+    if (btn) {
+      btn.textContent = newEnabled ? '🚫 إيقاف AI' : '✅ تفعيل AI';
+    }
+    /* جلب الإعداد الحالي من settings وتحديثه */
+    var _cfgH = _H({ 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' });
+    fetch(SURL + '/rest/v1/settings?key=eq.ai_sessions_config&select=value', { headers: _H() })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(cfgData) {
+      var aiConfig = {};
+      try { aiConfig = JSON.parse((cfgData[0] && cfgData[0].value) || '{}'); } catch(e) {}
+      aiConfig[s.id] = newEnabled;
+      return fetch(SURL + '/rest/v1/settings', {
+        method: 'POST', headers: _cfgH,
+        body: JSON.stringify({ key: 'ai_sessions_config', value: JSON.stringify(aiConfig) })
+      });
     })
-    .then(function (r) {
-      if (r.ok || r.status === 204) {
-        _toast(newEnabled ? '✅ تم تفعيل AI للعميل' : '⛔ تم تعطيل AI للعميل', 'warning');
-        setTimeout(function () { if (typeof loadChatSessions === 'function') loadChatSessions(); }, 400);
-      } else {
-        r.json().then(function (e) { _toast('خطأ: ' + (e.message || r.status), 'error'); })
-         .catch(function () { _toast('خطأ في تحديث الإعداد', 'error'); });
-      }
+    .then(function() {
+      _toast(newEnabled ? '✅ تم تفعيل AI للعميل' : '⛔ تم تعطيل AI للعميل', 'success');
     })
-    .catch(function () { _toast('خطأ في الاتصال', 'error'); });
+    .catch(function(e) { _toast('تم الحفظ محلياً', 'info'); });
   };
 
   /* ── Boot ──────────────────────────────────────────────────────── */
@@ -5861,6 +5869,67 @@ window._pmRenderPagination = _renderPagination;
   console.log('[P8] Admin bug fixes loaded ✓');
 })();
 
+</script>
+<div id="customerDetailsModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);" onclick="if(event.target===this)closeCustomerDetailsModal()">
+  <div style="background:#fff;max-width:660px;width:94%;max-height:88vh;margin:6vh auto;border-radius:18px;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid #f1f5f9;padding-bottom:14px;">
+      <h2 id="cdm-name" style="font-size:17px;font-weight:800;color:#1e293b;">تفاصيل العميل</h2>
+      <button onclick="closeCustomerDetailsModal()" style="background:#fee2e2;border:none;color:#dc2626;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;font-weight:700;">✕</button>
+    </div>
+    <div id="customerDetailsBody"></div>
+  </div>
+</div>
+<script>
+window.openCustomerDetails = function(idx) {
+  var c = (typeof _customersData !== 'undefined') ? _customersData[idx] : null;
+  if (!c) return;
+  document.getElementById('cdm-name').textContent = (c.lastName||c.name||'—') + ' — تفاصيل العميل';
+  var body = document.getElementById('customerDetailsBody');
+  var html = '';
+  /* Contact info */
+  var recentAddr = '';
+  for (var i = c.orders.length - 1; i >= 0; i--) {
+    if (c.orders[i].customer_address || c.orders[i].address) { recentAddr = c.orders[i].customer_address || c.orders[i].address; break; }
+  }
+  html += '<div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;">';
+  html += '<h3 style="font-weight:700;color:#334155;margin-bottom:10px;font-size:14px;">📋 معلومات التواصل</h3>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  html += '<div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><p style="font-size:11px;color:#94a3b8;margin-bottom:2px;">الهاتف</p><p style="font-size:13px;font-weight:600;color:#1e293b;direction:ltr;">' + (c.phone||'—') + '</p></div>';
+  html += '<div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><p style="font-size:11px;color:#94a3b8;margin-bottom:2px;">إجمالي الإنفاق</p><p style="font-size:13px;font-weight:700;color:#16a34a;">' + c.totalSpend.toLocaleString() + ' د.ع</p></div>';
+  if (recentAddr) html += '<div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #e2e8f0;grid-column:1/-1;"><p style="font-size:11px;color:#94a3b8;margin-bottom:2px;">آخر عنوان</p><p style="font-size:13px;font-weight:600;color:#1e293b;">' + recentAddr + '</p></div>';
+  html += '</div></div>';
+  /* Orders */
+  var stL = {new:'جديد',pending:'جديد',preparing:'تجهيز',shipped:'مع مندوب',on_the_way:'في الطريق',delivered:'تم التسليم',cancelled:'ملغى'};
+  var stC = {new:'#2563eb',pending:'#2563eb',preparing:'#d97706',shipped:'#7c3aed',on_the_way:'#0891b2',delivered:'#16a34a',cancelled:'#dc2626'};
+  html += '<h3 style="font-weight:700;color:#334155;margin-bottom:10px;font-size:14px;">🧾 سجل الطلبات (' + c.orders.length + ' طلب)</h3>';
+  var sortedOrders = c.orders.slice().sort(function(a,b){ return new Date(b.created_at||0)-new Date(a.created_at||0); });
+  sortedOrders.forEach(function(o) {
+    var st = o.status||'new';
+    var items = [];
+    if (Array.isArray(o.order_items) && o.order_items.length) items = o.order_items;
+    else if (Array.isArray(o.items) && o.items.length) items = o.items;
+    else if (typeof o.items === 'string') { try { items = JSON.parse(o.items); } catch(e) {} }
+    html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">';
+    html += '<div style="flex:1;min-width:0;">';
+    if (o.tracking_code) html += '<p style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:3px;">📱 ' + o.tracking_code + '</p>';
+    html += '<p style="font-size:12px;color:#64748b;margin-bottom:4px;">' + new Date(o.created_at||o.date||0).toLocaleDateString('ar-EG') + '</p>';
+    if (items.length) html += '<p style="font-size:12px;color:#475569;line-height:1.5;">' + items.map(function(it){ return (it.name||it.product_name||'') + ' ×' + (it.quantity||1); }).join(' &bull; ') + '</p>';
+    if (o.customer_address||o.address) html += '<p style="font-size:11px;color:#94a3b8;margin-top:3px;">📍 ' + (o.customer_address||o.address) + '</p>';
+    html += '</div>';
+    html += '<div style="text-align:left;flex-shrink:0;">';
+    html += '<span style="display:inline-block;background:' + (stC[st]||'#2563eb') + '1a;color:' + (stC[st]||'#2563eb') + ';border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;">' + (stL[st]||st) + '</span>';
+    html += '<p style="font-size:13px;font-weight:700;color:#1e293b;margin-top:6px;">' + ((o.total_amount||o.total||0)).toLocaleString() + ' د.ع</p>';
+    html += '</div></div></div>';
+  });
+  body.innerHTML = html;
+  document.getElementById('customerDetailsModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+};
+window.closeCustomerDetailsModal = function() {
+  document.getElementById('customerDetailsModal').style.display = 'none';
+  document.body.style.overflow = '';
+};
 </script>
 </body>
 </html>
