@@ -774,9 +774,7 @@ async function checkAndBindDevice() {
       console.warn('[DeviceBind] Unauthorized device. Access blocked.');
       return {
         allowed: false,
-        reason: '🚫 هذا الجهاز غير مصرح له بالدخول.
-
-لوحة التحكم مرتبطة بجهاز آخر فقط.'
+        reason: '🚫 هذا الجهاز غير مصرح له بالدخول.\n\nلوحة التحكم مرتبطة بجهاز آخر فقط.'
       };
     }
 
