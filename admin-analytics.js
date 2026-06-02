@@ -17,13 +17,13 @@ var _productQtyCache = {};
 
 // ── Helper to avoid single-quote inside string issues ──────────────────────
 window._reloadAnalytics = function() {
-  sessionStorage.removeItem('analyticsHidden');
+  localStorage.removeItem('analyticsHidden');
   if (typeof loadAnalytics === 'function') loadAnalytics();
 };
 
 async function loadAnalytics() {
   // ← إذا أخفى المستخدم الإحصائيات يدوياً، لا تعيد التحميل التلقائي
-  if (sessionStorage.getItem('analyticsHidden') === '1') {
+  if (localStorage.getItem('analyticsHidden') === '1') {
     var _cardsElCheck = document.getElementById('analyticsCards');
     if (_cardsElCheck) _cardsElCheck.innerHTML =
       '<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400">' +
@@ -506,8 +506,8 @@ function deleteAnalyticsView() {
   // Remove visitor stats
   var visStats=document.getElementById('visitorStatsSection');
   if (visStats) visStats.remove();
-  // ← حفظ حالة الحذف في sessionStorage لمنع الإعادة التلقائية عند الرفرش
-  sessionStorage.setItem('analyticsHidden','1');
+  // ← حفظ حالة الحذف في localStorage لمنع الإعادة التلقائية عند الرفرش
+  localStorage.setItem('analyticsHidden','1');
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) { undoBtn.classList.remove('hidden'); }
   if(typeof showToast==='function') showToast('تم مسح الإحصائيات','info');
@@ -542,8 +542,8 @@ window.resetAnalyticsFromDB = async function() {
       }
     }
     /* 3. مسح العرض المرئي */
-    sessionStorage.setItem('analyticsHidden','1');
-    sessionStorage.removeItem('analyticsHidden');
+    localStorage.setItem('analyticsHidden','1');
+    localStorage.removeItem('analyticsHidden');
     _lastAnalyticsSnapshot = null;
     _profitBreakdownCache = null;
     _productQtyCache = {};
@@ -557,7 +557,7 @@ window.resetAnalyticsFromDB = async function() {
 function undoDeleteAnalytics() {
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) undoBtn.classList.add('hidden');
-  sessionStorage.removeItem('analyticsHidden');
+  localStorage.removeItem('analyticsHidden');
   loadAnalytics();
   if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
 }
@@ -585,21 +585,21 @@ function deleteCurrentStats() {
   /* Show undo button */
   var undoBtn = document.getElementById('statsUndoBtn');
   if (undoBtn) undoBtn.classList.remove('hidden');
-  sessionStorage.setItem('statsHidden','1');
+  localStorage.setItem('statsHidden','1');
   if(typeof showToast==='function') showToast('تم مسح عرض الإحصائيات','info');
 }
 
 function undoDeleteStats() {
   var undoBtn = document.getElementById('statsUndoBtn');
   if (undoBtn) undoBtn.classList.add('hidden');
-  sessionStorage.removeItem('statsHidden');
+  localStorage.removeItem('statsHidden');
   if(typeof loadStats==='function') loadStats();
   else if(typeof renderStats==='function') renderStats();
   if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
 }
 
 window._reloadStats = function() {
-  sessionStorage.removeItem('statsHidden');
+  localStorage.removeItem('statsHidden');
   var undoBtn = document.getElementById('statsUndoBtn');
   if (undoBtn) undoBtn.classList.add('hidden');
   if(typeof loadStats==='function') loadStats();
