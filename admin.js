@@ -784,7 +784,7 @@ function loadCategoryImages() {
         var previewHtml = url
           ? '<div class="mb-3 rounded-xl overflow-hidden h-28 bg-gray-50">' +
             '<img src="' + url + '" alt="' + cat.label + '" class="w-full h-full object-cover"' +
-            ' onerror="this.parentElement.style.display='none'">' +
+            ' onerror="this.parentElement.style.display=\'none\'">' +
             '</div>'
           : '<div class="mb-3 rounded-xl h-28 bg-gray-50 flex items-center justify-center text-brand-300">' +
             '<i class="fa-solid ' + cat.icon + ' text-3xl"></i>' +
