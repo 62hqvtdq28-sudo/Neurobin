@@ -124,7 +124,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .product-card-main::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#2D5016,#5C933B,#F59E0B);transform:scaleX(0);transition:transform .4s cubic-bezier(.4,0,.2,1)}
 .product-card-main:hover::before{transform:scaleX(1)}
 .product-card-main:hover{transform:translateY(-10px);box-shadow:0 30px 60px rgba(45,80,22,.15);border-color:#AABF89}
-.product-image-wrapper{overflow:hidden;position:relative;height:220px;background:linear-gradient(135deg,#E8EAD8 0%,#F6F7F4 100%);display:flex;align-items:center;justify-content:center}
+.product-image-wrapper{overflow:hidden;position:relative;height:260px;background:linear-gradient(135deg,#E8EAD8 0%,#F6F7F4 100%);display:flex;align-items:center;justify-content:center}
 .product-image{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
 .product-card-main:hover .product-image{transform:scale(1.08)}
 .product-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(45,80,22,.95) 0%,rgba(45,80,22,.4) 50%,transparent 100%);opacity:0;transition:opacity .4s ease;display:flex;align-items:flex-end;justify-content:center;padding:1.5rem}
@@ -251,7 +251,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 /* Responsive */
 @media(max-width:767px){
   .products-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem}
-  .product-image-wrapper{height:145px}
+  .product-image-wrapper{height:220px}
   .product-card-main>div:last-child{padding:0.4rem}
   .product-card-main h3{font-size:0.8rem!important;margin-bottom:0.2rem!important;line-height:1.25!important}
   .product-card-main .text-xl{font-size:0.75rem!important}
@@ -271,7 +271,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 
   /* Product Grid */
   .products-grid{grid-template-columns:repeat(3,1fr);gap:1rem}
-  .product-image-wrapper{height:175px}
+  .product-image-wrapper{height:240px}
   .product-card-main>div:last-child{padding:0.75rem}
   .product-card-main h3{font-size:0.88rem!important}
   .product-card-main .text-xl{font-size:0.95rem!important}
