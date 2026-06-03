@@ -168,16 +168,31 @@
   const Orders = {
     async list()        { return _queryOrders(false); },
     async listDeleted() { return _queryOrders(true);  },
-    updateStatus: (id,s) => upd('orders', id, { status:s, updated_at: new Date().toISOString() }),
+    /* patchOrder: direct fetch with anon key — reliable for all order writes */
+    async patchOrder(id, payload) {
+      var res = await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + encodeURIComponent(String(id)), {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        var err = {}; try { err = await res.json(); } catch(_e2) {}
+        throw new Error(err.message || err.error || ('خطأ HTTP ' + res.status));
+      }
+    },
+    updateStatus: function(id, s) {
+      return Orders.patchOrder(id, { status: s, updated_at: new Date().toISOString() });
+    },
     softDelete: async (id) => {
-      await _requireSession();
-      const { error } = await _db.from('orders').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-      if (error) throw error;
+      await Orders.patchOrder(id, { deleted_at: new Date().toISOString() });
     },
     restore: async (id) => {
-      await _requireSession();
-      const { error } = await _db.from('orders').update({ deleted_at: null }).eq('id', id);
-      if (error) throw error;
+      await Orders.patchOrder(id, { deleted_at: null });
     },
     hardDelete: (id) => del('orders', id)
   };
@@ -312,6 +327,6 @@
   };
 
   window.SupaDB = { Auth, Products, Bundles, Packages, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
-  console.log('[SupaDB] v2.3 \u2713 (iPad Fix + Mobile RLS Fix + Auto Session Refresh)');
+  console.log('[SupaDB] v2.4 \u2713 (patchOrder direct fetch)');
 })();
 
