@@ -2677,14 +2677,14 @@
 
 
 <!-- [SUPABASE] DB adapter + patched JS -->
-<script src="supabase-db.js?v=15"></script>
+<script src="supabase-db.js?v=16"></script>
 <script src="admin-security.js?v=22"></script>
     <script src="admin-improvements.js?v=21"></script>
     <script src="admin-auth.js?v=23"></script>
     <script src="admin-charts.js?v=21"></script>
     <script src="admin.js?v=23"></script>
 <script src="products.js?v=11"></script>
-<script src="orders.js?v=12"></script>
+<script src="orders.js?v=13"></script>
 <script>/* Immediately save real loadOrders so P8 wrapper can find it regardless of execution order */window._loadOrdersReal = window.loadOrders;</script>
 
 <div id="createDiscountModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
@@ -5747,12 +5747,17 @@ window._pmRenderPagination = _renderPagination;
     setTimeout(_updateFilterCounts, 200);
   };
 
-  /* 1-c: Fix updateOrderStatus — session + cache invalidation + badge */
+  /* 1-c: Fix updateOrderStatus — session check, then delegate to orders.js stage-aware version */
   var _origUpdateOrderStatus = window.updateOrderStatus;
   window.updateOrderStatus = async function (orderId, status) {
     try {
       await _ensureSession();
       if (typeof _invalidateOrderCache === 'function') _invalidateOrderCache();
+      /* Delegate to orders.js updateOrderStatus which maps stages to valid DB statuses */
+      if (typeof _origUpdateOrderStatus === 'function') {
+        return await _origUpdateOrderStatus(orderId, status);
+      }
+      /* Fallback if orders.js not yet loaded */
       await SupaDB.Orders.updateStatus(orderId, status);
       await window.loadOrders();
       if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
