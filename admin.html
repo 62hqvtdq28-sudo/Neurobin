@@ -2684,7 +2684,7 @@
     <script src="admin-charts.js?v=21"></script>
     <script src="admin.js?v=23"></script>
 <script src="products.js?v=11"></script>
-<script src="orders.js?v=14"></script>
+<script src="orders.js?v=13"></script>
 <script>/* Immediately save real loadOrders so P8 wrapper can find it regardless of execution order */window._loadOrdersReal = window.loadOrders;</script>
 
 <div id="createDiscountModal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3">
@@ -5501,17 +5501,15 @@ function _initRipple(){
 /* ─── 7. Status Filter Counts ────────────────── */
 function _updateTabCounts(orders){
   if(!orders || !orders.length) return;
-  /* Use effective status (reads [__ds:stage__] tag) so counters match displayed cards */
-  var getEff = window._getEffectiveStatus || function(o){ return o.status || 'new'; };
-  var counts = { all: orders.length };
-  orders.forEach(function(o){ var s = getEff(o); counts[s] = (counts[s]||0) + 1; });
-  document.querySelectorAll('#section-orders .tab-btn').forEach(function(tab){
+  var counts = {};
+  orders.forEach(function(o){ counts[o.status] = (counts[o.status]||0) + 1; });
+  document.querySelectorAll('.tab-btn').forEach(function(tab){
     var f = tab.dataset.filter;
-    if(!f || f === 'deleted') return;
+    if(!f) return;
     var old = tab.querySelector('.tab-count-badge');
     if(old) old.remove();
-    var n = counts[f] || 0;
-    if(n > 0){
+    var n = f === 'all' ? orders.length : (counts[f] || 0);
+    if(n > 0 && f !== 'all'){
       var badge = document.createElement('span');
       badge.className = 'tab-count-badge';
       badge.textContent = n > 99 ? '99+' : n;
@@ -5642,32 +5640,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
 /* Expose for external call */
 window._pmUpdateTabCounts = _updateTabCounts;
-
-/* updateOrdersBadge: called by orders.js after status changes — refreshes all counters */
-window.updateOrdersBadge = function() {
-  var allOrders = window._ordersCache || [];
-  if (allOrders.length && typeof window._refreshOrderCounts === 'function') {
-    window._refreshOrderCounts(allOrders);
-  }
-};
-
-/* _refreshOrderCounts: canonical counter function called by orders.js after every load.
-   Always operates on the full allOrders array (not the filtered subset).
-   Uses _getEffectiveStatus to handle the [__ds:stage__] tag mapping. */
-window._refreshOrderCounts = function(allOrders) {
-  if (!allOrders || !allOrders.length) return;
-  var getEff = window._getEffectiveStatus || function(o){ return o.status||'new'; };
-  var counts = { all: allOrders.length, new:0, preparing:0, shipped:0, on_the_way:0, delivered:0, cancelled:0 };
-  allOrders.forEach(function(o) {
-    var s = getEff(o);
-    if (counts[s] !== undefined) counts[s]++;
-    else counts[s] = 1; /* handle unexpected status values */
-  });
-  /* Write to both badge types and sidebar */
-  if (typeof _applyCountsToBtns === 'function') {
-    _applyCountsToBtns(counts);
-  }
-};
 window._pmRenderPagination = _renderPagination;
 
 })();
@@ -5821,49 +5793,21 @@ window._pmRenderPagination = _renderPagination;
     });
   }
 
-  /* 1-e: Update filter tab count badges — reads from full cache not filtered DOM */
+  /* 1-e: Update filter tab count badges after each render */
   function _updateFilterCounts() {
-    /* Use _ordersCache (full dataset) so counts are correct even when a filter is active */
-    var allOrders = window._ordersCache || [];
-    if (typeof _refreshOrderCounts === 'function' && allOrders.length) {
-      _refreshOrderCounts(allOrders);
-    } else {
-      /* Fallback: read data-status from rendered cards (less accurate but safe) */
-      var getEff = window._getEffectiveStatus || function(o){ return o.status||'new'; };
-      var counts = { all: allOrders.length, new:0, preparing:0, shipped:0, on_the_way:0, delivered:0, cancelled:0 };
-      allOrders.forEach(function(o){ var s = getEff(o); if(counts[s]!==undefined) counts[s]++; });
-      _applyCountsToBtns(counts);
-    }
-  }
-
-  /* Helper: write counts into both .tab-count-badge and .pm-filter-count elements */
-  function _applyCountsToBtns(counts) {
-    document.querySelectorAll('#section-orders [data-filter]').forEach(function(btn) {
-      var f = btn.getAttribute('data-filter');
-      if (!f || f === 'deleted') return;
-      var n = counts[f] || 0;
-      /* tab-count-badge (rounded pill, defined in CSS) */
-      var old = btn.querySelector('.tab-count-badge');
-      if (old) old.remove();
-      if (n > 0) {
-        var b1 = document.createElement('span');
-        b1.className = 'tab-count-badge';
-        b1.textContent = n > 99 ? '99+' : n;
-        btn.style.position = 'relative';
-        btn.appendChild(b1);
-      }
-      /* pm-filter-count (used by pm-filter-tab style) */
-      var b2 = btn.querySelector('.pm-filter-count');
-      if (!b2) { b2 = document.createElement('span'); b2.className = 'pm-filter-count'; btn.appendChild(b2); }
-      b2.textContent = n > 0 ? (n > 99 ? '99+' : n) : '';
+    var cards = document.querySelectorAll('#ordersList [data-status]');
+    var counts = { all: 0, new: 0, preparing: 0, shipped: 0, on_the_way: 0, delivered: 0, cancelled: 0 };
+    cards.forEach(function (c) {
+      var s = c.getAttribute('data-status') || 'new';
+      counts.all++;
+      if (counts[s] !== undefined) counts[s]++;
     });
-    /* Sidebar ordersBadge = count of new orders */
-    var badge = document.getElementById('ordersBadge');
-    if (badge) {
-      var newCount = counts['new'] || 0;
-      if (newCount > 0) { badge.textContent = newCount > 99 ? '99+' : newCount; badge.classList.remove('hidden'); }
-      else { badge.classList.add('hidden'); }
-    }
+    document.querySelectorAll('#section-orders [data-filter]').forEach(function (btn) {
+      var f = btn.getAttribute('data-filter');
+      var badge = btn.querySelector('.pm-filter-count');
+      if (!badge) { badge = document.createElement('span'); badge.className = 'pm-filter-count'; btn.appendChild(badge); }
+      badge.textContent = counts[f] !== undefined ? counts[f] : '';
+    });
   }
 
   /* ══════════════════════════════════════════════════════════════
