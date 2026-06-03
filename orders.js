@@ -1,5 +1,5 @@
 // orders.js — Migrated to Supabase
-// v13 — Stage-based delivery tracking via [__ds:stage__] notes tag
+// v14 — Fix order counters: use _getEffectiveStatus for counts; expose allOrders via _refreshOrderCounts
 // طلبات العملاء تظهر في لوحة التحكم مبا[...]
 
 var currentOrderFilter = 'all';
@@ -38,6 +38,10 @@ function _getEffectiveStatus(order) {
   return s;
 }
 window._getEffectiveStatus = _getEffectiveStatus;
+/* _refreshOrderCounts is defined in admin.html P8; stub here so orders.js never throws */
+if (typeof _refreshOrderCounts === 'undefined') {
+  window._refreshOrderCounts = null; /* will be set by admin.html */
+}
 
 async function loadOrders() {
   var container = document.getElementById('ordersList');
@@ -53,15 +57,21 @@ async function loadOrders() {
     var allOrders;
     if (cacheValid) {
       allOrders = isDeleted ? _ordersDeletedCache : _ordersCache;
+      if (!isDeleted) window._ordersCache = _ordersCache; /* keep window ref in sync */
     } else {
       allOrders = isDeleted
         ? await SupaDB.Orders.listDeleted()
         : await SupaDB.Orders.list();
       if (isDeleted) { _ordersDeletedCache = allOrders; }
-      else { _ordersCache = allOrders; _ordersCacheTime = now; }
+      else { _ordersCache = allOrders; _ordersCacheTime = now;
+             window._ordersCache = _ordersCache; /* expose for admin.html counters */ }
       /* Invalidate derived caches when data refreshes */
       _phoneCountCache = null;
       _numMapCache = null;
+    }
+    /* ── Expose cache for counter functions ── */
+    if (!isDeleted && typeof window._refreshOrderCounts === 'function') {
+      window._refreshOrderCounts(allOrders);
     }
 
     var orders = allOrders;
@@ -188,6 +198,35 @@ async function loadOrders() {
     setTimeout(function(){ container.classList.remove('orders-loaded'); }, 300);
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
       try { lucide.createIcons(); } catch(e) { /* fallback: no icons rendered */ }
+    }
+    /* ── Refresh counters on every render (uses allOrders — not filtered subset) ── */
+    if (!isDeleted && typeof window._refreshOrderCounts === 'function') {
+      window._refreshOrderCounts(allOrders);
+    }
+    /* ── Debug: log status breakdown after every render ── */
+    if (!isDeleted && allOrders) {
+      var _dbgCounts = {};
+      allOrders.forEach(function(o) {
+        var eff = _getEffectiveStatus(o);
+        _dbgCounts[eff] = (_dbgCounts[eff]||0) + 1;
+        _dbgCounts['__raw__'+o.status] = (_dbgCounts['__raw__'+o.status]||0) + 1;
+      });
+      console.log('[Orders] Total fetched:', allOrders.length,
+        '| Effective counts:', JSON.stringify({
+          new: _dbgCounts.new||0,
+          preparing: _dbgCounts.preparing||0,
+          shipped: _dbgCounts.shipped||0,
+          on_the_way: _dbgCounts.on_the_way||0,
+          delivered: _dbgCounts.delivered||0,
+          cancelled: _dbgCounts.cancelled||0
+        }),
+        '| Raw DB statuses:', JSON.stringify({
+          new: _dbgCounts['__raw__new']||0,
+          progress: _dbgCounts['__raw__progress']||0,
+          delivered: _dbgCounts['__raw__delivered']||0,
+          cancelled: _dbgCounts['__raw__cancelled']||0
+        })
+      );
     }
   } catch(e) {
     if(container) container.innerHTML = '<div class="text-center py-8 text-red-500">خطأ في تحميل الطلبات: ' + escapeHTML(e.message) + '</div>';
