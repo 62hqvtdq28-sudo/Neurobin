@@ -1332,7 +1332,7 @@ function normalizeArabic(str) {
     .replace(/[أإآا]/g, 'ا')
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
-    .replace(/[ً-ٰٟ]/g, '') // Remove diacritics
+    .replace(/[ً-ٰٟ]/g, '') // Remove diacritics
     .replace(/\s+/g, ' ')
     .trim();
 }
