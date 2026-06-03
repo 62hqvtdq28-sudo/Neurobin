@@ -1,4 +1,5 @@
 // orders.js — Migrated to Supabase
+// v13 — Stage-based delivery tracking via [__ds:stage__] notes tag
 // طلبات العملاء تظهر في لوحة التحكم مبا[...]
 
 var currentOrderFilter = 'all';
@@ -24,6 +25,19 @@ function _invalidateOrderCache() {
   _ordersCacheTime = 0;
 }
 window._invalidateOrderCache = _invalidateOrderCache;
+
+/* Stage helper: DB allows only new/progress/delivered/cancelled;
+   real delivery stage is tracked via hidden tag [__ds:stage__] in notes field */
+function _getEffectiveStatus(order) {
+  var s = order.status || 'new';
+  if (s === 'progress' || s === 'preparing' || s === 'shipped' || s === 'on_the_way') {
+    var m = (order.notes || '').match(/\[__ds:(\w+)__\]/);
+    if (m) return m[1];
+    if (s === 'progress') return 'on_the_way';
+  }
+  return s;
+}
+window._getEffectiveStatus = _getEffectiveStatus;
 
 async function loadOrders() {
   var container = document.getElementById('ordersList');
@@ -52,7 +66,7 @@ async function loadOrders() {
 
     var orders = allOrders;
     var q = document.getElementById('orderSearch') ? document.getElementById('orderSearch').value.toLowerCase() : '';
-    if (currentOrderFilter !== 'all' && !isDeleted) orders = orders.filter(function(o){ return o.status === currentOrderFilter; });
+    if (currentOrderFilter !== 'all' && !isDeleted) orders = orders.filter(function(o){ return _getEffectiveStatus(o) === currentOrderFilter; });
     var _df = (typeof window._orderDateFrom !== 'undefined') ? window._orderDateFrom : '';
     var _dt = (typeof window._orderDateTo !== 'undefined') ? window._orderDateTo : '';
     var _rg = (typeof window._orderRegion !== 'undefined') ? window._orderRegion : '';
@@ -85,6 +99,7 @@ async function loadOrders() {
     orders.forEach(function(order) {
       var oid = escapeHTML(String(order.id));
       var status = order.status || 'new';
+      var eff = _getEffectiveStatus(order);
       var items = (Array.isArray(order.order_items) && order.order_items.length > 0) ? order.order_items : (Array.isArray(order.items) ? order.items : []);
 
       // ─── بناء أزرار الإجراءات حسب الحالة ───
@@ -103,11 +118,11 @@ async function loadOrders() {
         // #15: if order < 30 minutes old and status is new, show cancel hint
         var _orderAge = Date.now() - new Date(order.created_at||0).getTime();
         var _canCancelAge = _orderAge < 30*60*1000;
-        var _statusFlow = {new:'preparing',preparing:'shipped',shipped:'on_the_way',on_the_way:'delivered'};
-        var _statusBtnLabels = {new:'📦 تجهيز الطلب',preparing:'🚐 تسليم للمندوب',shipped:'🚚 المندوب في الطريق',on_the_way:'✅ تم التوصيل'};
-        var _nextStatus = _statusFlow[status];
+        var _statusFlow = {new:'preparing',preparing:'shipped',shipped:'on_the_way',on_the_way:'delivered',progress:'shipped',pending:'preparing'};
+        var _statusBtnLabels = {new:'📦 تجهيز الطلب',preparing:'🚐 مع المندوب',shipped:'🚚 في الطريق',on_the_way:'✅ تم التوصيل',progress:'🚚 في الطريق',pending:'📦 تجهيز الطلب'};
+        var _nextStatus = _statusFlow[eff];
         if (_nextStatus) {
-          actionBtns += '<button data-action="status-next" data-order-id="' + oid + '" data-next-status="' + _nextStatus + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">' + (_statusBtnLabels[status]||'التالي') + '</button>';
+          actionBtns += '<button data-action="status-next" data-order-id="' + oid + '" data-next-status="' + _nextStatus + '" class="flex-1 min-w-[90px] bg-blue-100 text-blue-700 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors">' + (_statusBtnLabels[eff]||'التالي') + '</button>';
         }
         actionBtns += '<button data-action="status-delivered" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-green-100 text-green-700 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors">✅ تم التسليم</button>' +
           '<button data-action="status-cancelled" data-order-id="' + oid + '" class="flex-1 min-w-[90px] bg-red-100 text-red-700 py-2 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors">✕ إلغاء</button>';
@@ -115,7 +130,7 @@ async function loadOrders() {
 
       // ─── بناء HTML الكارد بشكل صحيح ───
       /* animate-fade-in removed from per-card — animates container instead (1 vs N animations) */
-      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100" data-status="' + escapeHTML(status) + '">';
+      var cardHtml = '<div class="bg-white rounded-xl p-4 sm:p-5 border border-brand-100" data-status="' + escapeHTML(eff) + '">';
 
       // رأس الكارد: الاسم + الحالة
       cardHtml += '<div class="flex items-start justify-between mb-3">';
@@ -131,7 +146,7 @@ async function loadOrders() {
       }
       cardHtml += '</div>';
       cardHtml += '<div class="text-left">';
-      cardHtml += '<span class="order-status ' + (statusClasses[status]||'order-new') + '">' + (statusLabels[status]||'جديد') + '</span>';
+      cardHtml += '<span class="order-status ' + (statusClasses[eff]||'order-new') + '">' + (statusLabels[eff]||'جديد') + '</span>';
       cardHtml += '<p class="text-brand-400 text-xs mt-1">' + new Date(order.created_at||order.date||Date.now()).toLocaleDateString('ar-EG') + '</p>';
       cardHtml += '</div>';
       cardHtml += '</div>'; // end header
@@ -196,12 +211,33 @@ function searchOrders() {
 }
 
 async function updateOrderStatus(orderId, status) {
-  // Validate inputs directly (no sessionStorage dependency)
   if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
-  var validStatuses = ['new','pending','preparing','shipped','progress','on_the_way','delivered','cancelled'];
-  if (!validStatuses.includes(status)) { showToast('حالة غير صالحة: ' + status,'error'); return; }
+  /* Map app stages to DB-valid status (DB allows: new/progress/delivered/cancelled) */
+  var _stageMap = {
+    new:       {dbStatus:'new',       stage:null},
+    pending:   {dbStatus:'progress',  stage:'preparing'},
+    preparing: {dbStatus:'progress',  stage:'preparing'},
+    shipped:   {dbStatus:'progress',  stage:'shipped'},
+    on_the_way:{dbStatus:'progress',  stage:'on_the_way'},
+    progress:  {dbStatus:'progress',  stage:'on_the_way'},
+    delivered: {dbStatus:'delivered', stage:null},
+    cancelled: {dbStatus:'cancelled', stage:null}
+  };
+  var mapped = _stageMap[status];
+  if (!mapped) { showToast('حالة غير صالحة: ' + status,'error'); return; }
+  var allOrders = _ordersCache || [];
+  var curOrder = allOrders.find(function(o){ return String(o.id) === String(orderId); });
+  var curNotes = curOrder ? (curOrder.notes || '') : '';
+  var cleanNotes = curNotes.replace(/\[__ds:\w+__\]/g, '').trim();
+  var payload = {status: mapped.dbStatus, updated_at: new Date().toISOString()};
+  if (mapped.stage) {
+    payload.notes = '[__ds:' + mapped.stage + '__]' + (cleanNotes ? ' ' + cleanNotes : '');
+  } else {
+    payload.notes = cleanNotes || null;
+  }
   try {
-    await SupaDB.Orders.updateStatus(String(orderId), status);
+    await SupaDB.Orders.patchOrder(String(orderId), payload);
+    _invalidateOrderCache();
     await loadOrders();
     if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
     showToast('تم تحديث حالة الطلب ✅','success');
