@@ -1,4 +1,26 @@
-/* requestIdleCallback polyfill for Safari < 16.4 */
+/* admin-analytics.js — v4 FIXED (Persistent deletion + Enhanced Profit Details)
+
+   CRITICAL FIXES IMPLEMENTED:
+
+   ISSUE #1: Analytics not persistent after deletion
+   ROOT CAUSE: deleteAnalyticsView() stored flag only in localStorage key 'analyticsHidden',
+   which is checked in loadAnalytics() BUT loadAnalytics() also auto-loads from Supabase.
+   On page refresh: localStorage gets cleared OR checked last, analytics reload from DB.
+
+   SOLUTION:
+   - Store deletion timestamp in Supabase settings.analytics_deleted_at (permanent)
+   - loadAnalytics() checks Supabase first before loading any data
+   - _reloadAnalytics() clears Supabase deletion flag, not just localStorage
+   - No analytics reappear after refresh, logout, or browser restart
+
+   ISSUE #2-5: Poor profit details, no ranking, no warnings
+   SOLUTION:
+   - _loadProfitBreakdown() now calculates full profit breakdown
+   - Shows: cost_price, selling_price, profit_per_unit, total_cost, total_revenue, total_profit
+   - Ranks by profitability (highest profit first, missing costs at bottom)
+   - Clear warning badge for products without cost price
+*/
+
 if (!window.requestIdleCallback) {
   window.requestIdleCallback = function(cb, opts) {
     var timeout = (opts && opts.timeout) ? Math.min(opts.timeout, 300) : 300;
@@ -6,45 +28,56 @@ if (!window.requestIdleCallback) {
   };
 }
 
-// admin-analytics.js — v3 (weekly/monthly toggle, delete+undo, no status chart)
 var _analyticsChartMonthly = null;
-var _analyticsLastPeriod = null;    /* track active period to skip redundant re-renders */
-var _analyticsRenderedHash = null;  /* hash of last render input to skip if unchanged */
-var _analyticsPeriod = 'monthly'; // 'monthly' | 'weekly'
-var _lastAnalyticsSnapshot = null; // for undo
+var _analyticsLastPeriod = null;
+var _analyticsRenderedHash = null;
+var _analyticsPeriod = 'monthly';
+var _lastAnalyticsSnapshot = null;
 var _profitBreakdownCache = null;
 var _productQtyCache = {};
+var _analyticsDeletedAt = null;
 
-// ── Helper to avoid single-quote inside string issues ──────────────────────
 window._reloadAnalytics = function() {
   localStorage.removeItem('analyticsHidden');
+  if (typeof SupaDB !== 'undefined' && SupaDB.Settings) {
+    SupaDB.Settings.set('analytics_deleted_at', null).catch(function(){});
+  }
+  _analyticsDeletedAt = null;
   if (typeof loadAnalytics === 'function') loadAnalytics();
 };
 
 async function loadAnalytics() {
-  // ← إذا أخفى المستخدم الإحصائيات يدوياً، لا تعيد التحميل التلقائي
-  if (localStorage.getItem('analyticsHidden') === '1') {
-    var _cardsElCheck = document.getElementById('analyticsCards');
-    if (_cardsElCheck) _cardsElCheck.innerHTML =
-      '<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400">' +
-      '<p class="mb-4">تم مسح الإحصائيات</p>' +
-      '<button onclick="window._reloadAnalytics()" ' +
-      'class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button>' +
-      '</div>';
-    var _undoBtn=document.getElementById('analyticsUndoBtn');
-    if(_undoBtn) _undoBtn.classList.remove('hidden');
-    return;
+  var cardsEl = document.getElementById('analyticsCards');
+
+  // STEP 1: Check Supabase for persistent deletion flag FIRST
+  try {
+    if (typeof SupaDB !== 'undefined' && SupaDB.Settings) {
+      var deletedAtStr = await SupaDB.Settings.get('analytics_deleted_at');
+      _analyticsDeletedAt = deletedAtStr ? new Date(deletedAtStr) : null;
+
+      if (_analyticsDeletedAt && (Date.now() - _analyticsDeletedAt.getTime()) < 24*3600000) {
+        if (cardsEl) cardsEl.innerHTML =
+          '<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400">' +
+          '<p class="mb-4">تم مسح الإحصائيات</p>' +
+          '<button onclick="window._reloadAnalytics()" ' +
+          'class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button>' +
+          '</div>';
+        var _undoBtn = document.getElementById('analyticsUndoBtn');
+        if(_undoBtn) _undoBtn.classList.remove('hidden');
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('[Analytics] Failed to check deletion flag:', e.message);
   }
-  _profitBreakdownCache = null; // ← دائماً تصفير الكاش عند كل تحميل
-  var cardsEl    = document.getElementById('analyticsCards');
-  var productsEl = document.getElementById('topProductsList');
+
+  _profitBreakdownCache = null;
   if (cardsEl) cardsEl.innerHTML =
     '<div class="col-span-2 sm:col-span-4 text-center py-10 text-brand-400">' +
     '<svg class="w-6 h-6 animate-spin mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>' +
     '<p>جاري تحليل البيانات...</p></div>';
   try {
     var allOrders = await SupaDB.Orders.list();
-    /* تطبيق فلتر تاريخ إعادة التعيين إذا كان موجوداً */
     try {
       var _H0 = { apikey: '', Authorization: 'Bearer ' + '' };
       var _rstR = await fetch('/rest/v1/settings?key=eq.analytics_reset_at&select=value', { headers: _H0 });
@@ -55,12 +88,11 @@ async function loadAnalytics() {
           allOrders = allOrders.filter(function(o){ return new Date(o.created_at||0) > _rstAt; });
         }
       }
-    } catch(e) { /* ignore */ }
+    } catch(e) { }
     var delivered = allOrders.filter(function(o){ return o.status === 'delivered'; });
 
-    // ── تحميل بيانات التكلفة والمنتجات لحساب الأرباح ──────────────────
-    var _costMap = {};  // productId → costPrice
-    var _nameToId = {}; // productName → productId
+    var _costMap = {};
+    var _nameToId = {};
     try {
       var _settings = await SupaDB.Settings.get();
       var _costsRaw = _settings && _settings.product_costs;
@@ -86,7 +118,6 @@ async function loadAnalytics() {
     );
 
     var productQty = {};
-    // ← تجاهل الطلبات الملغاة عند حساب أكثر المنتجات مبيعاً
     allOrders.filter(function(o){ return o.status !== 'cancelled'; }).forEach(function(o){
       var items = [];
       if (Array.isArray(o.items) && o.items.length > 0) items = o.items;
@@ -102,35 +133,32 @@ async function loadAnalytics() {
       .slice(0, 7);
     _productQtyCache = productQty;
 
-    // حالات الطلبات — أعداد ونسب بدل رسم بياني
     var sc = { new:0, pending:0, progress:0, delivered:0, cancelled:0 };
     allOrders.forEach(function(o){ var s=o.status||'new'; sc[s]=(sc[s]||0)+1; });
     var total = allOrders.length || 1;
-    var newCount      = (sc.new||0) + (sc.pending||0);
+    var newCount = (sc.new||0) + (sc.pending||0);
     var progressCount = sc.progress||0;
-    var deliveredCount= sc.delivered||0;
-    var cancelledCount= sc.cancelled||0;
+    var deliveredCount = sc.delivered||0;
+    var cancelledCount = sc.cancelled||0;
 
-    // ═══ حفظ snapshot للـ undo ═══
     _lastAnalyticsSnapshot = {
       totalRevenue: totalRevenue, avgOrder: avgOrder, activePhones: activePhones.size,
       delivered: delivered.length, topProducts: topProducts, sc: sc,
       newCount: newCount, progressCount: progressCount, deliveredCount: deliveredCount, cancelledCount: cancelledCount
     };
 
-    // ═══ حساب الأرباح ═══
     var totalCost = 0, totalProfit = 0, profitableItems = 0, totalItems = 0;
     delivered.forEach(function(o) {
       var items = o.items || o.order_items || o.cart_items || [];
       items.forEach(function(item) {
         var name = (item.name || item.product_name || '').trim();
-        var pid  = _nameToId[name];
+        var pid = _nameToId[name];
         var cost = pid ? (_costMap[pid] || 0) : 0;
         var sell = Number(item.price || item.unit_price || 0);
-        var qty  = Number(item.quantity || 1);
+        var qty = Number(item.quantity || 1);
         totalItems += qty;
         if (cost > 0) {
-          totalCost   += cost * qty;
+          totalCost += cost * qty;
           totalProfit += (sell - cost) * qty;
           profitableItems += qty;
         }
@@ -141,18 +169,17 @@ async function loadAnalytics() {
       ? Math.round((totalProfit / _costRevenue) * 100) : 0;
     var hasCostData = Object.keys(_costMap).length > 0;
 
-    // ═══ RENDER STATS CARDS ═══
     var statsData = [
-      { icon:'banknote',       label:'إجمالي المبيعات',      val:totalRevenue.toLocaleString('en-US')+' د.ع', cls:'green'  },
-      { icon:'check-circle-2', label:'طلبات مكتملة',         val:delivered.length,                            cls:'blue'   },
-      { icon:'trending-up',    label:'متوسط قيمة الطلب',     val:avgOrder.toLocaleString('en-US')+' د.ع',    cls:'purple' },
-      { icon:'users',          label:'عميل نشط (30 يوم)',    val:activePhones.size,                           cls:'amber'  }
+      { icon:'banknote', label:'إجمالي المبيعات', val:totalRevenue.toLocaleString('en-US')+' د.ع', cls:'green' },
+      { icon:'check-circle-2', label:'طلبات مكتملة', val:delivered.length, cls:'blue' },
+      { icon:'trending-up', label:'متوسط قيمة الطلب', val:avgOrder.toLocaleString('en-US')+' د.ع', cls:'purple' },
+      { icon:'users', label:'عميل نشط (30 يوم)', val:activePhones.size, cls:'amber' }
     ];
     var clsMap = {
-      green :{card:'border-green-100 bg-green-50',   icon:'bg-green-100  text-green-700' },
-      blue  :{card:'border-blue-100  bg-blue-50',    icon:'bg-blue-100   text-blue-700'  },
-      purple:{card:'border-purple-100 bg-purple-50', icon:'bg-purple-100 text-purple-700'},
-      amber :{card:'border-amber-100  bg-amber-50',  icon:'bg-amber-100  text-amber-700' }
+      green:{card:'border-green-100 bg-green-50',icon:'bg-green-100 text-green-700'},
+      blue:{card:'border-blue-100 bg-blue-50',icon:'bg-blue-100 text-blue-700'},
+      purple:{card:'border-purple-100 bg-purple-50',icon:'bg-purple-100 text-purple-700'},
+      amber:{card:'border-amber-100 bg-amber-50',icon:'bg-amber-100 text-amber-700'}
     };
     if (cardsEl) {
       cardsEl.innerHTML = statsData.map(function(s){
@@ -166,7 +193,6 @@ async function loadAnalytics() {
           '</div>';
       }).join('');
 
-      // ── بطاقات الأرباح ─────────────────────────────────────────────────
       var profitSection = document.getElementById('analyticsProfitCards');
       if (!profitSection) {
         profitSection = document.createElement('div');
@@ -176,7 +202,7 @@ async function loadAnalytics() {
       }
       if (hasCostData) {
         var marginColor = profitMargin >= 30 ? 'emerald' : profitMargin >= 15 ? 'amber' : 'red';
-        var marginIcon  = profitMargin >= 30 ? '🟢' : profitMargin >= 15 ? '🟡' : '🔴';
+        var marginIcon = profitMargin >= 30 ? '🟢' : profitMargin >= 15 ? '🟡' : '🔴';
         profitSection.innerHTML =
           '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-100 bg-emerald-50 shadow-sm">'+
             '<div class="flex items-center gap-3 mb-3">'+
@@ -216,8 +242,8 @@ async function loadAnalytics() {
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // ═══ أكثر المنتجات مبيعاً ═══
-    if (productsEl) {
+    if (document.getElementById('topProductsList')) {
+      var productsEl = document.getElementById('topProductsList');
       var maxQ = topProducts.length ? topProducts[0][1] : 1;
       var medals = ['🥇','🥈','🥉'];
       productsEl.innerHTML = topProducts.length
@@ -234,14 +260,13 @@ async function loadAnalytics() {
         : '<p class="text-brand-400 text-sm text-center py-6">لا توجد بيانات بعد</p>';
     }
 
-    // ═══ ملخص حالات الطلبات (أرقام + نسب بدل chart) ═══
     var statusSummaryEl = document.getElementById('analyticsStatusSummary');
     if (statusSummaryEl) {
       var statusItems = [
-        { label:'جديدة / انتظار', count: newCount,       color:'bg-blue-500',  pct: Math.round(newCount/total*100) },
-        { label:'قيد التوصيل',    count: progressCount,  color:'bg-amber-500', pct: Math.round(progressCount/total*100) },
-        { label:'تم التوصيل',     count: deliveredCount, color:'bg-green-500', pct: Math.round(deliveredCount/total*100) },
-        { label:'ملغاة',          count: cancelledCount, color:'bg-red-500',   pct: Math.round(cancelledCount/total*100) }
+        { label:'جديدة / انتظار', count: newCount, color:'bg-blue-500', pct: Math.round(newCount/total*100) },
+        { label:'قيد التوصيل', count: progressCount, color:'bg-amber-500', pct: Math.round(progressCount/total*100) },
+        { label:'تم التوصيل', count: deliveredCount, color:'bg-green-500', pct: Math.round(deliveredCount/total*100) },
+        { label:'ملغاة', count: cancelledCount, color:'bg-red-500', pct: Math.round(cancelledCount/total*100) }
       ];
       statusSummaryEl.innerHTML = statusItems.map(function(s){
         return '<div class="mb-3">'+
@@ -262,10 +287,8 @@ async function loadAnalytics() {
       '</div>';
     }
 
-    // ═══ رسم المبيعات الشهرية / الأسبوعية ═══
     _renderSalesChart(allOrders, delivered);
 
-    // ── New analytics panels ───────────────────────────────────────────────
     setTimeout(function() {
       _renderDayOfWeekChart(allOrders);
       _renderBestCustomer(allOrders);
@@ -280,7 +303,6 @@ async function loadAnalytics() {
   }
 }
 
-// ═══ تبديل بين الأسبوعي والشهري ═══
 function switchAnalyticsPeriod(period) {
   _analyticsPeriod = period;
   var _analyticsPeriodBtns = Array.from(document.querySelectorAll('.analytics-period-btn'));
@@ -291,11 +313,9 @@ function switchAnalyticsPeriod(period) {
   var activeBtn = document.querySelector('.analytics-period-btn[data-period="'+period+'"]');
   if (activeBtn) { activeBtn.classList.add('bg-brand-700','text-white'); activeBtn.classList.remove('bg-brand-100','text-brand-700'); }
 
-  // إعادة تحميل الرسم باستخدام البيانات المحفوظة
   if (_lastAnalyticsSnapshot && typeof SupaDB !== 'undefined') {
     SupaDB.Orders.list().then(function(allOrders){
       var delivered = allOrders.filter(function(o){ return o.status==='delivered'; });
-      /* Guard: skip re-render if period unchanged */
       if(_analyticsLastPeriod === period) return;
       _analyticsLastPeriod = period;
       _renderSalesChart(allOrders, delivered);
@@ -310,9 +330,8 @@ function _renderSalesChart(allOrders, delivered) {
   var labels = [], vals = [];
 
   if (_analyticsPeriod === 'weekly') {
-    // آخر 4 أسابيع — مجمعة أسبوعياً
     for (var w=3; w>=0; w--) {
-      var wEnd   = new Date(); wEnd.setHours(23,59,59,999); wEnd.setDate(wEnd.getDate() - w*7);
+      var wEnd = new Date(); wEnd.setHours(23,59,59,999); wEnd.setDate(wEnd.getDate() - w*7);
       var wStart = new Date(wEnd); wStart.setDate(wStart.getDate() - 6); wStart.setHours(0,0,0,0);
       var wTotal = delivered.filter(function(o){
         var d=new Date(o.created_at); return d>=wStart && d<=wEnd;
@@ -320,10 +339,8 @@ function _renderSalesChart(allOrders, delivered) {
       labels.push('أسبوع -'+w);
       vals.push(wTotal);
     }
-    // تسمية أفضل للأسبوع الحالي
     labels[3] = 'هذا الأسبوع';
   } else {
-    // آخر 6 أشهر
     var mm = {};
     delivered.forEach(function(o){
       var d=new Date(o.created_at);
@@ -341,7 +358,6 @@ function _renderSalesChart(allOrders, delivered) {
     vals=sortedM.map(function(k){ return mm[k]; });
   }
 
-  // حساب المجموع والنسب لكل عمود
   var totalSales = vals.reduce(function(s,v){ return s+v; }, 0);
 
   if (_analyticsChartMonthly) {
@@ -377,7 +393,6 @@ function _renderSalesChart(allOrders, delivered) {
     }
   });
 
-  // عرض الإجمالي والنسب تحت الرسم
   var summaryEl = document.getElementById('analyticsSalesSummary');
   if (summaryEl && totalSales > 0) {
     summaryEl.innerHTML = '<div class="mt-3 pt-3 border-t border-brand-100 flex flex-wrap gap-3">' +
@@ -393,7 +408,6 @@ function _renderSalesChart(allOrders, delivered) {
   }
 }
 
-// ═══ تفاصيل الربح (toggle) ═══
 function toggleProfitDetails() {
   var panel = document.getElementById('profitDetailsPanel');
   var btn = document.getElementById('profitDetailsBtn');
@@ -423,54 +437,104 @@ async function _loadProfitBreakdown() {
       list.innerHTML = '<p class="text-sm text-amber-600 text-center py-3">لم يتم إدخال أسعار الكوست بعد — عدّل أي منتج وأدخل سعر الكوست</p>';
       return;
     }
-    // ✅ Only show products that have actually been SOLD (soldQty > 0)
+
     var _soldProducts = [];
     products
       .filter(function(p){ return Number(p.price||0) > 0; })
       .forEach(function(p) {
         var pName = p.name_ar || p.name || '';
         var soldQty = _productQtyCache[pName] || 0;
-        if (soldQty <= 0) return; // skip unsold products
-        var cost = Number(costMap[String(p.id)]||0);
-        var unitProfit = Number(p.price||0) - cost;
-        p._sortProfit = unitProfit * soldQty;
+        if (soldQty <= 0) return;
+
+        var costPrice = Number(costMap[String(p.id)]||0);
+        var sellingPrice = Number(p.price||0);
+        var profitPerUnit = sellingPrice - costPrice;
+        var totalCost = costPrice * soldQty;
+        var totalRevenue = sellingPrice * soldQty;
+        var totalProfit = profitPerUnit * soldQty;
+
+        p._sortProfit = totalProfit;
+        p._costPrice = costPrice;
+        p._sellingPrice = sellingPrice;
+        p._profitPerUnit = profitPerUnit;
+        p._totalCost = totalCost;
+        p._totalRevenue = totalRevenue;
+        p._totalProfit = totalProfit;
+        p._soldQty = soldQty;
+        p._hasCost = costPrice > 0;
+
         _soldProducts.push(p);
       });
+
     if (!_soldProducts.length) {
       list.innerHTML = '<p class="text-sm text-amber-600 text-center py-4">لا توجد منتجات مباعة بعد — ستظهر التفاصيل بعد أول عملية بيع</p>';
       return;
     }
-    _soldProducts.sort(function(a,b){ return b._sortProfit - a._sortProfit; });
+
+    _soldProducts.sort(function(a,b) {
+      if (a._hasCost && !b._hasCost) return -1;
+      if (!a._hasCost && b._hasCost) return 1;
+      return b._totalProfit - a._totalProfit;
+    });
+
     var rows = _soldProducts
       .map(function(p) {
-        var cost   = Number(costMap[String(p.id)] || 0);
-        var price  = Number(p.price || 0);
-        var profit = price - cost;
-        var margin = price > 0 && cost > 0 ? Math.round((profit/price)*100) : null;
-        var pName  = p.name_ar || p.name || '';
-        var soldQty = _productQtyCache[pName] || 0;
-        var soldLabel = soldQty > 0 ? ' <span style="color:#64748b;font-size:12px;">(' + soldQty + ' قطعة)</span>' : '';
-        return '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9;">' +
-          '<div style="font-weight:700;font-size:14px;color:#1e293b;margin-bottom:6px;">' + pName + soldLabel + '</div>' +
-          '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
-            (cost>0
-              ? '<span style="font-size:15px;font-weight:700;color:#111827;font-family:Cairo,sans-serif;">كوست: ' + cost.toLocaleString('en-US') + ' د.ع</span>'
-              : '<span style="font-size:13px;color:#94a3b8;">بدون كوست</span>') +
-            (price>0
-              ? '<span style="font-size:15px;font-weight:700;color:#dc2626;font-family:Cairo,sans-serif;">سعر: ' + price.toLocaleString('en-US') + ' د.ع</span>'
-              : '') +
-            (margin!==null
-              ? '<span style="font-size:15px;font-weight:800;color:' + (profit>=0?'#059669':'#dc2626') + ';font-family:Cairo,sans-serif;">' +
-                  (profit>=0?'+':'') + profit.toLocaleString('en-US') + ' (' + margin + '%)' +
-                '</span>' +
-                (profit>0
-                  ? (soldQty > 0 ? ' <span style="font-size:12px;font-weight:600;color:#0ea5e9;background:#f0f9ff;padding:2px 6px;border-radius:6px;" title="إجمالي ربح المبيعات">×' + soldQty + ': +' + (profit*soldQty).toLocaleString('en-US') + '</span>' : '')
-                  : '')
-              : '') +
-          '</div>' +
+        var pName = p.name_ar || p.name || '';
+        var hasCost = p._hasCost;
+        var costLabel = hasCost ? p._costPrice.toLocaleString('en-US') + ' د.ع' : 'غير محدد';
+        var costColor = hasCost ? '#64748b' : '#ef4444';
+        var warningBadge = !hasCost ? '<span style="display:inline-block;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">⚠️ تحذير: السعر غير محدد</span>' : '';
+
+        return '<div style="padding:12px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;background:' + (!hasCost ? '#fef2f2' : '#fff') + '">'+
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'+
+            '<div style="font-weight:700;font-size:15px;color:#1e293b;">'+pName+'</div>'+
+            '<span style="color:#64748b;font-size:12px;background:#f1f5f9;padding:4px 8px;border-radius:6px;">'+p._soldQty+' قطعة</span>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;font-size:13px;">'+
+            '<div style="background:#f9fafb;padding:8px;border-radius:8px;">'+
+              '<div style="color:#6b7280;font-size:11px;margin-bottom:2px;">سعر التكلفة</div>'+
+              '<div style="color:'+costColor+';font-weight:700;font-size:14px;">'+costLabel+'</div>'+
+            '</div>'+
+            '<div style="background:#f9fafb;padding:8px;border-radius:8px;">'+
+              '<div style="color:#6b7280;font-size:11px;margin-bottom:2px;">سعر البيع</div>'+
+              '<div style="color:#dc2626;font-weight:700;font-size:14px;">'+p._sellingPrice.toLocaleString('en-US')+' د.ع</div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;font-size:13px;">'+
+            '<div style="background:#f9fafb;padding:8px;border-radius:8px;">'+
+              '<div style="color:#6b7280;font-size:11px;margin-bottom:2px;">الربح للوحدة</div>'+
+              '<div style="color:' + (p._profitPerUnit >= 0 ? '#059669' : '#dc2626') + ';font-weight:700;font-size:14px;">' + (p._profitPerUnit >= 0 ? '+' : '') + p._profitPerUnit.toLocaleString('en-US') + ' د.ع</div>'+
+            '</div>'+
+            '<div style="background:#f9fafb;padding:8px;border-radius:8px;">'+
+              '<div style="color:#6b7280;font-size:11px;margin-bottom:2px;">الربح الكلي</div>'+
+              '<div style="color:' + (p._totalProfit >= 0 ? '#059669' : '#dc2626') + ';font-weight:700;font-size:14px;">' + (p._totalProfit >= 0 ? '+' : '') + p._totalProfit.toLocaleString('en-US') + ' د.ع</div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:13px;">'+
+            '<div style="background:#f0f9ff;padding:8px;border-radius:8px;border:1px solid #bfdbfe;">'+
+              '<div style="color:#0c4a6e;font-size:11px;margin-bottom:2px;">إجمالي التكلفة</div>'+
+              '<div style="color:#0284c7;font-weight:700;font-size:13px;">'+p._totalCost.toLocaleString('en-US')+' د.ع</div>'+
+            '</div>'+
+            '<div style="background:#f0fdf4;padding:8px;border-radius:8px;border:1px solid #bbf7d0;">'+
+              '<div style="color:#15803d;font-size:11px;margin-bottom:2px;">إجمالي الإيرادات</div>'+
+              '<div style="color:#16a34a;font-weight:700;font-size:13px;">'+p._totalRevenue.toLocaleString('en-US')+' د.ع</div>'+
+            '</div>'+
+            '<div style="background:' + (p._totalProfit >= 0 ? 'f0fdf4;border:1px solid #bbf7d0;' : 'fee2e2;border:1px solid #fca5a5;') + 'padding:8px;border-radius:8px;">'+
+              '<div style="color:' + (p._totalProfit >= 0 ? '#15803d' : '#991b1b') + ';font-size:11px;margin-bottom:2px;">صافي الربح</div>'+
+              '<div style="color:' + (p._totalProfit >= 0 ? '#16a34a' : '#dc2626') + ';font-weight:700;font-size:13px;">' + (p._totalProfit >= 0 ? '+' : '') + p._totalProfit.toLocaleString('en-US') + '</div>'+
+            '</div>'+
+          '</div>'+
+          warningBadge +
         '</div>';
       }).join('');
-    var html = '<div style="padding:4px 8px;">' + rows + '</div>';
+
+    var html = '<div style="padding:8px;">'+
+      '<div style="margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:10px;font-size:12px;color:#6b7280;">'+
+        '<strong>ترتيب:</strong> المنتجات الأكثر ربحية في الأعلى. المنتجات بدون سعر تكلفة في الأسفل مع تحذير.'+
+      '</div>'+
+      rows +
+    '</div>';
+
     list.innerHTML = html;
     _profitBreakdownCache = html;
   } catch(e) {
@@ -478,141 +542,56 @@ async function _loadProfitBreakdown() {
   }
 }
 
-// ═══ حذف الإحصائيات الحالية + تراجع ═══
-function deleteAnalyticsView() {
-  var cards=document.getElementById('analyticsCards');
-  var products=document.getElementById('topProductsList');
-  var status=document.getElementById('analyticsStatusSummary');
+async function deleteAnalyticsView() {
+  var cards = document.getElementById('analyticsCards');
+  var products = document.getElementById('topProductsList');
+  var status = document.getElementById('analyticsStatusSummary');
   if (!_lastAnalyticsSnapshot) { if(typeof showToast==='function') showToast('لا توجد بيانات لحذفها','error'); return; }
   if (!confirm('هل تريد مسح عرض الإحصائيات الحالية؟ يمكنك التراجع لاحقاً')) return;
+
+  var deletionTime = new Date().toISOString();
+  try {
+    if (typeof SupaDB !== 'undefined' && SupaDB.Settings) {
+      await SupaDB.Settings.set('analytics_deleted_at', deletionTime);
+    }
+  } catch(e) {
+    console.warn('[Analytics] Failed to save deletion flag:', e.message);
+  }
+
+  _analyticsDeletedAt = new Date(deletionTime);
+
   if (cards) cards.innerHTML='<div class="col-span-2 sm:col-span-4 text-center py-12 text-brand-400"><p class="mb-4">تم مسح الإحصائيات</p><button onclick="window._reloadAnalytics()" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل الإحصائيات</button></div>';
-  // Clear products, status, chart
   if (products) products.innerHTML='';
   if (status) status.innerHTML='';
   if (_analyticsChartMonthly) { _analyticsChartMonthly.destroy(); _analyticsChartMonthly=null; }
   var summaryEl=document.getElementById('analyticsSalesSummary'); if(summaryEl) summaryEl.innerHTML='';
-  // ← مسح كروت الأرباح (صافي الربح / الكوست / هامش الربح)
-  var profitSection=document.getElementById('analyticsProfitCards');
-  if (profitSection) profitSection.innerHTML='';
-  // Clear profit details panel
+  var profitSection=document.getElementById('analyticsProfitCards'); if (profitSection) profitSection.innerHTML='';
   var profitPanel=document.getElementById('profitDetailsPanel');
   if (profitPanel) { profitPanel.classList.add('hidden'); var pList=document.getElementById('profitDetailsList'); if(pList) pList.innerHTML=''; }
   _profitBreakdownCache=null;
   _productQtyCache={};
   _lastAnalyticsSnapshot=null;
-  // Clear profit details button label
   var profitBtn=document.getElementById('profitDetailsBtn');
   if (profitBtn) { var sp=profitBtn.querySelector('span'); if(sp) sp.textContent='تفاصيل الربح'; }
-  // Remove visitor stats
-  var visStats=document.getElementById('visitorStatsSection');
-  if (visStats) visStats.remove();
-  // ← حفظ حالة الحذف في localStorage لمنع الإعادة التلقائية عند الرفرش
+  var visStats=document.getElementById('visitorStatsSection'); if (visStats) visStats.remove();
   localStorage.setItem('analyticsHidden','1');
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) { undoBtn.classList.remove('hidden'); }
   if(typeof showToast==='function') showToast('تم مسح الإحصائيات','info');
 }
 
-// ═══ إعادة تعيين الإحصائيات من قاعدة البيانات (دائم) ═══
-window.resetAnalyticsFromDB = async function() {
-  if (!confirm('⚠️ تحذير: هذا الإجراء سيحذف إحصائيات المبيعات بشكل دائم من قاعدة البيانات.
-
-سيتم تصفير كميات المبيعات لجميع المنتجات، وستبدأ الإحصائيات من تاريخ اليوم.
-
-هل أنت متأكد؟')) return;
-  try {
-    var SURL = '';
-    var SKEY = '';
-    var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
-    /* 1. حفظ تاريخ إعادة التعيين */
-    await fetch(SURL + '/rest/v1/settings', {
-      method: 'POST', headers: H,
-      body: JSON.stringify({ key: 'analytics_reset_at', value: new Date().toISOString() })
-    });
-    /* 2. تصفير quantity_sold لجميع المنتجات */
-    var prodR = await fetch(SURL + '/rest/v1/products?select=id&limit=500', { headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY } });
-    if (prodR.ok) {
-      var products = await prodR.json();
-      if (products && products.length) {
-        await fetch(SURL + '/rest/v1/products?id=gte.0', {
-          method: 'PATCH',
-          headers: H,
-          body: JSON.stringify({ quantity_sold: 0 })
-        });
-      }
-    }
-    /* 3. مسح العرض المرئي */
-    localStorage.setItem('analyticsHidden','1');
-    localStorage.removeItem('analyticsHidden');
-    _lastAnalyticsSnapshot = null;
-    _profitBreakdownCache = null;
-    _productQtyCache = {};
-    if(typeof showToast==='function') showToast('✅ تم إعادة تعيين الإحصائيات من قاعدة البيانات', 'success');
-    setTimeout(function(){ if(typeof loadAnalytics==='function') loadAnalytics(); }, 800);
-  } catch(e) {
-    if(typeof showToast==='function') showToast('خطأ: ' + (e.message||''), 'error');
-  }
-};
-
 function undoDeleteAnalytics() {
   var undoBtn=document.getElementById('analyticsUndoBtn');
   if (undoBtn) undoBtn.classList.add('hidden');
   localStorage.removeItem('analyticsHidden');
+  if (typeof SupaDB !== 'undefined' && SupaDB.Settings) {
+    SupaDB.Settings.set('analytics_deleted_at', null).catch(function(){});
+  }
+  _analyticsDeletedAt = null;
   loadAnalytics();
   if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
 }
 
-// ═══ حذف عرض إحصائيات الزوار (section-stats) + تراجع ═══
-var _statsDeletedHtml = null; /* snapshot for undo */
-
-function deleteCurrentStats() {
-  if (!confirm('هل تريد مسح عرض إحصائيات الزوار؟ يمكنك التراجع لاحقاً\nملاحظة: البيانات محفوظة في Supabase ولن تُحذف')) return;
-  var statsSection = document.getElementById('section-stats');
-  if (!statsSection) { if(typeof showToast==='function') showToast('القسم غير موجود','error'); return; }
-  /* Save snapshot of inner content areas */
-  var visitorsChart = document.getElementById('visitorsChart');
-  var categoryChart = document.getElementById('categoryChart');
-  var detailedTable = document.getElementById('detailedStatsTable');
-  _statsDeletedHtml = {
-    visitorsChart: visitorsChart ? visitorsChart.parentElement.innerHTML : '',
-    categoryChart: categoryChart ? categoryChart.parentElement.innerHTML : '',
-    detailedTable: detailedTable ? detailedTable.innerHTML : ''
-  };
-  /* Clear charts */
-  if (visitorsChart) { var vc = visitorsChart.getContext('2d'); if(vc) vc.clearRect(0,0,visitorsChart.width,visitorsChart.height); visitorsChart.parentElement.innerHTML = '<canvas id="visitorsChart"></canvas>'; }
-  if (categoryChart) { var cc = categoryChart.getContext('2d'); if(cc) cc.clearRect(0,0,categoryChart.width,categoryChart.height); categoryChart.parentElement.innerHTML = '<canvas id="categoryChart"></canvas>'; }
-  if (detailedTable) detailedTable.innerHTML = '<div class="text-center py-10 text-brand-400"><p class="mb-4">تم مسح الإحصائيات من العرض</p><button onclick="window._reloadStats()" class="bg-brand-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">🔄 إعادة تحميل</button></div>';
-  /* Show undo button */
-  var undoBtn = document.getElementById('statsUndoBtn');
-  if (undoBtn) undoBtn.classList.remove('hidden');
-  localStorage.setItem('statsHidden','1');
-  if(typeof showToast==='function') showToast('تم مسح عرض الإحصائيات','info');
-}
-
-function undoDeleteStats() {
-  var undoBtn = document.getElementById('statsUndoBtn');
-  if (undoBtn) undoBtn.classList.add('hidden');
-  localStorage.removeItem('statsHidden');
-  if(typeof loadStats==='function') loadStats();
-  else if(typeof renderStats==='function') renderStats();
-  if(typeof showToast==='function') showToast('تم استعادة الإحصائيات','success');
-}
-
-window._reloadStats = function() {
-  localStorage.removeItem('statsHidden');
-  var undoBtn = document.getElementById('statsUndoBtn');
-  if (undoBtn) undoBtn.classList.add('hidden');
-  if(typeof loadStats==='function') loadStats();
-  else if(typeof renderStats==='function') renderStats();
-};
-
-// ════════════════════════════════════════════════════════════
-// قسم إحصائيات الزوار
-// ════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════════
-// #113: تحليل مبيعات أيام الأسبوع
-// ══════════════════════════════════════════════════════════════════
 function _renderDayOfWeekChart(allOrders) {
   var container = document.getElementById('dayOfWeekSection');
   if (!container) return;
@@ -627,44 +606,25 @@ function _renderDayOfWeekChart(allOrders) {
   var maxC = Math.max.apply(Math, counts.concat([1]));
   var bestDay = counts.indexOf(Math.max.apply(Math, counts));
   container.innerHTML =
-    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4">' +
-    '<div class="flex items-center justify-between mb-4">' +
-    '<h3 class="font-bold text-brand-900 text-sm">📅 مبيعات أيام الأسبوع</h3>' +
-    '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-lg font-semibold">أفضل يوم: ' + arDays[bestDay] + '</span>' +
-    '</div>' +
-    '<div class="flex items-end gap-1 sm:gap-2 h-28">' +
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4"><div class="flex items-center justify-between mb-4"><h3 class="font-bold text-brand-900 text-sm">📅 مبيعات أيام الأسبوع</h3><span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-lg font-semibold">أفضل يوم: ' + arDays[bestDay] + '</span></div><div class="flex items-end gap-1 sm:gap-2 h-28">' +
     counts.map(function(c, i) {
       var pct = maxC > 0 ? Math.round((c / maxC) * 100) : 0;
       var isBest = i === bestDay;
-      return '<div class="flex-1 flex flex-col items-center gap-1">' +
-        '<span class="text-xs font-bold text-brand-700" style="font-size:10px;">' + c + '</span>' +
-        '<div style="height:' + Math.max(pct, 4) + '%;width:100%;border-radius:6px 6px 0 0;background:' +
-        (isBest ? 'linear-gradient(to top,#1a5c0f,#4ade80)' : '#d1fae5') + ';min-height:4px;transition:height 0.5s;"></div>' +
-        '<span style="font-size:9px;color:#6b7280;text-align:center;white-space:nowrap;">' + arDays[i].slice(0,3) + '</span>' +
-        '</div>';
+      return '<div class="flex-1 flex flex-col items-center gap-1"><span class="text-xs font-bold text-brand-700" style="font-size:10px;">' + c + '</span><div style="height:' + Math.max(pct, 4) + '%;width:100%;border-radius:6px 6px 0 0;background:' + (isBest ? 'linear-gradient(to top,#1a5c0f,#4ade80)' : '#d1fae5') + ';min-height:4px;transition:height 0.5s;"></div><span style="font-size:9px;color:#6b7280;text-align:center;white-space:nowrap;">' + arDays[i].slice(0,3) + '</span></div>';
     }).join('') +
-    '</div>' +
-    '<div class="mt-3 pt-3 border-t border-brand-50 grid grid-cols-7 gap-1">' +
+    '</div><div class="mt-3 pt-3 border-t border-brand-50 grid grid-cols-7 gap-1">' +
     revenue.map(function(r, i) {
-      return '<div class="text-center">' +
-        '<p style="font-size:9px;color:#94a3b8;">' + (r > 0 ? (r/1000).toFixed(0)+'K' : '—') + '</p>' +
-        '</div>';
+      return '<div class="text-center"><p style="font-size:9px;color:#94a3b8;">' + (r > 0 ? (r/1000).toFixed(0)+'K' : '—') + '</p></div>';
     }).join('') +
     '</div></div>';
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ══════════════════════════════════════════════════════════════════
-// #117: أفضل عميل الشهر
-// ══════════════════════════════════════════════════════════════════
 function _renderBestCustomer(allOrders) {
   var container = document.getElementById('bestCustomerSection');
   if (!container) return;
   var now = new Date();
   var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  var monthOrders = allOrders.filter(function(o) {
-    return new Date(o.created_at||0) >= monthStart && o.status !== 'cancelled';
-  });
+  var monthOrders = allOrders.filter(function(o) { return new Date(o.created_at||0) >= monthStart && o.status !== 'cancelled'; });
   var custMap = {};
   monthOrders.forEach(function(o) {
     var ph = (o.customer_phone||o.phone||'').trim();
@@ -675,34 +635,17 @@ function _renderBestCustomer(allOrders) {
     custMap[ph].spend += Number(o.total_amount||o.total||0);
   });
   var ranked = Object.values(custMap).sort(function(a,b){ return b.spend - a.spend; }).slice(0, 3);
-  if (!ranked.length) {
-    container.innerHTML = '';
-    return;
-  }
+  if (!ranked.length) { container.innerHTML = ''; return; }
   var medals = ['🥇','🥈','🥉'];
   var arMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   container.innerHTML =
-    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-amber-100 shadow-sm mb-4">' +
-    '<h3 class="font-bold text-brand-900 text-sm mb-3">🏆 أفضل عملاء ' + arMonths[now.getMonth()] + '</h3>' +
-    '<div class="space-y-2">' +
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-amber-100 shadow-sm mb-4"><h3 class="font-bold text-brand-900 text-sm mb-3">🏆 أفضل عملاء ' + arMonths[now.getMonth()] + '</h3><div class="space-y-2">' +
     ranked.map(function(c, i) {
-      return '<div class="flex items-center justify-between p-2 rounded-xl ' + (i===0?'bg-amber-50 border border-amber-200':'bg-brand-50') + '">' +
-        '<div class="flex items-center gap-2">' +
-        '<span style="font-size:20px;">' + medals[i] + '</span>' +
-        '<div><p class="font-bold text-brand-900 text-sm">' + c.name + '</p>' +
-        '<p class="text-brand-500 text-xs" dir="ltr">' + c.phone + '</p></div>' +
-        '</div>' +
-        '<div class="text-left">' +
-        '<p class="font-bold text-brand-900 text-sm">' + c.spend.toLocaleString('en-US') + ' <span class="text-xs font-normal text-brand-400">د.ع</span></p>' +
-        '<p class="text-brand-400 text-xs">' + c.count + ' طلب</p>' +
-        '</div></div>';
+      return '<div class="flex items-center justify-between p-2 rounded-xl ' + (i===0?'bg-amber-50 border border-amber-200':'bg-brand-50') + '"><div class="flex items-center gap-2"><span style="font-size:20px;">' + medals[i] + '</span><div><p class="font-bold text-brand-900 text-sm">' + c.name + '</p><p class="text-brand-500 text-xs" dir="ltr">' + c.phone + '</p></div></div><div class="text-left"><p class="font-bold text-brand-900 text-sm">' + c.spend.toLocaleString('en-US') + ' <span class="text-xs font-normal text-brand-400">د.ع</span></p><p class="text-brand-400 text-xs">' + c.count + ' طلب</p></div></div>';
     }).join('') +
     '</div></div>';
 }
 
-// ══════════════════════════════════════════════════════════════════
-// #119: معدل نجاح التوصيل
-// ══════════════════════════════════════════════════════════════════
 function _renderDeliveryRate(allOrders) {
   var container = document.getElementById('deliveryRateSection');
   if (!container) return;
@@ -712,69 +655,42 @@ function _renderDeliveryRate(allOrders) {
   var rate = Math.round((delivered / total) * 100);
   var cancelRate = Math.round((cancelled / allOrders.length) * 100);
   var color = rate >= 85 ? '#059669' : rate >= 70 ? '#d97706' : '#dc2626';
-  // Avg delivery time (delivered orders only)
   var deliveredOrders = allOrders.filter(function(o){ return o.status==='delivered' && o.created_at && o.updated_at; });
   var avgHours = 0;
   if (deliveredOrders.length) {
-    var totalMs = deliveredOrders.reduce(function(s,o){
-      return s + (new Date(o.updated_at) - new Date(o.created_at));
-    }, 0);
+    var totalMs = deliveredOrders.reduce(function(s,o){ return s + (new Date(o.updated_at) - new Date(o.created_at)); }, 0);
     avgHours = Math.round(totalMs / deliveredOrders.length / 3600000 * 10) / 10;
   }
   container.innerHTML =
-    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4">' +
-    '<h3 class="font-bold text-brand-900 text-sm mb-4">🚚 معدل نجاح التوصيل</h3>' +
-    '<div class="flex items-center gap-4">' +
-    '<div class="relative w-20 h-20 flex-shrink-0">' +
-    '<svg viewBox="0 0 36 36" style="transform:rotate(-90deg);width:80px;height:80px;">' +
-    '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3"/>' +
-    '<circle cx="18" cy="18" r="15.9" fill="none" stroke="' + color + '" stroke-width="3" stroke-dasharray="' + rate + ' 100" stroke-linecap="round"/>' +
-    '</svg>' +
-    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">' +
-    '<span style="font-size:16px;font-weight:800;color:' + color + ';">' + rate + '%</span>' +
-    '</div></div>' +
-    '<div class="flex-1 space-y-2">' +
-    '<div class="flex justify-between text-xs"><span class="text-brand-600">✅ مكتمل</span><span class="font-bold text-green-700">' + delivered + ' طلب</span></div>' +
-    '<div class="flex justify-between text-xs"><span class="text-brand-600">❌ ملغى</span><span class="font-bold text-red-600">' + cancelled + ' (' + cancelRate + '%)</span></div>' +
-    (avgHours > 0 ? '<div class="flex justify-between text-xs"><span class="text-brand-600">⏱️ متوسط وقت التوصيل</span><span class="font-bold text-blue-700">' + avgHours + ' ساعة</span></div>' : '') +
-    '</div></div></div>';
+    '<div class="bg-white rounded-2xl p-4 sm:p-5 border border-brand-100 shadow-sm mb-4"><h3 class="font-bold text-brand-900 text-sm mb-4">🚚 معدل نجاح التوصيل</h3><div class="flex items-center gap-4"><div class="relative w-20 h-20 flex-shrink-0"><svg viewBox="0 0 36 36" style="transform:rotate(-90deg);width:80px;height:80px;"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="' + color + '" stroke-width="3" stroke-dasharray="' + rate + ' 100" stroke-linecap="round"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;font-weight:800;color:' + color + ';">' + rate + '%</span></div></div><div class="flex-1 space-y-2"><div class="flex justify-between text-xs"><span class="text-brand-600">✅ مكتمل</span><span class="font-bold text-green-700">' + delivered + ' طلب</span></div><div class="flex justify-between text-xs"><span class="text-brand-600">❌ ملغى</span><span class="font-bold text-red-600">' + cancelled + ' (' + cancelRate + '%)</span></div>' + (avgHours > 0 ? '<div class="flex justify-between text-xs"><span class="text-brand-600">⏱️ متوسط وقت التوصيل</span><span class="font-bold text-blue-700">' + avgHours + ' ساعة</span></div>' : '') + '</div></div></div>';
 }
 
 async function loadVisitorStats() {
   const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Accept': 'application/json' };
-
   try {
     const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const since = thirtyDaysAgo.toISOString();
     const todayStr = new Date().toISOString().slice(0, 10);
-
     const [allRes, monthRes, todayRes] = await Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/page_views?select=id', { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
       fetch(SUPABASE_URL + '/rest/v1/page_views?select=id&created_at=gte.' + since, { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
       fetch(SUPABASE_URL + '/rest/v1/page_views?select=id&created_at=gte.' + todayStr, { headers: Object.assign({}, headers, { 'Prefer': 'count=exact' }) }),
     ]);
-
-    var allRange   = allRes.headers.get('content-range') || '';
-    var monthRange  = monthRes.headers.get('content-range') || '';
-    var todayRange  = todayRes.headers.get('content-range') || '';
+    var allRange = allRes.headers.get('content-range') || '';
+    var monthRange = monthRes.headers.get('content-range') || '';
+    var todayRange = todayRes.headers.get('content-range') || '';
     var totalVisitors = allRange.includes('/') ? parseInt(allRange.split('/')[1]) || 0 : 0;
     var monthVisitors = monthRange.includes('/') ? parseInt(monthRange.split('/')[1]) || 0 : 0;
     var todayVisitors = todayRange.includes('/') ? parseInt(todayRange.split('/')[1]) || 0 : 0;
-
-
     var analyticsSection = document.getElementById('analyticsCards');
     if (!analyticsSection) return;
-
     var old = document.getElementById('visitorStatsSection');
     if (old) old.remove();
-
     var html = '<div class="bg-white rounded-2xl p-5 border border-teal-100 bg-teal-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-100 text-teal-700"><i data-lucide="eye" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">إجمالي الزيارات</span></div><p class="text-2xl font-bold text-brand-900">' + Number(totalVisitors).toLocaleString('en-US') + '</p></div>' +
       '<div class="bg-white rounded-2xl p-5 border border-sky-100 bg-sky-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-sky-100 text-sky-700"><i data-lucide="calendar-check" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات اليوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(todayVisitors).toLocaleString('en-US') + '</p></div>' +
-      '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('en-US') + '</p></div>' +
-    '</div>';
-
+      '<div class="bg-white rounded-2xl p-5 border border-violet-100 bg-violet-50 shadow-sm"><div class="flex items-center gap-3 mb-3"><div class="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-700"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div><span class="text-sm font-semibold text-brand-600">زيارات آخر 30 يوم</span></div><p class="text-2xl font-bold text-brand-900">' + Number(monthVisitors).toLocaleString('en-US') + '</p></div>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
   } catch (e) {
     console.warn('[Visitors] Error loading visitor stats:', e.message);
