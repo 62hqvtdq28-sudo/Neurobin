@@ -4138,8 +4138,8 @@ async function saveCatImg(key, url) {
 
   var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
   var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var PROXY = SURL + '/functions/v1/gemini-proxy';
-  var H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY, 'Content-Type': 'application/json' };
+  var PROXY = '/api/groq-proxy';
+  var H = { 'Content-Type': 'application/json' };
 
   var SYS = 'انت مساعد تدريبي لصيدلية Neurobin. '
     + 'عندما يعلمك المدير كيف يرد البوت على موقف معين، '
