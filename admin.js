@@ -436,11 +436,26 @@ function showToast(message, type) {
 var _moProducts = [];   // cache of products from Supabase
 var _moCartItems = [];  // selected items: [{id, name, price, qty}]
 
+var _adminScrollY = 0;
+function _adminLockScroll() {
+  _adminScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  document.body.style.top      = '-' + _adminScrollY + 'px';
+  document.body.style.position = 'fixed';
+  document.body.style.width    = '100%';
+  document.body.style.overflow = 'hidden';
+}
+function _adminUnlockScroll() {
+  document.body.style.position = '';
+  document.body.style.top      = '';
+  document.body.style.width    = '';
+  document.body.style.overflow = '';
+  window.scrollTo(0, _adminScrollY);
+}
 function openManualOrderModal() {
   var modal = document.getElementById('manualOrderModal');
   if (!modal) return;
-  modal.style.display = 'block';
-  document.body.style.overflow = 'hidden';
+  modal.style.display = 'flex';
+  _adminLockScroll();
   ['moName','moPhone','moAddress','moNotes'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
@@ -469,7 +484,7 @@ function openManualOrderModal() {
 function closeManualOrderModal() {
   var modal = document.getElementById('manualOrderModal');
   if (modal) modal.style.display = 'none';
-  document.body.style.overflow = '';
+  _adminUnlockScroll();
 }
 
 function toggleMoProductPicker() {
@@ -706,7 +721,6 @@ async function saveManualOrder() {
       notes:            notes    || null,
       total_amount:     subtotal + delivery,
       status:           status,
-      source:           'manual',
       created_at:       new Date().toISOString(),
       updated_at:       new Date().toISOString()
     }).select().single();
