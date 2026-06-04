@@ -3632,18 +3632,27 @@ if(window.visualViewport){
 /* Expose globally so app.js can call after opening checkout */
 window._setDvh = _setDvh;
 
-/* ─── 2. Virtual keyboard — push fixed elements ──
-   When keyboard opens, `visualViewport.height` shrinks.
-   Adjust fixed bottom elements so they stay visible. */
+/* ─── 2. Virtual keyboard — push fixed elements + resize modals ──
+   When keyboard opens, visualViewport.height shrinks.
+   Adjust fixed elements AND modal containers to stay visible. */
 var _kbdOffset = 0;
-/* Cache keyboard-adjusted elements once to avoid querySelectorAll on every viewport resize */
 var _kbdEls = null;
+/* Modal containers that need height adjustment when keyboard opens */
+var _MODAL_CONTAINERS = [
+  { wrapId: 'checkoutModal',  innerSel: '.checkout-container'   },
+  { wrapId: 'quickViewModal', innerSel: '.quick-view-container' },
+  { wrapId: 'searchModal',    innerSel: '.search-container'     },
+  { wrapId: 'notifyModal',    innerSel: '.modal-content'        }
+];
 function _handleKeyboard(){
   if(!window.visualViewport) return;
-  var vvH = window.visualViewport.height;
-  var wH  = window.innerHeight;
-  _kbdOffset = Math.max(0, wH - vvH);
-  /* Cache elements (keyboard events fire often — avoid repeated DOM queries) */
+  var vvH    = window.visualViewport.height;
+  var vvTop  = window.visualViewport.offsetTop || 0;
+  var wH     = window.innerHeight;
+  _kbdOffset = Math.max(0, wH - vvH - vvTop);
+  var isKbd  = _kbdOffset > 60;
+
+  /* 1. Push fixed bottom elements out of keyboard's way */
   if(!_kbdEls){
     _kbdEls = [
       document.querySelector('.whatsapp-float'),
@@ -3651,12 +3660,33 @@ function _handleKeyboard(){
       document.getElementById('toast')
     ].filter(Boolean);
   }
-  var offset = _kbdOffset > 50 ? 'translateY(-' + (_kbdOffset - 20) + 'px)' : '';
-  /* Use rAF to batch DOM writes and avoid forced layout */
+  var bOffset = isKbd ? 'translateY(-' + (_kbdOffset - 20) + 'px)' : '';
+
+  /* 2. Resize active modal containers to fit visual viewport */
+  var maxH = isKbd ? (vvH - 32) + 'px' : '';
+
   requestAnimationFrame(function(){
+    /* Fixed element adjustment */
     for(var i=0;i<_kbdEls.length;i++){
-      _kbdEls[i].style.transform = offset;
+      _kbdEls[i].style.transform = bOffset;
     }
+    /* Modal container height adjustment */
+    _MODAL_CONTAINERS.forEach(function(cfg){
+      var wrap = document.getElementById(cfg.wrapId);
+      if(!wrap) return;
+      var isActive = wrap.classList.contains('active') || wrap.style.display === 'flex';
+      if(!isActive) return;
+      var container = wrap.querySelector(cfg.innerSel);
+      if(container){
+        if(isKbd){
+          container.style.maxHeight = maxH;
+          container.style.overflowY = 'auto';
+        } else {
+          container.style.maxHeight = '';
+          container.style.overflowY = '';
+        }
+      }
+    });
   });
 }
 if(window.visualViewport){
@@ -3664,42 +3694,60 @@ if(window.visualViewport){
   window.visualViewport.addEventListener('scroll', _handleKeyboard, {passive:true});
 }
 
-/* ─── 2b. Checkout modal: scroll focused input into visible area ──────────────
-   iOS Safari sometimes doesn't auto-scroll focused inputs inside a nested
-   overflow:auto container when the keyboard opens. We handle it manually.    */
+/* ─── 2b. All modals: scroll focused input into visible area ────────────────
+   iOS Safari doesn't auto-scroll focused inputs inside overflow:auto containers.
+   We detect focus inside any active modal and scroll the input to center.    */
 document.addEventListener('focusin', function(e) {
-  var modal = document.getElementById('checkoutModal');
-  if (!modal || !modal.classList.contains('active')) return;
-  if (!modal.contains(e.target)) return;
-  /* Wait for visualViewport to finish resizing (keyboard slide-up ≈ 280ms) */
+  var el = e.target;
+  if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && el.tagName !== 'SELECT')) return;
+  /* Check if inside an active modal */
+  var modalIds = ['checkoutModal', 'quickViewModal', 'searchModal', 'notifyModal'];
+  var inActiveModal = false;
+  for (var mi = 0; mi < modalIds.length; mi++) {
+    var modal = document.getElementById(modalIds[mi]);
+    if (!modal) continue;
+    var isActive = modal.classList.contains('active') || modal.style.display === 'flex';
+    if (isActive && modal.contains(el)) { inActiveModal = true; break; }
+  }
+  if (!inActiveModal) return;
+  /* Wait for keyboard animation (iOS: ~280-350ms) then center the input */
   setTimeout(function() {
-    if (typeof e.target.scrollIntoView === 'function') {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, 320);
+  }, 380);
 }, { passive: true });
 
-/* ─── 3. Body scroll lock — true iOS fix ─────────
-   iOS doesn't respect `overflow:hidden` on body.
-   Store scroll position, fix body with `top` offset. */
+/* ─── 3. Body scroll lock — keyboard-safe iOS fix ──────────────────
+   Uses body.modal-open class + position:fixed + top offset.
+   CSS does overflow:hidden; JS only sets position and top.
+   This works correctly with Virtual Viewport API keyboard detection. */
 var _scrollPos = 0;
-var _originalOverflow = '';
 function _lockScroll(){
-  _scrollPos = window.pageYOffset || document.documentElement.scrollTop;
-  _originalOverflow = document.body.style.overflow;
+  if(document.body.classList.contains('modal-open')) return; /* already locked */
+  _scrollPos = window.pageYOffset || document.documentElement.scrollTop || 0;
+  document.body.classList.add('modal-open');
   document.body.style.top = '-' + _scrollPos + 'px';
-  document.body.style.position = 'fixed';
-  document.body.style.width = '100%';
-  document.body.style.overflow = 'hidden';
 }
 function _unlockScroll(){
-  document.body.style.position = '';
+  if(!document.body.classList.contains('modal-open')) return;
+  document.body.classList.remove('modal-open');
+  var savedTop = document.body.style.top;
   document.body.style.top = '';
-  document.body.style.width = '';
-  document.body.style.overflow = _originalOverflow || '';
-  window.scrollTo(0, _scrollPos);
+  /* Restore page scroll */
+  var sy = Math.abs(parseInt(savedTop || '0', 10)) || _scrollPos;
+  window.scrollTo(0, sy);
+  _scrollPos = 0;
+  /* Reset any keyboard-adjusted modal container heights */
+  requestAnimationFrame(function(){
+    var sels = '.checkout-container,.quick-view-container,.search-container,.modal-content';
+    document.querySelectorAll(sels).forEach(function(c){
+      c.style.maxHeight = '';
+      c.style.overflowY = '';
+    });
+  });
 }
-/* Expose globally so modals can use it */
+/* Expose globally so app.js and admin.js can use them */
 window._lockScroll   = _lockScroll;
 window._unlockScroll = _unlockScroll;
 
