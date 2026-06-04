@@ -179,7 +179,7 @@ async function loadProductsFromSupabase() {
   try {
     const { data, error } = await supabaseClient
       .from('products')
-      .select('*')
+      .select('id,name,name_ar,category,price,image_url,in_stock,stock_level,stock,description,original_price,qty_2_price,qty_3_price')
       .order('created_at', { ascending: true });
 
     if (error) throw error;
@@ -218,7 +218,7 @@ var bundles = [];
 async function loadBundlesFromSupabase() {
   if (!supabaseClient) return;
   try {
-    const { data, error } = await supabaseClient.from('bundles').select('*').eq('active', true).order('created_at', { ascending: true });
+    const { data, error } = await supabaseClient.from('bundles').select('id,title_ar,product_ids,bundle_price,original_price').eq('active', true).order('created_at', { ascending: true });
     if (error) throw error;
     if (data) {
       bundles = data.map(b => ({
@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(() => {
     const loadingScreen = document.getElementById('loadingScreen');
     if (loadingScreen) loadingScreen.classList.add('hidden');
-  }, 800);
+  }, 150);
 
   lucide.createIcons();
   renderProducts(products);
@@ -646,71 +646,132 @@ async function submitNotifyRequest(){
 }
 // ================================
 
+// ── Pagination state ─────────────────────────────────────────────────────────
+var _PAGE_SIZE = 24;
+var _renderedCount = 0;
+var _currentProductsList = [];
+var _loadMoreObserver = null;
+
+function renderProductCard(product) {
+  const safeId = SecurityValidator.escapeHtml(product.id);
+  const safeCategory = SecurityValidator.escapeHtml(product.category);
+  const safeName   = SecurityValidator.escapeHtml(product.nameAr);
+  const safeNameEn = SecurityValidator.escapeHtml(product.name);
+  const safeDesc   = SecurityValidator.escapeHtml(product.description || '');
+  const isFavorite = favorites.includes(product.id);
+  let stockBadge = '';
+  var _sn = (typeof product.stock === 'number') ? product.stock : null;
+  if (!product.inStock || _sn === 0) {
+    stockBadge = '<span class="stock-badge out-of-stock z-10">\u0646\u0641\u0630\u062a \u0627\u0644\u0643\u0645\u064a\u0629</span>';
+  } else if (_sn === 1) {
+    stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u0629</span>';
+  } else if (_sn === 2) {
+    stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u062a\u064a\u0646</span>';
+  } else {
+    stockBadge = '<span class="stock-badge in-stock z-10">\u0645\u062a\u0648\u0641\u0631 \u0644\u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0641\u0648\u0631\u064a</span>';
+  }
+  const _discPct = (product.originalPrice && product.originalPrice > product.price)
+    ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
+  const discountBadge = _discPct >= 5
+    ? `<span class="discount-badge">-${_discPct}%</span>` : '';
+  var stLabels = {'combination':'💧 مختلطة','oily':'✨ دهنية','dry':'🌿 جافة','normal':'⭐ عادية','sensitive':'🌹 حساسة','acne_prone':'🟠 حبوب','all_types':'🌸 لكل الأنواع'};
+  var st = typeof SkinType !== 'undefined' ? SkinType.get(product.id) : [];
+  var skinBadges = st.length ? '<div class="flex flex-wrap gap-1 mb-1">'+st.map(function(t){return'<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-family:Cairo,sans-serif;">'+((stLabels[t])||t)+'</span>';}).join('')+'</div>' : '';
+  return `
+    <div class="product-card-main scroll-animate-scale" role="listitem" data-category="${safeCategory}" data-id="${safeId}">
+      ${stockBadge}${discountBadge}
+      <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? '\u0625\u0632\u0627\u0644\u0629 \u0645\u0646 \u0627\u0644\u0645\u0641\u0636\u0644\u0629' : '\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0645\u0641\u0636\u0644\u0629'}">
+        <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : ''}"></i>
+      </button>
+      <div class="product-image-wrapper cursor-pointer" onclick="event.preventDefault();openQuickView('${safeId}')">
+        ${product.image
+          ? `<img src="${SecurityValidator.escapeHtml(product.image)}" alt="${safeName}" class="w-full h-full product-img-animated" style="object-fit:cover;" loading="lazy" decoding="async">`
+          : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50"><svg class="w-16 h-16 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
+        }
+        <div class="product-overlay">
+          <button class="bg-white text-brand-700 px-6 py-2.5 rounded-full font-semibold hover:bg-brand-50 transition-colors">\u0639\u0631\u0636 \u0633\u0631\u064a\u0639</button>
+        </div>
+      </div>
+      <div class="p-2.5 product-card-body">
+        <span class="inline-block bg-brand-50 text-brand-600 text-xs font-medium px-2 py-0.5 rounded-full mb-1">
+          ${SecurityValidator.escapeHtml(getCategoryLabel(product.category))}
+        </span>
+        <h3 class="font-heading font-bold text-sm text-brand-900 leading-snug">${safeName}</h3>
+        ${safeNameEn && safeNameEn !== safeName ? `<p class="font-heading font-bold text-sm text-brand-900 leading-snug mb-1">${safeNameEn}</p>` : '<div class="mb-1"></div>'}
+        ${safeDesc ? `<p class="text-xs text-gray-900 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
+        ${skinBadges}
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col leading-none">
+            ${product.originalPrice && product.originalPrice > product.price ? `<span class="text-xs text-gray-400 line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
+            <span class="${product.originalPrice && product.originalPrice > product.price ? 'text-base' : 'text-sm'} font-bold text-red-600 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
+            ${product.qty2Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-1">٢ قطعة: ${SecurityValidator.escapeHtml(formatPrice(product.qty2Price))}</span>` : ''}${product.qty3Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-0.5">٣ قطع: ${SecurityValidator.escapeHtml(formatPrice(product.qty3Price))}</span>` : ''}
+          </div>
+          ${product.inStock
+            ? `<button onclick="addToCart('${safeId}')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all"><i data-lucide="plus" class="w-3 h-3"></i><span>أضف للسلة</span></button>`
+            : `<button onclick="openNotifyModal('${safeId}','${safeName.replace(/'/g,"&#39;")}')" class="btn-primary bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all"><i data-lucide="bell" class="w-3 h-3"></i><span>أخبرني</span></button>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function _appendProducts() {
+  if (_renderedCount >= _currentProductsList.length) {
+    if (_loadMoreObserver) { _loadMoreObserver.disconnect(); _loadMoreObserver = null; }
+    return;
+  }
+  const grid = document.getElementById('productsGrid');
+  const sentinel = document.getElementById('prod-load-sentinel');
+  if (!grid) return;
+  const batch = _currentProductsList.slice(_renderedCount, _renderedCount + _PAGE_SIZE);
+  _renderedCount += batch.length;
+  const frag = document.createDocumentFragment();
+  const temp = document.createElement('div');
+  temp.innerHTML = batch.map(renderProductCard).join('');
+  while (temp.firstChild) frag.appendChild(temp.firstChild);
+  if (sentinel) grid.insertBefore(frag, sentinel);
+  else grid.appendChild(frag);
+  lucide.createIcons();
+  if (_renderedCount >= _currentProductsList.length) {
+    if (sentinel) sentinel.remove();
+    if (_loadMoreObserver) { _loadMoreObserver.disconnect(); _loadMoreObserver = null; }
+  }
+}
+
 function renderProducts(productsToRender) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
-  grid.innerHTML = productsToRender.map(product => {
-    const safeId = SecurityValidator.escapeHtml(product.id);
-    const safeCategory = SecurityValidator.escapeHtml(product.category);
-    const safeName   = SecurityValidator.escapeHtml(product.nameAr);
-    const safeNameEn = SecurityValidator.escapeHtml(product.name);
-    const safeDesc   = SecurityValidator.escapeHtml(product.description || '');
-    const isFavorite = favorites.includes(product.id);
-    let stockBadge = '';
-    var _sn = (typeof product.stock === 'number') ? product.stock : null;
-    if (!product.inStock || _sn === 0) {
-      stockBadge = '<span class="stock-badge out-of-stock z-10">\u0646\u0641\u0630\u062a \u0627\u0644\u0643\u0645\u064a\u0629</span>';
-    } else if (_sn === 1) {
-      stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u0629</span>';
-    } else if (_sn === 2) {
-      stockBadge = '<span class="stock-badge low-stock z-10">\u0622\u062e\u0631 \u0642\u0637\u0639\u062a\u064a\u0646</span>';
-    } else {
-      stockBadge = '<span class="stock-badge in-stock z-10">\u0645\u062a\u0648\u0641\u0631 \u0644\u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0641\u0648\u0631\u064a</span>';
-    }
-    const _discPct = (product.originalPrice && product.originalPrice > product.price)
-      ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
-    const discountBadge = _discPct >= 5
-      ? `<span class="discount-badge">-${_discPct}%</span>` : '';
-    return `
-      <div class="product-card-main scroll-animate-scale" role="listitem" data-category="${safeCategory}" data-id="${safeId}">
-        ${stockBadge}${discountBadge}
-        <button onclick="toggleFavorite('${safeId}')" class="favorite-btn ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? '\u0625\u0632\u0627\u0644\u0629 \u0645\u0646 \u0627\u0644\u0645\u0641\u0636\u0644\u0629' : '\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0645\u0641\u0636\u0644\u0629'}">
-          <i data-lucide="heart" class="w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : ''}"></i>
-        </button>
-        <div class="product-image-wrapper cursor-pointer" onclick="event.preventDefault();openQuickView('${safeId}')">
-          ${product.image
-            ? `<img src="${SecurityValidator.escapeHtml(product.image)}" alt="${safeName}" class="w-full h-full product-img-animated" style="object-fit:cover;" loading="lazy" decoding="async">`
-            : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50"><svg class="w-16 h-16 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1M5 17a2 2 0 01-2-2V5"/></svg></div>`
-          }
-          <div class="product-overlay">
-            <button class="bg-white text-brand-700 px-6 py-2.5 rounded-full font-semibold hover:bg-brand-50 transition-colors">\u0639\u0631\u0636 \u0633\u0631\u064a\u0639</button>
-          </div>
-        </div>
-        <div class="p-2.5 product-card-body">
-          <span class="inline-block bg-brand-50 text-brand-600 text-xs font-medium px-2 py-0.5 rounded-full mb-1">
-            ${SecurityValidator.escapeHtml(getCategoryLabel(product.category))}
-          </span>
-          <h3 class="font-heading font-bold text-sm text-brand-900 leading-snug">${safeName}</h3>
-          ${safeNameEn && safeNameEn !== safeName ? `<p class="font-heading font-bold text-sm text-brand-900 leading-snug mb-1">${safeNameEn}</p>` : '<div class="mb-1"></div>'}
-          ${safeDesc ? `<p class="text-xs text-gray-900 leading-snug mb-1 line-clamp-2 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${safeDesc}</p>` : ''}
-          ${(function(){var st=typeof SkinType!=='undefined'?SkinType.get(product.id):[];var stLabels={'combination':'💧 مختلطة','oily':'✨ دهنية','dry':'🌿 جافة','normal':'⭐ عادية','sensitive':'🌹 حساسة','acne_prone':'🟠 حبوب','all_types':'🌸 لكل الأنواع'};return st.length?'<div class="flex flex-wrap gap-1 mb-1">'+st.map(function(t){return'<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-family:Cairo,sans-serif;">'+((stLabels[t])||t)+'</span>';}).join('')+'</div>':'';}())}
-          <div class="flex items-center justify-between">
-            <div class="flex flex-col leading-none">
-              ${product.originalPrice && product.originalPrice > product.price ? `<span class="text-xs text-gray-400 line-through leading-none mb-0.5">${SecurityValidator.escapeHtml(formatPrice(product.originalPrice))}</span>` : ''}
-              <span class="${product.originalPrice && product.originalPrice > product.price ? 'text-base' : 'text-sm'} font-bold text-red-600 leading-none">${SecurityValidator.escapeHtml(formatPrice(product.price))}</span>
-              ${product.qty2Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-1">٢ قطعة: ${SecurityValidator.escapeHtml(formatPrice(product.qty2Price))}</span>` : ''}${product.qty3Price ? `<span class="${product.originalPrice ? 'text-base' : 'text-sm'} font-bold text-orange-600 leading-none mt-0.5">٣ قطع: ${SecurityValidator.escapeHtml(formatPrice(product.qty3Price))}</span>` : ''}
-            </div>
-            ${product.inStock
-              ? `<button onclick="addToCart('${safeId}')" class="btn-primary bg-brand-700 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all"><i data-lucide="plus" class="w-3 h-3"></i><span>أضف للسلة</span></button>`
-              : `<button onclick="openNotifyModal('${safeId}','${safeName.replace(/'/g,"&#39;")}')" class="btn-primary bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-full font-medium text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition-all"><i data-lucide="bell" class="w-3 h-3"></i><span>أخبرني</span></button>`
-            }
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+
+  // Reset pagination
+  _currentProductsList = productsToRender;
+  _renderedCount = 0;
+  if (_loadMoreObserver) { _loadMoreObserver.disconnect(); _loadMoreObserver = null; }
+
+  if (!productsToRender || !productsToRender.length) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-brand-400">لا توجد منتجات</div>';
+    return;
+  }
+
+  // Render first page only
+  const firstBatch = productsToRender.slice(0, _PAGE_SIZE);
+  _renderedCount = firstBatch.length;
+  grid.innerHTML = firstBatch.map(renderProductCard).join('');
+
   lucide.createIcons();
   initScrollAnimations();
+
+  // Set up infinite scroll sentinel for remaining products
+  if (productsToRender.length > _PAGE_SIZE) {
+    const sentinel = document.createElement('div');
+    sentinel.id = 'prod-load-sentinel';
+    sentinel.style.cssText = 'height:4px;grid-column:1/-1;pointer-events:none;';
+    grid.appendChild(sentinel);
+    _loadMoreObserver = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) _appendProducts();
+    }, { rootMargin: '400px' });
+    _loadMoreObserver.observe(sentinel);
+  }
 }
 
 function getCategoryLabel(category) {
