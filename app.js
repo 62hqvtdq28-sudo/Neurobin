@@ -917,10 +917,14 @@ function openFavorites() {
 
 function openCheckout() {
   closeCart();
-  document.getElementById('checkoutModal').classList.add('active');
+  var _coModal = document.getElementById('checkoutModal');
+  if (!_coModal) return;
+  /* Portal: move to direct body child — escapes all stacking contexts / overflow parents */
+  if (_coModal.parentElement !== document.body) document.body.appendChild(_coModal);
+  _coModal.classList.add('active');
   _lockScroll();
-  /* Ensure --dvh CSS variable reflects current visual viewport before layout */
-  if (typeof window._setDvh === 'function') window._setDvh();
+  /* Sync modal overlay to visual viewport immediately */
+  if (typeof window._syncModalsToViewport === 'function') window._syncModalsToViewport();
   const checkoutItems = document.getElementById('checkoutItems');
   let total = 0;
   checkoutItems.innerHTML = cart.map(item => {
@@ -943,13 +947,10 @@ function openCheckout() {
 
 function closeCheckout() {
   var modal = document.getElementById('checkoutModal');
+  if (!modal) return;
   modal.classList.remove('active');
-  /* Reset any keyboard-driven overrides */
-  modal.style.paddingTop = '';
-  modal.style.alignItems = '';
+  /* _unlockScroll() will clear viewport-synced inline styles */
   _unlockScroll();
-  /* Re-sync --dvh now that keyboard is gone */
-  if (typeof window._setDvh === 'function') window._setDvh();
 }
 
 function closeCheckoutOnBackdrop(e) {
@@ -1123,13 +1124,19 @@ function openQuickView(productId) {
         </button>
       </div>
     </div>`;
+  /* Portal: move to direct body child — escapes all stacking contexts */
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
   modal.classList.add('active');
   _lockScroll();
+  /* Sync modal overlay to visual viewport immediately */
+  if (typeof window._syncModalsToViewport === 'function') window._syncModalsToViewport();
   lucide.createIcons();
 }
 
 function closeQuickView() {
-  document.getElementById('quickViewModal').classList.remove('active');
+  var _qvModal = document.getElementById('quickViewModal');
+  if (!_qvModal) return;
+  _qvModal.classList.remove('active');
   _unlockScroll();
 }
 
