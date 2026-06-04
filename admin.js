@@ -438,19 +438,71 @@ var _moCartItems = [];  // selected items: [{id, name, price, qty}]
 
 var _adminScrollY = 0;
 function _adminLockScroll() {
+  if (document.body.classList.contains('modal-open')) return;
   _adminScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  document.body.style.top      = '-' + _adminScrollY + 'px';
-  document.body.style.position = 'fixed';
-  document.body.style.width    = '100%';
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('modal-open');
+  document.body.style.top = '-' + _adminScrollY + 'px';
 }
 function _adminUnlockScroll() {
-  document.body.style.position = '';
-  document.body.style.top      = '';
-  document.body.style.width    = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, _adminScrollY);
+  if (!document.body.classList.contains('modal-open')) return;
+  document.body.classList.remove('modal-open');
+  var savedTop = document.body.style.top;
+  document.body.style.top = '';
+  var sy = Math.abs(parseInt(savedTop || '0', 10)) || _adminScrollY;
+  window.scrollTo(0, sy);
+  _adminScrollY = 0;
 }
+
+/* ─── Admin: keyboard-safe modal — Visual Viewport resize handler ── */
+(function _initAdminKeyboardFix() {
+  if (!window.visualViewport) return;
+
+  var _ADMIN_MODAL_CFGS = [
+    { id: 'manualOrderModal', innerSel: '[style*="overflow-y:auto"], [style*="overflow-y: auto"]' }
+  ];
+
+  function _adminHandleKbd() {
+    var vvH    = window.visualViewport.height;
+    var vvTop  = window.visualViewport.offsetTop || 0;
+    var wH     = window.innerHeight;
+    var kbdH   = Math.max(0, wH - vvH - vvTop);
+    var isKbd  = kbdH > 60;
+
+    _ADMIN_MODAL_CFGS.forEach(function(cfg) {
+      var wrap = document.getElementById(cfg.id);
+      if (!wrap || wrap.style.display === 'none') return;
+      /* Resize the scrollable inner container */
+      var inner = wrap.querySelector(cfg.innerSel) ||
+                  wrap.querySelector('.overflow-y-auto') ||
+                  wrap.querySelector('[class*="overflow"]');
+      if (!inner) {
+        /* fallback: direct child flex container */
+        inner = wrap.children[0];
+      }
+      if (inner) {
+        requestAnimationFrame(function() {
+          inner.style.maxHeight = isKbd ? (vvH - 80) + 'px' : '';
+        });
+      }
+    });
+  }
+
+  window.visualViewport.addEventListener('resize', _adminHandleKbd, { passive: true });
+  window.visualViewport.addEventListener('scroll', _adminHandleKbd, { passive: true });
+
+  /* scrollIntoView for all inputs inside admin modals */
+  document.addEventListener('focusin', function(e) {
+    var el = e.target;
+    if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && el.tagName !== 'SELECT')) return;
+    var wrap = document.getElementById('manualOrderModal');
+    if (!wrap || wrap.style.display === 'none' || !wrap.contains(el)) return;
+    setTimeout(function() {
+      if (typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 380);
+  }, { passive: true });
+}());
 function openManualOrderModal() {
   var modal = document.getElementById('manualOrderModal');
   if (!modal) return;
