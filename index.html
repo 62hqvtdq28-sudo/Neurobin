@@ -3632,27 +3632,14 @@ if(window.visualViewport){
 /* Expose globally so app.js can call after opening checkout */
 window._setDvh = _setDvh;
 
-/* ─── 2. Virtual keyboard — push fixed elements + resize modals ──
-   When keyboard opens, visualViewport.height shrinks.
-   Adjust fixed elements AND modal containers to stay visible. */
+/* ─── 2. Virtual keyboard — push fixed elements ──── */
 var _kbdOffset = 0;
 var _kbdEls = null;
-/* Modal containers that need height adjustment when keyboard opens */
-var _MODAL_CONTAINERS = [
-  { wrapId: 'checkoutModal',  innerSel: '.checkout-container'   },
-  { wrapId: 'quickViewModal', innerSel: '.quick-view-container' },
-  { wrapId: 'searchModal',    innerSel: '.search-container'     },
-  { wrapId: 'notifyModal',    innerSel: '.modal-content'        }
-];
 function _handleKeyboard(){
   if(!window.visualViewport) return;
-  var vvH    = window.visualViewport.height;
-  var vvTop  = window.visualViewport.offsetTop || 0;
-  var wH     = window.innerHeight;
-  _kbdOffset = Math.max(0, wH - vvH - vvTop);
-  var isKbd  = _kbdOffset > 60;
-
-  /* 1. Push fixed bottom elements out of keyboard's way */
+  var vvH   = window.visualViewport.height;
+  var wH    = window.innerHeight;
+  _kbdOffset = Math.max(0, wH - vvH);
   if(!_kbdEls){
     _kbdEls = [
       document.querySelector('.whatsapp-float'),
@@ -3660,39 +3647,57 @@ function _handleKeyboard(){
       document.getElementById('toast')
     ].filter(Boolean);
   }
-  var bOffset = isKbd ? 'translateY(-' + (_kbdOffset - 20) + 'px)' : '';
-
-  /* 2. Resize active modal containers to fit visual viewport */
-  var maxH = isKbd ? (vvH - 32) + 'px' : '';
-
+  var offset = _kbdOffset > 50 ? 'translateY(-' + (_kbdOffset - 20) + 'px)' : '';
   requestAnimationFrame(function(){
-    /* Fixed element adjustment */
     for(var i=0;i<_kbdEls.length;i++){
-      _kbdEls[i].style.transform = bOffset;
+      _kbdEls[i].style.transform = offset;
     }
-    /* Modal container height adjustment */
-    _MODAL_CONTAINERS.forEach(function(cfg){
-      var wrap = document.getElementById(cfg.wrapId);
-      if(!wrap) return;
-      var isActive = wrap.classList.contains('active') || wrap.style.display === 'flex';
-      if(!isActive) return;
-      var container = wrap.querySelector(cfg.innerSel);
-      if(container){
-        if(isKbd){
-          container.style.maxHeight = maxH;
-          container.style.overflowY = 'auto';
-        } else {
-          container.style.maxHeight = '';
-          container.style.overflowY = '';
-        }
-      }
-    });
+    /* Also sync modal overlays to visual viewport */
+    _syncModalsToViewport();
   });
 }
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', _handleKeyboard, {passive:true});
   window.visualViewport.addEventListener('scroll', _handleKeyboard, {passive:true});
 }
+
+/* ─── 2b. Visual Viewport Modal Sync (THE definitive iPad fix) ────────────
+   On iOS Safari, position:fixed elements can misbehave when:
+     • html has overflow-x:hidden (makes html a scroll container)
+     • body has position:fixed (scroll lock)
+     • keyboard opens (visual viewport != layout viewport)
+   Solution: explicitly set top/left/width/height on each modal overlay
+   to match window.visualViewport. JS overrides CSS inset:0.            */
+var _VV_MODAL_IDS = ['checkoutModal', 'quickViewModal', 'searchModal'];
+function _syncModalsToViewport(){
+  var vv = window.visualViewport;
+  if(!vv) return;
+  var top  = vv.offsetTop  + 'px';
+  var left = vv.offsetLeft + 'px';
+  var w    = vv.width      + 'px';
+  var h    = vv.height     + 'px';
+  requestAnimationFrame(function(){
+    _VV_MODAL_IDS.forEach(function(id){
+      var m = document.getElementById(id);
+      if(!m) return;
+      var isActive = m.classList.contains('active');
+      if(!isActive){
+        if(m._vvSynced){
+          m.style.top=m.style.left=m.style.width=m.style.height='';
+          m._vvSynced=false;
+        }
+        return;
+      }
+      m.style.top    = top;
+      m.style.left   = left;
+      m.style.width  = w;
+      m.style.height = h;
+      m._vvSynced    = true;
+    });
+  });
+}
+/* Export for app.js to call after opening a modal */
+window._syncModalsToViewport = _syncModalsToViewport;
 
 /* ─── 2b. All modals: scroll focused input into visible area ────────────────
    iOS Safari doesn't auto-scroll focused inputs inside overflow:auto containers.
@@ -3724,26 +3729,26 @@ document.addEventListener('focusin', function(e) {
    This works correctly with Virtual Viewport API keyboard detection. */
 var _scrollPos = 0;
 function _lockScroll(){
-  if(document.body.classList.contains('modal-open')) return; /* already locked */
+  if(document.body.classList.contains('modal-open')) return;
   _scrollPos = window.pageYOffset || document.documentElement.scrollTop || 0;
   document.body.classList.add('modal-open');
   document.body.style.top = '-' + _scrollPos + 'px';
+  /* Sync modals to visual viewport after body is locked */
+  setTimeout(_syncModalsToViewport, 0);
 }
 function _unlockScroll(){
   if(!document.body.classList.contains('modal-open')) return;
   document.body.classList.remove('modal-open');
   var savedTop = document.body.style.top;
   document.body.style.top = '';
-  /* Restore page scroll */
-  var sy = Math.abs(parseInt(savedTop || '0', 10)) || _scrollPos;
+  var sy = Math.abs(parseInt(savedTop||'0',10))||_scrollPos;
   window.scrollTo(0, sy);
   _scrollPos = 0;
-  /* Reset any keyboard-adjusted modal container heights */
+  /* Clear viewport-synced modal inline styles */
   requestAnimationFrame(function(){
-    var sels = '.checkout-container,.quick-view-container,.search-container,.modal-content';
-    document.querySelectorAll(sels).forEach(function(c){
-      c.style.maxHeight = '';
-      c.style.overflowY = '';
+    _VV_MODAL_IDS.forEach(function(id){
+      var m = document.getElementById(id);
+      if(m){ m.style.top=m.style.left=m.style.width=m.style.height=''; m._vvSynced=false; }
     });
   });
 }
