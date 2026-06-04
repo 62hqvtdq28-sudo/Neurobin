@@ -577,9 +577,7 @@ async function saveManualOrder() {
       notes:            notes    || null,
       status:           status,
       total_amount:     totalAmount,
-      delivery_fee:     delivery,
       items:            orderItems,
-      order_items:      orderItems,
       created_at:       new Date().toISOString()
     }).select().single();
 
