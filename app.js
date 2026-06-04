@@ -945,6 +945,8 @@ function openCheckout() {
   closeCart();
   document.getElementById('checkoutModal').classList.add('active');
   _lockScroll();
+  /* Ensure --dvh CSS variable reflects current visual viewport before layout */
+  if (typeof window._setDvh === 'function') window._setDvh();
   const checkoutItems = document.getElementById('checkoutItems');
   let total = 0;
   checkoutItems.innerHTML = cart.map(item => {
@@ -966,8 +968,14 @@ function openCheckout() {
 }
 
 function closeCheckout() {
-  document.getElementById('checkoutModal').classList.remove('active');
+  var modal = document.getElementById('checkoutModal');
+  modal.classList.remove('active');
+  /* Reset any keyboard-driven overrides */
+  modal.style.paddingTop = '';
+  modal.style.alignItems = '';
   _unlockScroll();
+  /* Re-sync --dvh now that keyboard is gone */
+  if (typeof window._setDvh === 'function') window._setDvh();
 }
 
 function closeCheckoutOnBackdrop(e) {
