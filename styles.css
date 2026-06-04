@@ -163,9 +163,9 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .glass-effect{background:rgba(255,255,255,0.95);border:1px solid rgba(255, 255, 255, 0.3)}
 
 /* Checkout Modal */
-.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;/* iOS Safari keyboard fix: track visual viewport height so modal never hides behind keyboard */height:var(--dvh,100vh);transition:opacity .25s ease,visibility .25s ease,padding-top .2s ease}
 .checkout-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;max-height:90dvh;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease}
+.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-height:calc(var(--dvh,100vh) - 2rem);opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease,max-height .2s ease}
 .checkout-modal.active .checkout-container{opacity:1;transform:translateY(0)}
 
 /* WhatsApp Float Button */
@@ -304,8 +304,7 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 /* â”€â”€ Checkout Modal Mobile Fix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-height: 800px) {
   .checkout-container {
-    max-height: 95vh;
-    max-height: 95dvh;
+    max-height: calc(var(--dvh, 100vh) - 0.75rem);
     border-radius: 1rem;
   }
 }
@@ -315,8 +314,8 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
     align-items: flex-end;
   }
   .checkout-container {
-    max-height: 96vh;
-    max-height: 96dvh;
+    /* Bottom-sheet: container aligns to bottom of visual viewport (above keyboard) */
+    max-height: calc(var(--dvh, 100vh) - 0.5rem);
     border-radius: 1.25rem 1.25rem 0 0;
     max-width: 100%;
   }
@@ -464,7 +463,8 @@ button, a, [role="button"], label,
 @supports (-webkit-touch-callout: none) {
   /* Fix 100vh on iOS (address bar bug) */
   .cart-sidebar        { height: -webkit-fill-available; }
-  .checkout-container  { max-height: -webkit-fill-available; }
+  /* Use --dvh (updated by visualViewport) instead of fill-available — keyboard-aware */
+  .checkout-container  { max-height: calc(var(--dvh, 100vh) - 1rem); }
 
   /* Disable hover lift on touch devices (prevents sticky hover) */
   .product-card-main:hover { transform: none; box-shadow: none; }
