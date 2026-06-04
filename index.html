@@ -1106,33 +1106,33 @@ main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; 
     '</div>';
   }
 
-  async function loadOffers() {
+  function _toRawFormat(p) {
+    return { id: p.id, name_ar: p.nameAr||p.name, name: p.name||p.nameAr, price: p.price,
+      original_price: p.originalPrice, image_url: p.image, image: p.image,
+      stock: (typeof p.stock === 'number') ? p.stock : (p.inStock ? 100 : 0), category: p.category };
+  }
+
+  function loadOffers() {
     var container = document.getElementById('offersProductsScroll');
     if (!container) return;
-    try {
-      // جلب المنتجات التي تملك original_price (أي خصم) أو is_offer=true
-      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,original_price,image_url,stock,category&original_price=not.is.null&order=created_at.desc&limit=12', {headers:H});
-      var prods = res.ok ? await res.json() : [];
-      // فلترة المنتجات التي السعر الأصلي فعلاً أكبر من سعر البيع
-      prods = prods.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price); });
-      if (!prods.length) {
-        // fallback: جلب أحدث المنتجات
-        var res2 = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,original_price,image_url,stock,category&order=price.asc&limit=8', {headers:H});
-        prods = res2.ok ? await res2.json() : [];
-      }
-      if (!prods.length) {
-        container.closest('section').style.display='none';
-        return;
-      }
-      container.innerHTML = prods.map(renderOfferCard).join('');
-    } catch(e) {
-      container.closest('section').style.display='none';
+    function render(wp) {
+      var prods = wp.map(_toRawFormat);
+      var offers = prods.filter(function(p){ return p.original_price && Number(p.original_price) > Number(p.price); });
+      if (!offers.length) offers = prods.slice(0, 8);
+      offers = offers.slice(0, 12);
+      if (!offers.length) { container.closest('section').style.display='none'; return; }
+      container.innerHTML = offers.map(renderOfferCard).join('');
     }
+    if (window.products && window.products.length) { render(window.products); return; }
+    window.addEventListener('nbProductsLoaded', function h(e) {
+      window.removeEventListener('nbProductsLoaded', h);
+      render((e.detail && e.detail.length) ? e.detail : (window.products || []));
+    });
   }
 
   if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadOffers, 600); });
-  } else { setTimeout(loadOffers, 600); }
+    document.addEventListener('DOMContentLoaded', loadOffers);
+  } else { loadOffers(); }
 })();
 </script>
 
@@ -1187,9 +1187,8 @@ main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; 
       });
       var topNames = Object.entries(countMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
       if (!topNames.length) {
-        // Fallback: show most popular products (newest)
-        var fallRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&order=created_at.desc&limit=8', {headers:H});
-        var fallProds = fallRes.ok ? await fallRes.json() : [];
+        // Fallback: use already-loaded window.products (newest = last in array)
+        var fallProds = (window.products||[]).slice().reverse().slice(0,8).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0)}; });
         if (!fallProds.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد منتجات بعد</p>'; return; }
         grid.innerHTML = fallProds.map(function(p, i) {
           p.image = p.image_url || '';
@@ -1210,9 +1209,8 @@ main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; 
         return;
       }
 
-      // Load product details
-      var prodRes = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&order=name_ar.asc', {headers:H});
-      var prods = prodRes.ok ? await prodRes.json() : [];
+      // Use already-loaded window.products instead of a second Supabase fetch
+      var prods = (window.products||[]).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0),category:p.category}; });
       var prodMap = {};
       (prods||[]).forEach(function(p){ p.image = p.image_url || p.image || ''; prodMap[(p.name_ar||p.name||'').trim()] = p; });
 
@@ -1220,9 +1218,8 @@ main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; 
         .filter(function(x){ return x.product; });
 
       if (!topProds.length) {
-        // Fallback: orders exist but no product match - show popular products 
-        var fallRes2 = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category&order=created_at.desc&limit=8', {headers:H});
-        var fallProds2 = fallRes2.ok ? await fallRes2.json() : [];
+        // Fallback: use already-loaded window.products
+        var fallProds2 = (window.products||[]).slice().reverse().slice(0,8).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0)}; });
         if (!fallProds2.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد منتجات</p>'; return; }
         grid.innerHTML = fallProds2.map(function(p) {
           p.image = p.image_url || '';
@@ -1341,22 +1338,30 @@ main, .main-content, #products, .section-content-wrapper { touch-action: pan-y; 
     '</div>';
   }
 
-  async function loadNew() {
+  function _toRawFmtNew(p) {
+    return { id: p.id, name_ar: p.nameAr||p.name, name: p.name||p.nameAr, price: p.price,
+      image_url: p.image, image: p.image, category: p.category,
+      stock: (typeof p.stock === 'number') ? p.stock : (p.inStock ? 100 : 0) };
+  }
+
+  function loadNew() {
     var container = document.getElementById('newProductsScroll');
     if (!container) return;
-    try {
-      var res = await fetch(SURL+'/rest/v1/products?select=id,name_ar,name,price,image_url,stock,category,created_at&order=created_at.desc&limit=10', {headers:H});
-      var prods = res.ok ? await res.json() : [];
+    function render(wp) {
+      var prods = wp.slice().reverse().slice(0, 10).map(_toRawFmtNew);
       if (!prods.length) { container.innerHTML='<p style="color:#9ca3af;padding:20px;">لا توجد منتجات</p>'; return; }
       container.innerHTML = prods.map(function(p){ return renderCard(p,'new','جديد ✨'); }).join('');
-    } catch(e) {
-      container.innerHTML='<p style="color:#9ca3af;padding:20px;">تعذر التحميل</p>';
     }
+    if (window.products && window.products.length) { render(window.products); return; }
+    window.addEventListener('nbProductsLoaded', function h(e) {
+      window.removeEventListener('nbProductsLoaded', h);
+      render((e.detail && e.detail.length) ? e.detail : (window.products || []));
+    });
   }
 
   if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadNew, 300); });
-  } else { setTimeout(loadNew, 300); }
+    document.addEventListener('DOMContentLoaded', loadNew);
+  } else { loadNew(); }
 })();
 </script>
 
@@ -3938,8 +3943,8 @@ window.addEventListener('resize', function(){
 <script src="./perf.js" defer></script>
 <script src="./img-loader.js" defer></script>
 <script src="./seo.js" defer></script>
-<script src="./pwa-install.js"></script>
-<script src="./safari-ios-fix.js"></script>
+<script src="./pwa-install.js" defer></script>
+<script src="./safari-ios-fix.js" defer></script>
 
 <script id="pm-contact-fix-p8">
 /* ═══════════════════════════════════════════════════════════════════

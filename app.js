@@ -132,6 +132,10 @@ const RateLimiter = {
 // ===================================================
 const FALLBACK_PRODUCTS = []; // Products managed via Supabase admin panel
 
+const NB_PRODUCTS_CACHE_KEY = 'nb_products_v1';
+const NB_BUNDLES_CACHE_KEY  = 'nb_bundles_v1';
+const NB_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // ===================================================
 // \u0631\u0633\u0648\u0645 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u2014 Delivery Fee (\u0644\u062c\u0645\u064a\u0639 \u0623\u0646\u062d\u0627\u0621 \u0627\u0644\u0639\u0631\u0627\u0642)
 // ===================================================
@@ -175,6 +179,24 @@ async function loadProductsFromSupabase() {
     console.error('\u274c supabaseClient is null — initSupabase() failed');
     return;
   }
+  // Serve from sessionStorage cache if still fresh (5 min TTL)
+  try {
+    const _c = sessionStorage.getItem(NB_PRODUCTS_CACHE_KEY);
+    if (_c) {
+      const _p = JSON.parse(_c);
+      if (_p.ts && (Date.now() - _p.ts) < NB_CACHE_TTL && Array.isArray(_p.data) && _p.data.length) {
+        products = _p.data;
+        displayedProducts = activeCategory === 'bundles' ? [...products]
+          : (activeCategory === 'all' ? [...products] : products.filter(function(p) { return p.category === activeCategory; }));
+        if (activeCategory !== 'bundles') renderProducts(displayedProducts);
+        updateCartUI();
+        console.log('\u2705 Products loaded from cache:', products.length);
+        window.dispatchEvent(new CustomEvent('nbProductsLoaded', { detail: products }));
+        return;
+      }
+    }
+  } catch(_e) { /* ignore cache errors */ }
+
   showProductSkeletons(8);
   try {
     const { data, error } = await supabaseClient
@@ -199,6 +221,8 @@ async function loadProductsFromSupabase() {
         qty2Price: p.qty_2_price ? Number(p.qty_2_price) : null,
         qty3Price: p.qty_3_price ? Number(p.qty_3_price) : null
       }));
+      // Persist to sessionStorage for subsequent visits
+      try { sessionStorage.setItem(NB_PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: products })); } catch(_e) { /* quota */ }
       if (activeCategory === 'bundles') {
         displayedProducts = [...products];
       } else {
@@ -207,6 +231,7 @@ async function loadProductsFromSupabase() {
       }
       updateCartUI();
       console.log('\u2705 Products loaded from Supabase:', products.length);
+      window.dispatchEvent(new CustomEvent('nbProductsLoaded', { detail: products }));
     }
   } catch (e) {
     console.warn('\u26a0\ufe0f Using fallback products. Supabase error:', e.message);
@@ -217,6 +242,18 @@ var bundles = [];
 
 async function loadBundlesFromSupabase() {
   if (!supabaseClient) return;
+  // Serve from sessionStorage cache if still fresh
+  try {
+    const _c = sessionStorage.getItem(NB_BUNDLES_CACHE_KEY);
+    if (_c) {
+      const _p = JSON.parse(_c);
+      if (_p.ts && (Date.now() - _p.ts) < NB_CACHE_TTL && Array.isArray(_p.data)) {
+        bundles = _p.data;
+        console.log('\u2705 Bundles loaded from cache:', bundles.length);
+        return;
+      }
+    }
+  } catch(_e) { /* ignore */ }
   try {
     const { data, error } = await supabaseClient.from('bundles').select('id,title_ar,product_ids,bundle_price,original_price').eq('active', true).order('created_at', { ascending: true });
     if (error) throw error;
@@ -228,9 +265,10 @@ async function loadBundlesFromSupabase() {
         bundlePrice: Number(b.bundle_price) || 0,
         originalPrice: b.original_price ? Number(b.original_price) : null
       }));
-      console.log('✅ Bundles loaded:', bundles.length);
+      try { sessionStorage.setItem(NB_BUNDLES_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: bundles })); } catch(_e) { /* quota */ }
+      console.log('\u2705 Bundles loaded:', bundles.length);
     }
-  } catch(e) { console.warn('⚠️ Bundles load error:', e.message); }
+  } catch(e) { console.warn('\u26a0\ufe0f Bundles load error:', e.message); }
 }
 
 function renderBundles() {
@@ -1610,3 +1648,13 @@ document.addEventListener('keydown', (e) => {
   if (e.key === '/' && !e.target.matches('input, textarea')) { e.preventDefault(); openSearch(); }
   if (e.key === 'Escape') { closeCart(); closeSearch(); closeCheckout(); closeQuickView(); }
 });
+
+// Debounce performSearch — wraps the global so oninput="performSearch()" benefits automatically
+(function() {
+  var _orig = performSearch;
+  var _t;
+  window.performSearch = function() {
+    clearTimeout(_t);
+    _t = setTimeout(_orig, 150);
+  };
+})();
