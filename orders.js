@@ -336,19 +336,31 @@ document.addEventListener('click', function(e) {
 async function deleteOrder(orderId) {
   if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
   if (!confirm('هل تريدين حذف هذا الطلب؟ يمكنك استعادته لاحقاً من قائمة المحذوفات.')) return;
+  var _prevCount = (_ordersCache||[]).length;
+  console.log('[Orders] deleteOrder', orderId, '| cache before:', _prevCount);
   try {
     await SupaDB.Orders.softDelete(String(orderId));
+    _invalidateOrderCache();
     await loadOrders();
+    var _afterCount = (_ordersCache||[]).length;
+    console.log('[Orders] deleteOrder done | cache after:', _afterCount, '| removed:', _prevCount - _afterCount);
     if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
+    var _aSection = document.getElementById('section-analytics');
+    if (typeof loadAnalytics === 'function' && _aSection && !_aSection.classList.contains('hidden')) { loadAnalytics(); }
     showToast('تم حذف الطلب ✅ يمكنك استعادته من المحذوفات','success');
   } catch(e) { showToast('خطأ في حذف الطلب: ' + (e.message||'غير معروف'),'error'); }
 }
 
 async function restoreOrder(orderId) {
   if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
+  var _prevDeletedCount = (_ordersDeletedCache||[]).length;
+  console.log('[Orders] restoreOrder', orderId, '| deleted cache before:', _prevDeletedCount);
   try {
     await SupaDB.Orders.restore(String(orderId));
+    _invalidateOrderCache();
     await loadOrders();
+    var _afterCount = (_ordersCache||[]).length;
+    console.log('[Orders] restoreOrder done | active cache after:', _afterCount);
     if (typeof updateOrdersBadge === 'function') updateOrdersBadge();
     showToast('تم استعادة الطلب ✅','success');
   } catch(e) { showToast('خطأ في استعادة الطلب: ' + (e.message||'غير معروف'),'error'); }
@@ -357,9 +369,14 @@ async function restoreOrder(orderId) {
 async function hardDeleteOrder(orderId) {
   if (!orderId || String(orderId) === 'undefined') { showToast('معرف الطلب غير صالح','error'); return; }
   if (!confirm('⚠️ هل أنتِ متأكدة؟ سيتم حذف الطلب نهائياً ولا يمكن استعادته.')) return;
+  var _prevCount = (_ordersDeletedCache||[]).length;
+  console.log('[Orders] hardDeleteOrder', orderId, '| deleted cache before:', _prevCount);
   try {
     await SupaDB.Orders.hardDelete(String(orderId));
+    _invalidateOrderCache();
     await loadOrders();
+    var _afterCount = (_ordersDeletedCache||[]).length;
+    console.log('[Orders] hardDeleteOrder done | deleted cache after:', _afterCount);
     showToast('تم الحذف النهائي 🗑️','success');
   } catch(e) { showToast('خطأ في الحذف: ' + (e.message||'غير معروف'),'error'); }
 }
