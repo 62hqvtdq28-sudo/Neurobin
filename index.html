@@ -3629,6 +3629,8 @@ if(window.visualViewport){
 } else {
   window.addEventListener('resize', _setDvh, {passive:true});
 }
+/* Expose globally so app.js can call after opening checkout */
+window._setDvh = _setDvh;
 
 /* ─── 2. Virtual keyboard — push fixed elements ──
    When keyboard opens, `visualViewport.height` shrinks.
@@ -3661,6 +3663,21 @@ if(window.visualViewport){
   window.visualViewport.addEventListener('resize', _handleKeyboard, {passive:true});
   window.visualViewport.addEventListener('scroll', _handleKeyboard, {passive:true});
 }
+
+/* ─── 2b. Checkout modal: scroll focused input into visible area ──────────────
+   iOS Safari sometimes doesn't auto-scroll focused inputs inside a nested
+   overflow:auto container when the keyboard opens. We handle it manually.    */
+document.addEventListener('focusin', function(e) {
+  var modal = document.getElementById('checkoutModal');
+  if (!modal || !modal.classList.contains('active')) return;
+  if (!modal.contains(e.target)) return;
+  /* Wait for visualViewport to finish resizing (keyboard slide-up ≈ 280ms) */
+  setTimeout(function() {
+    if (typeof e.target.scrollIntoView === 'function') {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, 320);
+}, { passive: true });
 
 /* ─── 3. Body scroll lock — true iOS fix ─────────
    iOS doesn't respect `overflow:hidden` on body.
