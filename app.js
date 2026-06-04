@@ -7,32 +7,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 let supabaseClient = null;
 
 
-/* ─── PWA/WebView Scroll Lock — centralised fix ───────────────────────────
-   Uses overflow:hidden on <html> only (NOT position:fixed on body).
-   position:fixed causes page to jump to top in PWA/WebView and scroll
-   gets permanently stuck on iOS. This approach is safe for all platforms. */
-var _scrollLockDepth = 0;
-var _scrollLockY = 0;
-function _lockScroll() {
-  if (_scrollLockDepth === 0) {
-    _scrollLockY = window.scrollY || window.pageYOffset;
-    document.documentElement.style.overflow = 'hidden';
-    document.documentElement.style.height = '100%';
-  }
-  _scrollLockDepth++;
-}
-function _unlockScroll() {
-  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
-  if (_scrollLockDepth === 0) {
-    document.documentElement.style.overflow = '';
-    document.documentElement.style.height = '';
-    // Ensure body is clean too
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-  }
-}
 function initSupabase() {
   try {
     if (typeof supabase !== 'undefined') {
