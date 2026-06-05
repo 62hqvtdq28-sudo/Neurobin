@@ -303,7 +303,7 @@
       /* When SW takes control, reload for fresh cache */
       var refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (!refreshing) { refreshing = true; /* soft reload */ }
+        if (!refreshing) { refreshing = true; window.location.reload(); }
       });
     });
   }
