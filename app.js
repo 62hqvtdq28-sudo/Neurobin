@@ -813,7 +813,7 @@ function renderProducts(productsToRender) {
 }
 
 function getCategoryLabel(category) {
-  const labels = { medicines: 'مكملات غذائية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة', perfumes: 'عطور', haircare: 'عناية بالشعر', dental: 'عناية بالفم', handcare: 'عناية باليدين', footcare: 'عناية بالقدم', packages: 'بكجات' };
+  const labels = { medicines: 'مكملات غذائية', skincare: 'العناية بالبشرة', makeup: 'مكياج', devices: 'أجهزة', perfumes: 'عطور', haircare: 'عناية بالشعر', dental: 'عناية بالفم', handcare: 'عناية باليدين', footcare: 'العناية بالقدمين', packages: 'بكجات' };
   return labels[category] || category;
 }
 
