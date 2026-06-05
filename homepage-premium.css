@@ -2718,18 +2718,25 @@ textarea#customerNotes { border-radius: 12px !important; }
 /* ─── 15. Horizontal scroll prevention ──────── */
 html { overflow-x: clip; overflow-y: auto; }
 body { overflow-x: clip; overflow-y: auto; max-width: 100vw; }
-section, .premium-products-section { overflow-x: clip; }
+/* Use hidden (not clip) — clip can break touch-scroll in child containers on older iOS */
+section { overflow-x: hidden; }
+/* Scroll section parents must NOT clip their scroll containers */
+.premium-products-section,
+#topSelling,
+.offers-slider-section { overflow-x: hidden; }
 
 /* ─── 16. Snap scrolling for horizontal carousels ─ */
+/* proximity (not mandatory) — mandatory causes iOS Safari to lock/stutter the scroll */
+/* No !important — inline styles and JS must be able to override */
 .premium-products-scroll,
 #topSellingGrid {
-  scroll-snap-type: x mandatory !important;
-  -webkit-scroll-snap-type: x mandatory !important;
-  scroll-padding: 16px !important;
+  scroll-snap-type: x proximity;
+  -webkit-scroll-snap-type: x proximity;
+  scroll-padding: 16px;
 }
 .premium-products-scroll > *,
 #topSellingGrid > * {
-  scroll-snap-align: start !important;
+  scroll-snap-align: start;
 }
 
 /* ─── 17. Image rendering on Retina ─────────── */
