@@ -7,7 +7,7 @@
 //   Supabase    → Network-First (5-min TTL fallback)
 //   Fonts/CDN   → Cache-First (immutable assets)
 // ══════════════════════════════════════════════════════════
-const SW_VERSION   = 'v8';
+const SW_VERSION   = 'v9';
 const STATIC_CACHE = 'neurobin-static-v7';
 const IMG_CACHE    = 'neurobin-img-v2';
 const API_CACHE    = 'neurobin-api-v3';
