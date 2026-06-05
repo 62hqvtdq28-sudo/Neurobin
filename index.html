@@ -115,8 +115,10 @@ section, div { max-width: 100%; }
 .product-image-wrapper img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
-  padding: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 4px !important;
+  background: #fff;
 }
 /* تقليل الحشو الداخلي في الكارد */
 .product-card-main .p-2\.5 { padding: 8px 10px !important; }
@@ -132,8 +134,12 @@ section, div { max-width: 100%; }
 .prem-card-img {
   width: 100%;
   height: 180px !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
+  object-position: center !important;
   display: block;
+  background: #fff;
+  padding: 6px;
+  box-sizing: border-box;
 }
 </style>
 
@@ -257,7 +263,7 @@ section, div { max-width: 100%; }
         "@type": "OfferCatalog",
         "name": "منتجات الصيدلية",
         "itemListElement": [
-          { "@type": "OfferCatalog", "name": "أدوية" },
+          { "@type": "OfferCatalog", "name": "مكملات غذائية" },
           { "@type": "OfferCatalog", "name": "عناية بالبشرة" },
           { "@type": "OfferCatalog", "name": "مكياج" },
           { "@type": "OfferCatalog", "name": "عطور" },
@@ -1075,7 +1081,7 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   function catLabel(cat){
-    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
+    var m={'medicines':'مكملات غذائية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
     return m[cat]||cat||'';
   }
 
@@ -1183,7 +1189,6 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
 
   /* ── Render a product card ── */
   function renderCard(p, rank, isFirst) {
-    console.log('Rendering Rank:', rank);
     var DESCRIPTIONS = [
       '\uD83C\uDFC6 \u0627\u0644\u0623\u0643\u062b\u0631 \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
       '\uD83E\uDD48 \u062b\u0627\u0646\u064a \u0623\u0643\u062b\u0631 \u0645\u0646\u062a\u062c \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
@@ -1191,13 +1196,11 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
       '\u2B50 \u0636\u0645\u0646 \u0623\u0641\u0636\u0644 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
       '\u2B50 \u0645\u0646 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u0644\u062f\u0649 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631'
     ];
-    var MEDALS = ['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
     var img_src  = escH(p.image || p.image_url || '');
     var name     = escH(p.name_ar || p.name_ar_col || p.name || '');
     var pid      = escH(String(p.id || ''));
     var price    = Number(p.price || 0).toLocaleString('en-US');
     var idx0     = rank - 1;
-    var medal    = MEDALS[idx0] || ('#' + rank);
     var desc     = DESCRIPTIONS[idx0] || DESCRIPTIONS[4];
     var inStock  = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
     var stockBadge = inStock
@@ -1205,14 +1208,12 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
       : '<span style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">\u0646\u0641\u0630</span>';
     // ⚠️ Image: NO onerror attribute (that single-quote caused the syntax error)
     var imgHtml = img_src
-      ? '<img src="' + img_src + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy">'
+      ? '<img src="' + img_src + '" alt="' + name + '" style="width:100%;height:100%;object-fit:contain;object-position:center;background:#fff;padding:4px;box-sizing:border-box;" loading="lazy">'
       : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">\uD83D\uDCE6</div>';
     return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView&&' + "'" + pid + "'" + ')openQuickView(' + "'" + pid + "'" + ');">' +
       '<div style="position:relative;height:180px;background:#f0fdf4;">' + imgHtml + stockBadge +
-      '<span style="position:absolute;top:8px;right:8px;font-size:18px;">' + medal + '</span>' +
       '</div>' +
       '<div style="padding:10px 10px 12px;">' +
-        (isFirst ? '<p style="font-size:9px;color:#9ca3af;margin:0 0 2px;font-weight:600;">TEST RANK SYSTEM ACTIVE</p>' : '') +
         '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + name + '">' + name + '</p>' +
         '<p style="font-size:11px;color:#059669;font-weight:700;margin:0 0 4px;">' + desc + '</p>' +
         '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">' + price + ' \u062f.\u0639</p>' +
@@ -1405,7 +1406,7 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   function catLabel(cat){
-    var m={'medicines':'أدوية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
+    var m={'medicines':'مكملات غذائية','skincare':'عناية بالبشرة','haircare':'عناية بالشعر','dental':'عناية بالفم','makeup':'مكياج','devices':'أجهزة','perfumes':'عطور','bundles':'عروض','handcare':'عناية باليدين','footcare':'عناية بالقدم'};
     return m[cat]||cat||'';
   }
 
@@ -1415,7 +1416,7 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
     var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
     var imgUrl = p.image_url || p.image || ''; var hasImg = imgUrl && imgUrl.startsWith('http');
     var imgHtml = hasImg
-      ? '<img class="prem-card-img" src="'+esc(imgUrl)+'" alt="'+name+'" loading="lazy" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+      ? '<img class="prem-card-img" src="'+esc(imgUrl)+'" alt="'+name+'" loading="lazy" style="object-fit:contain;object-position:center;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"> ' +
         '<div class="prem-card-img-placeholder" style="display:none;">📦</div>'
       : '<div class="prem-card-img-placeholder">📦</div>';
     var stockBadge = inStock
@@ -1484,8 +1485,8 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
         </button>
 
         <button onclick="filterProducts(event, 'medicines')" class="cat-icon-btn" data-filter="medicines" role="tab" aria-selected="false">
-          <div class="cat-icon-circle ci-meds" id="cat_circle_medicines"><img loading="lazy" alt="أدوية" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display='none'"><i class="fa-solid fa-syringe"></i></div>
-          <span class="cat-icon-label">أدوية</span>
+          <div class="cat-icon-circle ci-meds" id="cat_circle_medicines"><img loading="lazy" alt="مكملات غذائية" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:50%" onerror="this.style.display='none'"><i class="fa-solid fa-syringe"></i></div>
+          <span class="cat-icon-label">مكملات غذائية</span>
         </button>
 
         <button onclick="filterProducts(event, 'skincare')" class="cat-icon-btn" data-filter="skincare" role="tab" aria-selected="false">
@@ -1920,7 +1921,7 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
       <div>
         <h3 class="font-heading font-bold text-lg mb-6">الفئات</h3>
         <ul class="space-y-3">
-          <li><a href="#products" class="text-white/70 hover:text-white transition-colors">أدوية</a></li>
+          <li><a href="#products" class="text-white/70 hover:text-white transition-colors">مكملات غذائية</a></li>
           <li><a href="#products" class="text-white/70 hover:text-white transition-colors">العناية بالبشرة</a></li>
           <li><a href="#products" class="text-white/70 hover:text-white transition-colors">مكياج</a></li>
           <li><a href="#products" class="text-white/70 hover:text-white transition-colors">أجهزة</a></li>
@@ -3329,7 +3330,7 @@ function _showEmptyState(query){
     '<p class="sr-empty-sub">جرّب كلمات مختلفة أو تصفّح الفئات أدناه</p>'+
     '<div class="sr-cats">'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 العناية بالبشرة</span>'+
-    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 مكملات غذائية</span>'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
     '</div></div>';
@@ -3360,7 +3361,7 @@ function _newShowRecentSearches(){
     el.innerHTML =
       '<div class="sr-cats">'+
       '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 بشرة</span>'+
-      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+      '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 مكملات غذائية</span>'+
       '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
       '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
       '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'devices\')">📱 أجهزة</span>'+
@@ -3386,7 +3387,7 @@ function _newShowRecentSearches(){
     '<div class="sr-pills">'+pills+'</div>'+
     '<div class="sr-cats">'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'skincare\')">💆 بشرة</span>'+
-    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 أدوية</span>'+
+    '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'medicines\')">💊 مكملات غذائية</span>'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'makeup\')">💄 مكياج</span>'+
     '<span class="sr-cat-chip" onclick="closeSearch();filterProducts(event,\'perfumes\')">🌸 عطور</span>'+
     '</div>';
