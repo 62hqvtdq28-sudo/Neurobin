@@ -1,4 +1,10 @@
 // ===================================================
+// BUILD VERSION — baked at deploy time for cache debugging
+// ===================================================
+const BUILD_VERSION = 'PROD-20260605-FIX2';
+console.log('[DEBUG] BUILD_VERSION:', BUILD_VERSION);
+
+// ===================================================
 // \u0625\u0639\u062f\u0627\u062f\u0627\u062a Supabase \u2014 Supabase Configuration
 // ===================================================
 const SUPABASE_URL = 'https://hczsskviliuqyayylutv.supabase.co';
@@ -521,6 +527,65 @@ async function sendEmailNotification(orderData) {
   }
 }
 
+
+// ===================================================
+// صور أقسام الكاتيغوري — Category Circle Images
+// ===================================================
+async function loadCategoryImages() {
+  console.log('[DEBUG] STEP loadCategoryImages — start');
+  if (!supabaseClient) {
+    console.warn('[DEBUG] loadCategoryImages: supabaseClient null');
+    return;
+  }
+  try {
+    const { data, error } = await supabaseClient
+      .from('categories')
+      .select('slug, image_url, name_ar');
+    console.log('[DEBUG] categories query result:', data, error);
+    if (error) { console.warn('[DEBUG] categories error:', error.message); return; }
+    if (!data || !data.length) { console.log('[DEBUG] no category images in DB'); return; }
+
+    // map: category slug → circle element id
+    const circleMap = {
+      'medicines': 'cat_circle_medicines',
+      'skincare':  'cat_circle_skincare',
+      'haircare':  'cat_circle_haircare',
+      'dental':    'cat_circle_dental',
+      'handcare':  'cat_circle_handcare',
+      'footcare':  'cat_circle_footcare',
+      'makeup':    'cat_circle_makeup',
+      'devices':   'cat_circle_devices',
+      'perfumes':  'cat_circle_perfumes'
+    };
+
+    data.forEach(function(cat) {
+      console.log('[DEBUG] category:', cat.slug, '| image_url:', cat.image_url);
+      if (!cat.image_url || !cat.slug) return;
+      var circleId = circleMap[cat.slug];
+      if (!circleId) { console.log('[DEBUG] no circle mapped for slug:', cat.slug); return; }
+      var circle = document.getElementById(circleId);
+      if (!circle) { console.log('[DEBUG] circle element not found:', circleId); return; }
+      var img  = circle.querySelector('img');
+      var icon = circle.querySelector('i');
+      if (!img) { console.log('[DEBUG] no img in circle:', circleId); return; }
+
+      img.src = cat.image_url;
+      img.onload = function() {
+        img.style.display = 'block';
+        if (icon) icon.style.display = 'none';
+        console.log('[DEBUG] category image loaded:', cat.slug);
+      };
+      img.onerror = function() {
+        img.style.display = 'none';
+        if (icon) icon.style.display = '';
+        console.warn('[DEBUG] category image failed to load:', cat.slug, cat.image_url);
+      };
+    });
+  } catch(e) {
+    console.error('[DEBUG ERROR] loadCategoryImages:', e.message);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initSupabase();
 
@@ -560,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initEventListeners();
   loadProductsFromSupabase();
   loadBundlesFromSupabase();
+  loadCategoryImages();
 });
 
 function initEventListeners() {
