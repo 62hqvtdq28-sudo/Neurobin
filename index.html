@@ -1556,16 +1556,15 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
           <span style="font-size:12px;color:#166534;">د.ع</span>
         </div>
         <div style="display:flex;gap:6px;">
-          <button onclick="setAdvAvail('all')" id="advAvailAll" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#16a34a;color:#fff;transition:all 0.2s;">الكل</button>
-          <button onclick="setAdvAvail('in')" id="advAvailIn" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#166534;transition:all 0.2s;">✅ متوفر</button>
-          <button onclick="setAdvAvail('out')" id="advAvailOut" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#166534;transition:all 0.2s;">❌ نفذ</button>
+          <button onclick="setAdvSort('newest')" id="advSort_newest" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#16a34a;color:#fff;transition:all 0.2s;">🆕 الأحدث</button>
+          <button onclick="setAdvSort('oldest')" id="advSort_oldest" style="padding:6px 14px;border-radius:20px;border:1.5px solid #86efac;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#166534;transition:all 0.2s;">📅 الأقدم</button>
         </div>
         <button onclick="resetAdvFilters()" style="padding:6px 14px;border-radius:20px;border:1.5px solid #fca5a5;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#dc2626;margin-right:auto;">↺ إعادة ضبط</button>
       </div>
     </div>
     <script>
-    // ── Advanced Filter Engine ──────────────────────────────────────────────
-    var _advPriceMin = 0, _advPriceMax = Infinity, _advAvail = 'all';
+    // ── Advanced Filter + Sort Engine ───────────────────────────────────────
+    var _advPriceMin = 0, _advPriceMax = Infinity, _advSort = 'newest';
     var _advOrigRender = null;
 
     function _patchAdvFilters() {
@@ -1573,16 +1572,23 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
       if (typeof window.renderProducts !== 'function') return;
       _advOrigRender = window.renderProducts;
       window.renderProducts = function(products) {
-        var filtered = (products||[]).filter(function(p) {
-          var price = Number(p.price || p.price2 || 0);
-          var inStock = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
+        // 1. Price filter (kept as-is)
+        var list = (products||[]).filter(function(p) {
+          var price = Number(p.price || 0);
           if (_advPriceMin > 0 && price < _advPriceMin) return false;
           if (_advPriceMax < Infinity && price > _advPriceMax) return false;
-          if (_advAvail === 'in' && !inStock) return false;
-          if (_advAvail === 'out' && inStock) return false;
           return true;
         });
-        _advOrigRender(filtered);
+        // 2. Sort by date: newest→descending, oldest→ascending
+        list = list.slice().sort(function(a, b) {
+          // use createdAt if available, fallback to numeric id
+          var aVal = a.createdAt ? new Date(a.createdAt).getTime()
+                   : (Number(a.id) || 0);
+          var bVal = b.createdAt ? new Date(b.createdAt).getTime()
+                   : (Number(b.id) || 0);
+          return _advSort === 'newest' ? (bVal - aVal) : (aVal - bVal);
+        });
+        _advOrigRender(list);
       };
     }
 
@@ -1591,20 +1597,21 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
       _advPriceMin = Number(document.getElementById('advPriceMin').value)||0;
       var maxVal = document.getElementById('advPriceMax').value;
       _advPriceMax = maxVal ? Number(maxVal) : Infinity;
-      // Re-trigger current category filter
+      // Re-trigger current category filter to re-render with new sort
       var activeBtn = document.querySelector('.cat-icon-btn.active');
       if (activeBtn && typeof filterProducts === 'function') {
         filterProducts(null, activeBtn.dataset.filter||'all');
       }
     }
 
-    function setAdvAvail(val) {
-      _advAvail = val;
-      ['all','in','out'].forEach(function(v) {
-        var btn = document.getElementById('advAvail'+v.charAt(0).toUpperCase()+v.slice(1));
+    function setAdvSort(val) {
+      _advSort = val;
+      ['newest','oldest'].forEach(function(v) {
+        var btn = document.getElementById('advSort_' + v);
         if (!btn) return;
-        btn.style.background = (v===val) ? '#16a34a' : '#fff';
-        btn.style.color = (v===val) ? '#fff' : '#166534';
+        btn.style.background = (v === val) ? '#16a34a' : '#fff';
+        btn.style.color      = (v === val) ? '#fff'     : '#166534';
+        btn.style.borderColor= (v === val) ? '#16a34a'  : '#86efac';
       });
       applyAdvFilters();
     }
@@ -1612,16 +1619,17 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
     function resetAdvFilters() {
       document.getElementById('advPriceMin').value='';
       document.getElementById('advPriceMax').value='';
-      _advPriceMin=0; _advPriceMax=Infinity; _advAvail='all';
-      setAdvAvail('all');
+      _advPriceMin=0; _advPriceMax=Infinity; _advSort='newest';
+      setAdvSort('newest');
     }
 
-    // Show filter bar + patch after app loads
+    // Show filter bar + patch after app loads; default sort = newest
     window.addEventListener('load', function() {
       setTimeout(function() {
         var bar = document.getElementById('advFilterBar');
         if (bar) bar.style.display='block';
         _patchAdvFilters();
+        setAdvSort('newest'); // apply default sort on load
       }, 1500);
     });
     </script>
