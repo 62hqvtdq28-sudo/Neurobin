@@ -317,13 +317,15 @@
 .premium-products-scroll {
   display: flex;
   gap: 16px;
-  overflow-x: auto;
+  overflow-x: scroll; /* scroll (not auto) — more reliable on iOS Safari */
+  overflow-y: hidden;
   padding-bottom: 12px;
-  scroll-snap-type: x mandatory;
+  padding-inline-end: 16px; /* ensure last card is fully visible when scrolled to end */
+  scroll-snap-type: x proximity; /* proximity is smoother than mandatory on mobile */
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  overscroll-behavior-x: contain; /* prevent page scroll interference on horizontal swipe */
-  touch-action: pan-x; /* allow vertical page scroll when swiping over this area on iOS */
+  overscroll-behavior-x: contain;
+  touch-action: pan-x; /* handle horizontal; lets browser pass vertical scroll to page */
 }
 .premium-products-scroll::-webkit-scrollbar { display: none; }
 
@@ -341,7 +343,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   contain: layout style;
-  touch-action: manipulation;
+  touch-action: pan-x; /* pan-x (not manipulation) — allows pan gesture to pass through to scroll container */
 }
 @media (hover: hover) {
   .prem-card:hover {
