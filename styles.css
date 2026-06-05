@@ -341,9 +341,9 @@ input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label 
 .cat-icon-label{font-size:clamp(10px,2.8vw,12.5px);font-weight:700;color:#1E350F;text-align:center;line-height:1.3;max-width:clamp(64px,19vw,96px);word-break:break-word}
 .cat-icon-btn.active .cat-icon-label{color:#2D5016}
 /* Circle backgrounds */
-.ci-all{background:linear-gradient(135deg,#e8f5ee,#c0e6d0)}.ci-meds{background:linear-gradient(135deg,#fef3e2,#fde0a0)}.ci-skin{background:linear-gradient(135deg,#fce4ec,#f8bbd9)}.ci-hair{background:linear-gradient(135deg,#e8eaf6,#c5cae9)}.ci-teeth{background:linear-gradient(135deg,#e0f7fa,#b2ebf2)}.ci-makeup{background:linear-gradient(135deg,#f3e5f5,#e1bee7)}.ci-device{background:linear-gradient(135deg,#e3f2fd,#bbdefb)}.ci-perf{background:linear-gradient(135deg,#fff8e1,#ffe082)}
+.ci-all{background:linear-gradient(135deg,#e8f5ee,#c0e6d0)}.ci-meds,.ci-skin,.ci-hair,.ci-teeth,.ci-makeup,.ci-device,.ci-perf,.ci-hand,.ci-foot{background:#fff;border:1.5px solid #e5e7eb}.ci-bundles{background:linear-gradient(135deg,#ef4444,#f97316)}
 /* Icon colors */
-.ci-all i{color:#1a6e3c}.ci-meds i{color:#d4820a}.ci-skin i{color:#c2185b}.ci-hair i{color:#3949ab}.ci-teeth i{color:#00838f}.ci-makeup i{color:#8e24aa}.ci-device i{color:#1565c0}.ci-perf i{color:#f9a825}
+.ci-all i{color:#1a6e3c}.ci-meds i{color:#d4820a}.ci-skin i{color:#c2185b}.ci-hair i{color:#3949ab}.ci-teeth i{color:#00838f}.ci-makeup i{color:#8e24aa}.ci-device i{color:#1565c0}.ci-perf i{color:#f9a825}.ci-hand i{color:#f43f5e}.ci-foot i{color:#14b8a6}.ci-bundles i{color:#fff}
 
 
 /* ═══════════════════════════════════════════════════════
