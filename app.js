@@ -207,7 +207,7 @@ async function loadProductsFromSupabase() {
   try {
     const { data, error } = await supabaseClient
       .from('products')
-      .select('id,name,name_ar,category,price,image_url,in_stock,stock_level,stock,description,original_price,qty_2_price,qty_3_price')
+      .select('id,name,name_ar,category,price,image_url,in_stock,stock_level,stock,description,original_price,qty_2_price,qty_3_price,created_at')
       .order('created_at', { ascending: true });
 
     if (error) throw error;
@@ -225,7 +225,8 @@ async function loadProductsFromSupabase() {
         description: p.description || '',
         originalPrice: p.original_price ? Number(p.original_price) : null,
         qty2Price: p.qty_2_price ? Number(p.qty_2_price) : null,
-        qty3Price: p.qty_3_price ? Number(p.qty_3_price) : null
+        qty3Price: p.qty_3_price ? Number(p.qty_3_price) : null,
+        createdAt: p.created_at || null
       }));
       // Persist to sessionStorage for subsequent visits
       try { sessionStorage.setItem(NB_PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: products })); } catch(_e) { /* quota */ }
