@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════
-// Neurobin Service Worker — v7 (BUILD CHECK 2026)
+// Neurobin Service Worker — v10 (BUILD CHECK 2026)
 // Strategies:
 //   HTML        → Network-First (always fresh shell)
 //   Static JS/CSS → Stale-While-Revalidate (fast + fresh)
@@ -7,8 +7,8 @@
 //   Supabase    → Network-First (5-min TTL fallback)
 //   Fonts/CDN   → Cache-First (immutable assets)
 // ══════════════════════════════════════════════════════════
-const SW_VERSION   = 'v9';
-const STATIC_CACHE = 'neurobin-static-v7';
+const SW_VERSION   = 'v10';
+const STATIC_CACHE = 'neurobin-static-v10';
 const IMG_CACHE    = 'neurobin-img-v2';
 const API_CACHE    = 'neurobin-api-v3';
 const FONT_CACHE   = 'neurobin-font-v1';
@@ -45,7 +45,7 @@ self.addEventListener('install', function (e) {
       return Promise.allSettled(
         PRECACHE_ASSETS.map(function (url) {
           return cache.add(url).catch(function (err) {
-            console.warn('[SW v6] Failed to cache:', url, err.message);
+            console.warn('[SW v10] Failed to cache:', url, err.message);
           });
         })
       );
@@ -203,7 +203,7 @@ self.addEventListener('sync', function (e) {
   if (e.tag === 'sync-orders') e.waitUntil(syncPendingOrders());
 });
 async function syncPendingOrders() {
-  console.log('[SW v6] Background sync: pending orders check');
+  console.log('[SW v10] Background sync: pending orders check');
 }
 
 // ── Skip waiting on message ───────────────────────────────
