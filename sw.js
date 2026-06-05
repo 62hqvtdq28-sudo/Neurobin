@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════
-// Neurobin Service Worker — v10 (BUILD CHECK 2026)
+// Neurobin Service Worker — v11 (BUILD CHECK 2026)
 // Strategies:
 //   HTML        → Network-First (always fresh shell)
 //   Static JS/CSS → Stale-While-Revalidate (fast + fresh)
@@ -7,8 +7,8 @@
 //   Supabase    → Network-First (5-min TTL fallback)
 //   Fonts/CDN   → Cache-First (immutable assets)
 // ══════════════════════════════════════════════════════════
-const SW_VERSION   = 'v10';
-const STATIC_CACHE = 'neurobin-static-v10';
+const SW_VERSION   = 'v11';
+const STATIC_CACHE = 'neurobin-static-v11';
 const IMG_CACHE    = 'neurobin-img-v2';
 const API_CACHE    = 'neurobin-api-v3';
 const FONT_CACHE   = 'neurobin-font-v1';
@@ -45,7 +45,7 @@ self.addEventListener('install', function (e) {
       return Promise.allSettled(
         PRECACHE_ASSETS.map(function (url) {
           return cache.add(url).catch(function (err) {
-            console.warn('[SW v10] Failed to cache:', url, err.message);
+            console.warn('[SW v11] Failed to cache:', url, err.message);
           });
         })
       );
@@ -131,9 +131,9 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  // ── 5. JS/CSS/other static → Stale-While-Revalidate ─────
+  // ── 5. JS/CSS/other static → Network-First (always fresh) ─
   if (isInScope(url)) {
-    e.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
+    e.respondWith(networkFirstStatic(req, STATIC_CACHE));
     return;
   }
 });
@@ -153,7 +153,25 @@ function cacheFirst(req, cacheName) {
   });
 }
 
-// ── Strategy: Stale-While-Revalidate ─────────────────────
+// ── Strategy: Network-First for JS/CSS (always fresh) ────
+function networkFirstStatic(req, cacheName) {
+  return fetch(req).then(function (res) {
+    if (res && res.status === 200) {
+      caches.open(cacheName).then(function (cache) { cache.put(req, res.clone()); });
+    }
+    return res;
+  }).catch(function () {
+    // Offline fallback — serve from cache
+    return caches.open(cacheName).then(function (cache) {
+      return cache.match(req).then(function (cached) {
+        console.log('[SW v11] offline fallback for:', req.url);
+        return cached || new Response('', { status: 503 });
+      });
+    });
+  });
+}
+
+// ── Strategy: Stale-While-Revalidate (kept for reference) ────────────────────
 function staleWhileRevalidate(req, cacheName) {
   return caches.open(cacheName).then(function (cache) {
     return cache.match(req).then(function (cached) {
@@ -203,7 +221,7 @@ self.addEventListener('sync', function (e) {
   if (e.tag === 'sync-orders') e.waitUntil(syncPendingOrders());
 });
 async function syncPendingOrders() {
-  console.log('[SW v10] Background sync: pending orders check');
+  console.log('[SW v11] Background sync: pending orders check');
 }
 
 // ── Skip waiting on message ───────────────────────────────
