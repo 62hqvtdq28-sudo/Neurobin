@@ -1090,10 +1090,14 @@ body {
   overscroll-behavior: contain;
 }
 
-/* 4. Cart overlay — must NOT intercept scroll events on the page */
-.cart-overlay,
+/* 4. Cart overlay — ONLY block touch when visible (active)
+   touch-action:none on HIDDEN inset:0 overlay blocks single-finger scroll on Android */
+.cart-overlay {
+  pointer-events: none; /* no touch interception when hidden */
+}
 .cart-overlay.active {
-  touch-action: none; /* blocks touch on overlay only */
+  touch-action: none;   /* block scroll-through ONLY when overlay is visible */
+  pointer-events: auto;
 }
 /* Allow scroll inside sidebar even when overlay is active */
 .cart-sidebar,
@@ -1102,14 +1106,24 @@ body {
   pointer-events: auto;
 }
 
-/* 5. Modals: scroll inside the container, not page behind */
+/* 5. Modals: ONLY block touch when active — touch-action:none on hidden
+   inset:0 modals is the PRIMARY cause of 2-finger scroll on Android Chrome */
 .checkout-modal,
 .quick-view-modal,
 .search-modal,
 #checkoutModal,
 #quickViewModal,
 #searchModal {
-  touch-action: none; /* block scroll-through on backdrop */
+  pointer-events: none; /* no touch interception when hidden */
+}
+.checkout-modal.active,
+.quick-view-modal.active,
+.search-modal.active,
+#checkoutModal.active,
+#quickViewModal.active,
+#searchModal.active {
+  touch-action: none;   /* block scroll-through ONLY when modal is open */
+  pointer-events: auto;
 }
 .checkout-container,
 .quick-view-container,
@@ -1171,8 +1185,8 @@ body.modal-open {
   font-size: max(16px, 1em) !important;
 }
 
-/* touch-action on modal overlays — prevent scroll-through */
-.checkout-modal, .quick-view-modal, .search-modal {
+/* touch-action on modal overlays — ONLY when active (not hidden) */
+.checkout-modal.active, .quick-view-modal.active, .search-modal.active {
   touch-action: none;
 }
 .checkout-container, .quick-view-container, .search-container {
