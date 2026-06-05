@@ -1163,116 +1163,210 @@ main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-ove
   </div>
 </section>
 <script>
-// ── Feature #16: Top Selling Products ─────────────────────────────────────
+// ── Feature #16: Top Selling Products v3.0 ────────────────────────────────
+// ROOT CAUSES FIXED:
+//  1. JS syntax error: onerror="innerHTML='" (unescaped single quote killed the script)
+//  2. Race condition: 400ms timeout fires before window.products is populated
+//  3. Products fetched directly from Supabase when window.products not ready
 (function() {
+  'use strict';
+  console.log('BESTSELLERS NEW VERSION ACTIVE');
+
   var SURL = 'https://hczsskviliuqyayylutv.supabase.co';
   var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenNza3ZpbGl1cXlheXlsdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDg2OTUsImV4cCI6MjA5NDcyNDY5NX0.mT-fPrPzwbUx3mQZOqFGx8ndWTkUS-MeqLcfaN1zS4k';
-  var H = {'apikey':SKEY,'Authorization':'Bearer '+SKEY};
+  var H = {'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY};
+  var _ran = false;
 
-  function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escH(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
+  /* ── Render a product card ── */
+  function renderCard(p, rank, isFirst) {
+    console.log('Rendering Rank:', rank);
+    var DESCRIPTIONS = [
+      '\uD83C\uDFC6 \u0627\u0644\u0623\u0643\u062b\u0631 \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+      '\uD83E\uDD48 \u062b\u0627\u0646\u064a \u0623\u0643\u062b\u0631 \u0645\u0646\u062a\u062c \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+      '\uD83E\uDD49 \u0645\u0646 \u0623\u0643\u062b\u0631 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0637\u0644\u0628\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+      '\u2B50 \u0636\u0645\u0646 \u0623\u0641\u0636\u0644 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0645\u0628\u064a\u0639\u0627\u064b \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+      '\u2B50 \u0645\u0646 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u0644\u062f\u0649 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631'
+    ];
+    var MEDALS = ['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
+    var img_src  = escH(p.image || p.image_url || '');
+    var name     = escH(p.name_ar || p.name_ar_col || p.name || '');
+    var pid      = escH(String(p.id || ''));
+    var price    = Number(p.price || 0).toLocaleString('en-US');
+    var idx0     = rank - 1;
+    var medal    = MEDALS[idx0] || ('#' + rank);
+    var desc     = DESCRIPTIONS[idx0] || DESCRIPTIONS[4];
+    var inStock  = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
+    var stockBadge = inStock
+      ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">\u0645\u062a\u0648\u0641\u0631</span>'
+      : '<span style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">\u0646\u0641\u0630</span>';
+    // ⚠️ Image: NO onerror attribute (that single-quote caused the syntax error)
+    var imgHtml = img_src
+      ? '<img src="' + img_src + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy">'
+      : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">\uD83D\uDCE6</div>';
+    return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView&&' + "'" + pid + "'" + ')openQuickView(' + "'" + pid + "'" + ');">' +
+      '<div style="position:relative;height:180px;background:#f0fdf4;">' + imgHtml + stockBadge +
+      '<span style="position:absolute;top:8px;right:8px;font-size:18px;">' + medal + '</span>' +
+      '</div>' +
+      '<div style="padding:10px 10px 12px;">' +
+        (isFirst ? '<p style="font-size:9px;color:#9ca3af;margin:0 0 2px;font-weight:600;">TEST RANK SYSTEM ACTIVE</p>' : '') +
+        '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + name + '">' + name + '</p>' +
+        '<p style="font-size:11px;color:#059669;font-weight:700;margin:0 0 4px;">' + desc + '</p>' +
+        '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">' + price + ' \u062f.\u0639</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ── Get products array (from window.products or direct fetch) ── */
+  async function getProducts() {
+    var wp = window.products || [];
+    if (wp.length > 0) {
+      console.log('[bestsellers] using window.products:', wp.length);
+      return wp.map(function(p) {
+        return {
+          id: p.id,
+          name: p.name || p.nameAr || '',
+          name_ar: p.nameAr || p.name || '',
+          price: p.price,
+          image: p.image || p.image_url || '',
+          image_url: p.image || p.image_url || '',
+          stock: (typeof p.stock === 'number') ? p.stock : (p.inStock ? 100 : 0)
+        };
+      });
+    }
+    // Direct fetch from Supabase
+    console.log('[bestsellers] window.products empty, fetching directly');
+    var r = await fetch(
+      SURL + '/rest/v1/products?select=id,name,name_ar,price,image_url,stock&order=created_at.desc&limit=100',
+      {headers: H}
+    );
+    if (!r.ok) { console.warn('[bestsellers] products fetch failed:', r.status); return []; }
+    var data = await r.json();
+    console.log('[bestsellers] fetched', (data||[]).length, 'products directly');
+    return (data || []).map(function(p) {
+      return {
+        id: p.id,
+        name: p.name || p.name_ar || '',
+        name_ar: p.name_ar || p.name || '',
+        price: p.price,
+        image: p.image_url || '',
+        image_url: p.image_url || '',
+        stock: p.stock
+      };
+    });
+  }
+
+  /* ── Main loader ── */
   async function loadTopSelling() {
-    var grid = document.getElementById('topSellingGrid');
+    if (_ran) return;
+    _ran = true;
+    console.log('BESTSELLERS NEW VERSION ACTIVE');
+
+    var grid  = document.getElementById('topSellingGrid');
     var badge = document.getElementById('topSellingBadge');
-    if (!grid) return;
+    if (!grid) { console.warn('[bestsellers] topSellingGrid not found'); return; }
+
     try {
-      // Load delivered orders
-      var ordRes = await fetch(SURL+'/rest/v1/orders?select=id,items&status=neq.cancelled&limit=300', {headers:H});
+      /* 1. Fetch orders to count sales */
+      console.log('[bestsellers] fetching orders...');
+      var ordRes = await fetch(
+        SURL + '/rest/v1/orders?select=items&status=neq.cancelled&limit=500',
+        {headers: H}
+      );
       var orders = ordRes.ok ? await ordRes.json() : [];
-      // Count product names
+      console.log('[bestsellers] orders fetched:', (orders||[]).length);
+
+      /* 2. Count by product name */
       var countMap = {};
-      (orders||[]).forEach(function(o) {
+      (orders || []).forEach(function(o) {
         var items = [];
-        if (Array.isArray(o.items)) { items = o.items; }
-        else if (typeof o.items === 'string') { try { items = JSON.parse(o.items); } catch(e) { items = []; } }
+        if (Array.isArray(o.items)) {
+          items = o.items;
+        } else if (typeof o.items === 'string') {
+          try { items = JSON.parse(o.items); } catch(e) { items = []; }
+        }
         items.forEach(function(it) {
-          var n = (it.name||it.product_name||it.nameAr||'').trim();
-          if (n) countMap[n] = (countMap[n]||0)+(Number(it.quantity)||Number(it.qty)||1);
+          var n = (it.name || it.product_name || it.nameAr || it.name_ar || '').trim();
+          if (n) countMap[n] = (countMap[n] || 0) + (Number(it.quantity) || Number(it.qty) || 1);
         });
       });
-      var topNames = Object.entries(countMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
-      if (!topNames.length) {
-        // Fallback: use already-loaded window.products (newest = last in array)
-        var fallProds = (window.products||[]).slice().reverse().slice(0,8).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0)}; });
-        if (!fallProds.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد منتجات بعد</p>'; return; }
-        grid.innerHTML = fallProds.map(function(p, i) {
-          p.image = p.image_url || '';
-          var img = p.image && p.image.startsWith('http')
-            ? '<img src="'+escH(p.image)+'" alt="'+escH(p.name_ar||p.name)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">'
-            : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">📦</div>';
-          var inStock = (p.stock===undefined||p.stock===null)?true:Number(p.stock)>0;
-          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(\''+escH(String(p.id))+'\');">' +
-            '<div style="position:relative;height:180px;background:#f0fdf4;">' + img +
-            (inStock ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">متوفر</span>' : '') +
-            '</div>' +
-            '<div style="padding:10px 10px 12px;">' +
-              '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escH(p.name_ar||p.name)+'</p>' +
-              '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">'+Number(p.price||0).toLocaleString('en-US')+' د.ع</p>' +
-            '</div></div>';
-        }).join('');
-        if (window.lucide) lucide.createIcons();
+
+      var topNames = Object.entries(countMap)
+        .sort(function(a, b) { return b[1] - a[1]; })
+        .slice(0, 8)
+        .map(function(e) { return e[0]; });
+      console.log('[bestsellers] top names from orders:', topNames.length, topNames.slice(0,3));
+
+      /* 3. Get products */
+      var prods = await getProducts();
+      var prodMap = {};
+      prods.forEach(function(p) {
+        var key = (p.name_ar || p.name || '').trim();
+        if (key) prodMap[key] = p;
+        var key2 = (p.name || '').trim();
+        if (key2) prodMap[key2] = p;
+      });
+
+      /* 4. Build ranked list */
+      var topProds = [];
+      if (topNames.length > 0) {
+        topProds = topNames
+          .map(function(n, i) {
+            return {rank: i + 1, name: n, count: countMap[n], product: prodMap[n] || null};
+          })
+          .filter(function(x) { return x.product !== null; });
+        console.log('[bestsellers] matched', topProds.length, 'of', topNames.length, 'named products');
+      }
+
+      /* 5. Fallback: just show newest products if no ranked data */
+      if (!topProds.length) {
+        console.log('[bestsellers] no order data, using all products as fallback');
+        topProds = prods.slice(0, 8).map(function(p, i) {
+          return {rank: i + 1, name: p.name_ar || p.name || '', count: 0, product: p};
+        });
+      }
+
+      if (!topProds.length) {
+        grid.innerHTML = '<p class="text-brand-300 text-sm py-6 w-full text-center">\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0646\u062a\u062c\u0627\u062a</p>';
         return;
       }
 
-      // Use already-loaded window.products instead of a second Supabase fetch
-      var prods = (window.products||[]).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0),category:p.category}; });
-      var prodMap = {};
-      (prods||[]).forEach(function(p){ p.image = p.image_url || p.image || ''; prodMap[(p.name_ar||p.name||'').trim()] = p; });
+      console.log('[bestsellers] rendering', topProds.length, 'cards:',
+        topProds.map(function(t){ return 'Rank'+t.rank+':'+t.name; }));
 
-      var topProds = topNames.map(function(n,i){ return {rank:i+1, name:n, count:countMap[n], product:prodMap[n]||null}; })
-        .filter(function(x){ return x.product; });
-
-      if (!topProds.length) {
-        // Fallback: use already-loaded window.products
-        var fallProds2 = (window.products||[]).slice().reverse().slice(0,8).map(function(p){ return {id:p.id,name_ar:p.nameAr||p.name,name:p.name||p.nameAr,price:p.price,image_url:p.image,image:p.image,stock:(typeof p.stock==='number')?p.stock:(p.inStock?100:0)}; });
-        if (!fallProds2.length) { grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">لا توجد منتجات</p>'; return; }
-        grid.innerHTML = fallProds2.map(function(p) {
-          p.image = p.image_url || '';
-          var img = p.image && p.image.startsWith('http') ? '<img src="'+escH(p.image)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' : '<div style="display:flex;align-items:center;height:100%;justify-content:center;font-size:32px;">📦</div>';
-          return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView)openQuickView(\''+escH(String(p.id))+'\');">' +
-            '<div style="position:relative;height:180px;background:#f0fdf4;">'+ img +'</div>' +
-            '<div style="padding:10px;">' +
-              '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escH(p.name_ar||p.name)+'</p>' +
-              '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">'+Number(p.price||0).toLocaleString('en-US')+' د.ع</p>' +
-            '</div></div>';
-        }).join('');
-        if (window.lucide) lucide.createIcons(); return;
-      }
-
-      var medals = ['🥇','🥈','🥉'];
+      /* 6. Render */
       grid.innerHTML = topProds.map(function(tp, i) {
-        var p = tp.product;
-        var img = p.image && p.image.startsWith('http')
-          ? '<img src="'+escH(p.image)+'" alt="'+escH(p.name_ar||p.name)+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentNode.innerHTML='<div style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;\">📦</div>'">'
-          : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">📦</div>';
-        var inStock = (p.stock === undefined || p.stock === null) ? true : Number(p.stock) > 0;
-        var stockBadge = inStock
-          ? '<span style="position:absolute;top:8px;left:8px;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">متوفر</span>'
-          : '<span style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">نفذ</span>';
-        var rank = medals[i] || ('#'+(i+1));
-        return '<div class="flex-shrink-0 snap-start" style="width:170px;background:#fff;border-radius:16px;border:1.5px solid #d1fae5;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);cursor:pointer;" onclick="if(window.openQuickView&&\''+escH(String(p.id))+'\'&&\''+escH(String(p.id))+'\'.trim())openQuickView(\''+escH(String(p.id))+'\');">' +
-          '<div style="position:relative;height:180px;background:#f0fdf4;">' + img + stockBadge +
-          '<span style="position:absolute;top:8px;right:8px;font-size:18px;" title="'+(medals[i]?'الأكثر مبيعاً':'')+'">'+rank+'</span>' +
-          '</div>' +
-          '<div style="padding:10px 10px 12px;">' +
-            '<p style="font-weight:700;font-size:13px;color:#1e293b;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+escH(p.name_ar||p.name)+'">' + escH(p.name_ar||p.name) + '</p>' +
-            '<p style="font-size:11px;color:#059669;font-weight:700;margin:0 0 4px;">' + (['🏆 الأكثر مبيعاً هذا الشهر','🥈 ثاني أكثر منتج مبيعاً هذا الشهر','🥉 من أكثر المنتجات طلباً هذا الشهر','⭐ ضمن أفضل المنتجات مبيعاً هذا الشهر','⭐ من المنتجات المفضلة لدى العملاء هذا الشهر'][i] || '⭐ من المنتجات المفضلة لدى العملاء هذا الشهر') + '</p>' +
-            '<p style="font-weight:800;font-size:14px;color:#16a34a;margin:0;">' + Number(p.price||0).toLocaleString('en-US') + ' د.ع</p>' +
-          '</div>' +
-        '</div>';
+        return renderCard(tp.product, tp.rank, i === 0);
       }).join('');
 
       if (badge) badge.classList.remove('hidden');
-      if (window.lucide) lucide.createIcons();
-    } catch(e) {
-      if (grid) grid.innerHTML='<p class="text-brand-300 text-sm py-6 w-full text-center">تعذر التحميل</p>';
+      if (window.lucide) window.lucide.createIcons();
+      console.log('[bestsellers] render complete');
+
+    } catch(err) {
+      console.error('[bestsellers] EXCEPTION:', err.message, err.stack);
+      if (grid) {
+        grid.innerHTML = '<p class="text-brand-300 text-sm py-6 w-full text-center">\u062a\u0639\u0630\u0631 \u0627\u0644\u062a\u062d\u0645\u064a\u0644: ' + escH(String(err.message || err)) + '</p>';
+      }
     }
   }
 
-  if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadTopSelling, 400); });
+  /* ── Trigger: run when products are ready or on DOMContentLoaded ── */
+  function _tryRun() {
+    if (!_ran) loadTopSelling();
+  }
+
+  /* Listen for the app.js products-loaded event */
+  window.addEventListener('nbProductsLoaded', _tryRun);
+
+  /* Also run after a short delay (catches case when products already loaded) */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(_tryRun, 800); });
   } else {
-    setTimeout(loadTopSelling, 400);
+    setTimeout(_tryRun, 800);
   }
 })();
 </script>
