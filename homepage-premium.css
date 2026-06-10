@@ -2440,19 +2440,34 @@ section:not(#hero):not(#products):not(#navbar) {
   --safe-right:  env(safe-area-inset-right, 0px);
 }
 
-/* ─── 2. Full-height elements — dvh fix ────── */
+/* ─── 2. Full-height elements — dvh fix (active/open only) ────── */
 .cart-sidebar {
   height: 100vh !important;
   height: 100dvh !important;
   height: var(--dvh) !important;
 }
-.checkout-modal,
-.quick-view-modal,
-.search-modal,
-#searchModal,
-#mobileDrawer {
-  height: 100vh !important;
-  height: 100dvh !important;
+.checkout-modal:not(.active),
+.quick-view-modal:not(.active),
+.search-modal:not(.active),
+#searchModal:not(.active) {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+}
+#mobileDrawer:not(.open) {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+}
+.checkout-modal.active,
+.quick-view-modal.active,
+.search-modal.active,
+#searchModal.active,
+#mobileDrawer.open {
+  height: var(--dvh, 100dvh) !important;
+  visibility: visible;
 }
 
 /* ─── 3. Safe-area — ALL fixed bottom elements ─ */
@@ -2491,11 +2506,10 @@ section:not(#hero):not(#products):not(#navbar) {
 }
 
 /* ─── 5. Prevent body scroll bounce on modals ─ */
+html.modal-open,
 body.modal-open {
-  position: fixed !important;
   width: 100% !important;
   overflow: hidden !important;
-  /* preserve scroll position via JS top property */
 }
 /* Scroll chaining prevention — stops document scroll when modal scrollable area hits end */
 .cart-sidebar,
@@ -2595,14 +2609,16 @@ button.back-to-top,
   min-width: 44px !important;
 }
 
-/* ─── 10b. touch-action: manipulation — eliminates 300ms tap delay on iOS ─
-   This is the correct CSS solution (no JS ghost-click hacks needed) */
+/* ─── 10b. touch-action — buttons: manipulation; scroll areas: pan-y ─ */
 .btn-primary, .btn-secondary, .filter-btn, .cat-icon-btn,
 .nav-icon-btn, .nav-hamburger, .cart-badge,
 button.back-to-top, .whatsapp-float, .favorite-btn,
-.product-card-main, .search-result-item, .prem-card,
-button, [role="button"], a {
+button, [role="button"] {
   touch-action: manipulation !important;
+}
+.product-card-main, .search-result-item, .prem-card,
+#products, main, .premium-products-scroll {
+  touch-action: pan-y;
 }
 
 /* ─── 11. Forms — iOS prevent zoom + appearance ─ */
@@ -2765,13 +2781,13 @@ section { overflow-x: hidden; }
   contain: none !important;
 }
 
-/* ─── 19. iOS keyboard — layout resize ──────── */
-/* JS will set --dvh dynamically; this ensures layout follows */
-.cart-sidebar,
-#mobileDrawer,
-.checkout-modal,
-.search-modal {
-  height: var(--dvh, 100vh) !important;
+/* ─── 19. iOS keyboard — layout resize (active panels only) ──────── */
+.cart-sidebar.active,
+#mobileDrawer.open,
+.checkout-modal.active,
+.search-modal.active,
+#searchModal.active {
+  height: var(--dvh, 100dvh) !important;
 }
 
 /* ─── 20. RTL-specific Safari text fix ──────── */

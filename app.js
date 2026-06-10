@@ -655,20 +655,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initEventListeners() {
-  // ── Touch debug logs (temporary — remove after diagnosing scroll issue) ──
-  document.addEventListener('touchstart', function(e) {
-    console.log('[TOUCH-DBG] touchstart on:', e.target.id || e.target.className.toString().slice(0,50) || e.target.tagName,
-      '| defaultPrevented:', e.defaultPrevented, '| cancelable:', e.cancelable);
-  }, { passive: true, capture: true });
-  document.addEventListener('touchmove', function(e) {
-    console.log('[TOUCH-DBG] touchmove passive:', !e.cancelable, '| target:', e.target.id || e.target.tagName);
-  }, { passive: true, capture: true });
-  document.addEventListener('pointermove', function(e) {
-    if (e.pointerType === 'touch')
-      console.log('[TOUCH-DBG] pointermove touch on:', e.target.id || e.target.tagName);
-  }, { passive: true, capture: true });
-  // ────────────────────────────────────────────────────────────────────────
-
   const checkoutForm = document.getElementById('checkoutForm');
   if (checkoutForm) {
     checkoutForm.addEventListener('submit', function(e) {
