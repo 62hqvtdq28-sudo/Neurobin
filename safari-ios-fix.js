@@ -14,11 +14,16 @@
   /* ── 2. Body scroll reset ───────────────────────────────── */
   function resetBodyScroll() {
     var savedTop = parseInt(document.body.style.top || '0', 10);
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
     document.body.style.overflow   = '';
     document.body.style.position   = '';
     document.body.style.top        = '';
     document.body.style.width      = '';
     document.documentElement.style.overflow = '';
+    if (typeof window._scrollLockDepth !== 'undefined') {
+      window._scrollLockDepth = 0;
+    }
     // Restore scroll position if body was fixed
     if (savedTop) window.scrollTo(0, -savedTop);
   }

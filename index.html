@@ -66,8 +66,8 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
 <style>
 /* Main site responsive fixes */
-html { max-width: 100vw; scroll-behavior: smooth; }
-body { overflow-x: hidden; } /* overflow-x on body not html — html as scroll root blocks inner horizontal scrollers on iOS Safari */
+html { max-width: 100vw; scroll-behavior: smooth; overflow-x: clip; overflow-y: auto; height: auto; min-height: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+body { overflow-x: clip; overflow-y: auto; height: auto; min-height: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 img { max-width: 100%; height: auto; }
 
 /* Better mobile touch */
@@ -91,8 +91,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
   body { -webkit-user-select: none; user-select: none; }
   /* Allow text selection only in inputs */
   input, textarea, [contenteditable] { -webkit-user-select: auto; user-select: auto; }
-  /* Pull-to-refresh disable */
-  body { overscroll-behavior-y: contain; }
+  /* Pull-to-refresh disable + ensure page scroll in installed PWA */
+  html, body {
+    overflow-y: auto !important;
+    height: auto !important;
+    position: static !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 /* iOS status bar safe area */
 #navbar { padding-top: env(safe-area-inset-top, 0); }
@@ -335,9 +341,9 @@ img.img-loaded{opacity:1!important}
 </style>
 
 <style>
-body, html { -webkit-overflow-scrolling: touch; }
+html, body { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 main, .main-content, .section-content-wrapper { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
-#products { touch-action: manipulation; -webkit-overflow-scrolling: touch; }
+#products { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
 </style>
 </head>
 <body>
@@ -2153,18 +2159,21 @@ function toggleFollowMenu(e) {
 function toggleMobileMenu() {
   var nav = document.getElementById('mobileNav');
   var panel = document.getElementById('mobileNavPanel');
+  if (!nav) return;
   var isHidden = nav.classList.contains('hidden');
   if (isHidden) {
     nav.classList.remove('hidden');
     nav.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
+    if (typeof window._lockScroll === 'function') window._lockScroll();
+    else document.body.style.overflow = 'hidden';
     setTimeout(function() { if (panel) panel.style.transform = 'translateX(0)'; }, 10);
   } else {
     if (panel) panel.style.transform = 'translateX(100%)';
     setTimeout(function() {
       nav.classList.add('hidden');
       nav.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+      if (typeof window._unlockScroll === 'function') window._unlockScroll();
+      else document.body.style.overflow = '';
     }, 300);
   }
   var mainBadge = document.getElementById('favoritesBadge');
@@ -2182,7 +2191,8 @@ window.addEventListener('resize', function() {
       if (panel) panel.style.transform = 'translateX(100%)';
       nav.classList.add('hidden');
       nav.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+      if (typeof window._unlockScroll === 'function') window._unlockScroll();
+      else document.body.style.overflow = '';
     }
   }
 });
@@ -3063,7 +3073,12 @@ window.submitProductRequest = async function() {
     drawer.classList.remove('open');
     hamburger && hamburger.classList.remove('open');
     hamburger && hamburger.setAttribute('aria-expanded','false');
-    if (typeof window._unlockScroll !== 'function') document.body.style.overflow = '';
+    if (typeof window._unlockScroll === 'function') window._unlockScroll();
+    else {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
+      document.documentElement.classList.remove('modal-open');
+    }
   };
 
   // Keep backward-compat with old toggleMobileMenu()
@@ -3844,28 +3859,27 @@ document.addEventListener('focusin', function(e) {
   }, 380);
 }, { passive: true });
 
-/* ─── 3. Body scroll lock — keyboard-safe iOS fix ──────────────────
-   Uses body.modal-open class + position:fixed + top offset.
-   CSS does overflow:hidden; JS only sets position and top.
-   This works correctly with Virtual Viewport API keyboard detection. */
+/* ─── 3. Body scroll lock — nested modal-safe (no position:fixed in PWA) ── */
+var _scrollLockDepth = 0;
 var _scrollPos = 0;
 function _lockScroll(){
-  if(document.body.classList.contains('modal-open')) return;
+  _scrollLockDepth++;
+  if (_scrollLockDepth > 1) return;
   _scrollPos = window.pageYOffset || document.documentElement.scrollTop || 0;
+  document.documentElement.classList.add('modal-open');
   document.body.classList.add('modal-open');
-  document.body.style.top = '-' + _scrollPos + 'px';
-  /* Sync modals to visual viewport after body is locked */
+  document.body.style.top = '';
   setTimeout(_syncModalsToViewport, 0);
 }
 function _unlockScroll(){
-  if(!document.body.classList.contains('modal-open')) return;
+  if (_scrollLockDepth <= 0) return;
+  _scrollLockDepth--;
+  if (_scrollLockDepth > 0) return;
+  document.documentElement.classList.remove('modal-open');
   document.body.classList.remove('modal-open');
-  var savedTop = document.body.style.top;
   document.body.style.top = '';
-  var sy = Math.abs(parseInt(savedTop||'0',10))||_scrollPos;
-  window.scrollTo(0, sy);
+  window.scrollTo(0, _scrollPos);
   _scrollPos = 0;
-  /* Clear viewport-synced modal inline styles */
   requestAnimationFrame(function(){
     _VV_MODAL_IDS.forEach(function(id){
       var m = document.getElementById(id);
@@ -3874,35 +3888,12 @@ function _unlockScroll(){
   });
 }
 /* Expose globally so app.js and admin.js can use them */
-window._lockScroll   = _lockScroll;
+window._lockScroll = _lockScroll;
 window._unlockScroll = _unlockScroll;
-
-/* Patch body.style.overflow = 'hidden' calls via openCart / openCheckout */
-function _patchModalScrollLock(){
-  var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if(!_isIOS) return;
-
-  /* Patch all open* functions that set overflow hidden */
-  ['openCart','openCheckout','openQuickView','openSearch','openMobileDrawer'].forEach(function(fn){
-    if(typeof window[fn] !== 'function' || window[fn].__iosPatch) return;
-    var _orig = window[fn];
-    window[fn] = function(){
-      _lockScroll();
-      return _orig.apply(this, arguments);
-    };
-    window[fn].__iosPatch = true;
-  });
-  ['closeCart','closeCheckout','closeQuickView','closeSearch',
-   'closeMobileDrawer'].forEach(function(fn){
-    if(typeof window[fn] !== 'function' || window[fn].__iosPatch) return;
-    var _orig = window[fn];
-    window[fn] = function(){
-      _unlockScroll();
-      return _orig.apply(this, arguments);
-    };
-    window[fn].__iosPatch = true;
-  });
-}
+Object.defineProperty(window, '_scrollLockDepth', {
+  get: function(){ return _scrollLockDepth; },
+  set: function(v){ _scrollLockDepth = Math.max(0, Number(v) || 0); }
+});
 
 /* ─── 4. Orientation change — recompute layout ── */
 window.addEventListener('orientationchange', function(){
@@ -4056,13 +4047,10 @@ document.addEventListener('DOMContentLoaded', function(){
   _initSnapScroll();
   _fixOfferSlider();
   _adjustIPadModals();
-  /* Delay scroll lock patching until app.js is loaded */
-  setTimeout(_patchModalScrollLock, 800);
 });
 
 window.addEventListener('load', function(){
   _fixHorizontalOverflow();
-  _patchModalScrollLock();
   _adjustIPadModals();
   /* Signal to app.js that perf.js scroll handler is active (perf.js loads as defer,
      fires before window.load completes — flag is safe to check here) */
