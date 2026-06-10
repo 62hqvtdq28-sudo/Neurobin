@@ -838,6 +838,126 @@
   100% { background-position: -200% center; }
 }
 
+/* ═══════════════════════════════════════════
+   SNAPPY ANIMATIONS — ph.neurobin
+   ═══════════════════════════════════════════ */
+
+/* 1 ── Section enter (used by showSection in admin-auth.js) */
+@keyframes sectSlideIn {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:none; }
+}
+.page-transition-enter {
+  animation: sectSlideIn 0.17s cubic-bezier(0.22,1,0.36,1) both !important;
+}
+/* exit is hidden immediately so just keep the class harmless */
+.page-transition-exit { opacity:0; pointer-events:none !important; }
+
+/* 2 ── Modal inner content scale-in */
+@keyframes modalScaleIn {
+  from { opacity:0; transform:scale(0.88) translateY(16px); }
+  to   { opacity:1; transform:scale(1)   translateY(0); }
+}
+@keyframes modalScaleOut {
+  from { opacity:1; transform:scale(1)   translateY(0); }
+  to   { opacity:0; transform:scale(0.93) translateY(8px); }
+}
+.sn-modal-in  { animation: modalScaleIn  0.22s cubic-bezier(0.34,1.56,0.64,1) both !important; }
+.sn-modal-out { animation: modalScaleOut 0.14s ease forwards !important; }
+
+/* 3 ── Overlay backdrop fade */
+@keyframes overlayFadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes overlayFadeOut { from{opacity:1} to{opacity:0} }
+.sn-overlay-in  { animation: overlayFadeIn  0.18s ease both !important; }
+.sn-overlay-out { animation: overlayFadeOut 0.14s ease forwards !important; }
+
+/* 4 ── Sidebar active pill indicator */
+.sidebar-link { position:relative; overflow:hidden; }
+.sidebar-link::after {
+  content:''; position:absolute;
+  inset-inline-end:0; top:50%;
+  transform:translateY(-50%) scaleY(0);
+  width:3px; height:62%;
+  background:#F59E0B;
+  border-radius:3px 0 0 3px;
+  transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.sidebar-link.active::after { transform:translateY(-50%) scaleY(1); }
+
+/* 5 ── Sidebar link hover sweep */
+.sidebar-link::before {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,0.055);
+  transform:translateX(105%);
+  transition:transform 0.2s ease;
+  border-radius:inherit; pointer-events:none;
+}
+.sidebar-link:hover::before { transform:translateX(0); }
+
+/* 6 ── Button press micro-feedback */
+.cute-login-btn:active,
+button.w-full:active:not(.no-press),
+button[type=submit]:active { transform:scale(0.97) !important; transition:transform 0.07s ease !important; }
+
+/* 7 ── Ripple on sidebar clicks */
+@keyframes sn-ripple {
+  0%  { transform:scale(0);   opacity:.35; }
+  100%{ transform:scale(2.8); opacity:0;   }
+}
+.sn-ripple-dot {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,.22);
+  width:48px; height:48px;
+  margin-left:-24px; margin-top:-24px;
+  pointer-events:none;
+  animation:sn-ripple 0.48s ease-out forwards;
+}
+
+/* 8 ── Toast pop */
+@keyframes toastPop {
+  0%  { opacity:0; transform:translateY(12px) scale(0.92); }
+  70% { transform:translateY(-3px) scale(1.02); }
+  100%{ opacity:1; transform:none; }
+}
+#toast.show { animation:toastPop 0.22s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* 9 ── Notification panel slide */
+#notificationPanel {
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;
+  transform-origin: top left;
+}
+#notificationPanel.hidden {
+  opacity:0; transform:scaleY(0.88) translateY(-8px); pointer-events:none;
+}
+#notificationPanel:not(.hidden) {
+  opacity:1; transform:none; pointer-events:auto;
+}
+
+/* 10 ── Dropdown / picker panels */
+@keyframes dropIn {
+  from { opacity:0; transform:translateY(-6px) scaleY(0.94); }
+  to   { opacity:1; transform:none; }
+}
+.sn-drop-in { animation:dropIn 0.16s cubic-bezier(0.22,1,0.36,1) both !important; transform-origin:top center; }
+
+/* 11 ── Cards entrance stagger (order cards, product cards) */
+@keyframes cardFadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:none; }
+}
+.pm-order-card { animation:cardFadeUp 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.pm-order-card:nth-child(1){animation-delay:.03s}
+.pm-order-card:nth-child(2){animation-delay:.06s}
+.pm-order-card:nth-child(3){animation-delay:.09s}
+.pm-order-card:nth-child(4){animation-delay:.12s}
+.pm-order-card:nth-child(5){animation-delay:.15s}
+
+/* 12 ── Reduce motion override */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-enter, .sn-modal-in, .sn-modal-out,
+  .sn-overlay-in, .sn-overlay-out, .toastPop, .sn-drop-in,
+  .pm-order-card { animation:none !important; transition:none !important; }
+}
 
 </style>
 </head>
@@ -6401,6 +6521,154 @@ window.removeOfferFromProduct = async function() {
     if (btn) { btn.disabled = false; btn.textContent = '🗑️ حذف العرض'; }
   }
 };
+
+/* ═══════════════════════════════════════════
+   SNAPPY ANIMATIONS ENGINE — ph.neurobin
+   ═══════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  /* ── Helpers ── */
+  function getModalInner(modal) {
+    return modal.querySelector('.bg-white,.bg-cream') || modal.firstElementChild;
+  }
+
+  function animIn(modal) {
+    var inner = getModalInner(modal);
+    if (!inner) return;
+    inner.classList.remove('sn-modal-out');
+    modal.classList.remove('sn-overlay-out');
+    void inner.offsetWidth; // reflow
+    inner.classList.add('sn-modal-in');
+    modal.classList.add('sn-overlay-in');
+    inner.addEventListener('animationend', function() {
+      inner.classList.remove('sn-modal-in');
+    }, { once: true });
+  }
+
+  function animOut(modal, cb) {
+    var inner = getModalInner(modal);
+    if (!inner) { cb && cb(); return; }
+    inner.classList.remove('sn-modal-in');
+    modal.classList.remove('sn-overlay-in');
+    void inner.offsetWidth;
+    inner.classList.add('sn-modal-out');
+    modal.classList.add('sn-overlay-out');
+    var done = false;
+    inner.addEventListener('animationend', function() {
+      if (done) return; done = true;
+      inner.classList.remove('sn-modal-out');
+      modal.classList.remove('sn-overlay-out');
+      cb && cb();
+    }, { once: true });
+    // Fallback in case animationend doesn't fire
+    setTimeout(function() {
+      if (!done) { done = true; inner.classList.remove('sn-modal-out'); modal.classList.remove('sn-overlay-out'); cb && cb(); }
+    }, 300);
+  }
+
+  /* ── 1. .modal elements — MutationObserver for hidden class toggle ── */
+  function watchModal(modal) {
+    var prevHidden = modal.classList.contains('hidden');
+    new MutationObserver(function() {
+      var isHidden = modal.classList.contains('hidden');
+      if (prevHidden && !isHidden) animIn(modal);
+      prevHidden = isHidden;
+    }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+  }
+  document.querySelectorAll('.modal').forEach(watchModal);
+
+  /* ── 2. display:none modals — patched after all scripts load ── */
+  window.addEventListener('load', function() {
+    /* manualOrderModal */
+    var _omom = window.openManualOrderModal;
+    if (typeof _omom === 'function') {
+      window.openManualOrderModal = function() {
+        _omom.apply(this, arguments);
+        var m = document.getElementById('manualOrderModal');
+        if (m) requestAnimationFrame(function() { animIn(m); });
+      };
+    }
+    /* customerDetailsModal */
+    var _ocd = window.openCustomerDetails;
+    if (typeof _ocd === 'function') {
+      window.openCustomerDetails = function() {
+        _ocd.apply(this, arguments);
+        var m = document.getElementById('customerDetailsModal');
+        if (m) requestAnimationFrame(function() { animIn(m); });
+      };
+    }
+  });
+
+  /* ── 3. Sidebar ripple effect ── */
+  document.querySelectorAll('.sidebar-link').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      var dot = document.createElement('span');
+      dot.className = 'sn-ripple-dot';
+      var rect = btn.getBoundingClientRect();
+      dot.style.left = (e.clientX - rect.left) + 'px';
+      dot.style.top  = (e.clientY - rect.top)  + 'px';
+      btn.appendChild(dot);
+      dot.addEventListener('animationend', function() { dot.remove(); });
+    });
+  });
+
+  /* ── 4. Dropdown / picker panels animation ── */
+  var _origPicker = window.toggleProductPicker;
+  if (typeof _origPicker === 'function') {
+    window.toggleProductPicker = function(type) {
+      var picker = document.getElementById('productPicker');
+      var wasHidden = picker && picker.classList.contains('hidden');
+      _origPicker.apply(this, arguments);
+      if (wasHidden && picker && !picker.classList.contains('hidden')) {
+        picker.classList.add('sn-drop-in');
+        picker.addEventListener('animationend', function() { picker.classList.remove('sn-drop-in'); }, { once: true });
+      }
+    };
+  }
+
+  /* ── 5. Toast snappy pop — patch after DOMContentLoaded ── */
+  var _toastPatched = false;
+  function patchToast() {
+    if (_toastPatched || typeof window.showToast !== 'function') return;
+    _toastPatched = true;
+    var _origToast = window.showToast;
+    window.showToast = function(msg, type) {
+      _origToast.apply(this, arguments);
+      var toast = document.getElementById('toast');
+      if (toast) {
+        toast.style.animation = 'none';
+        void toast.offsetWidth;
+        toast.style.animation = '';
+      }
+    };
+  }
+  document.addEventListener('DOMContentLoaded', patchToast);
+  setTimeout(patchToast, 500);
+
+  /* ── 6. Section transition — wrap showSection for smoother switching ── */
+  function wrapShowSection() {
+    var _orig = window.showSection;
+    if (!_orig || _orig.__snPatched) return;
+    window.showSection = function(section) {
+      /* Fade out current section before switching */
+      var cur = document.querySelector('.section-content:not(.hidden)');
+      if (cur) {
+        cur.style.transition = 'opacity 0.09s ease, transform 0.09s ease';
+        cur.style.opacity = '0';
+        cur.style.transform = 'translateY(-6px)';
+      }
+      setTimeout(function() {
+        if (cur) { cur.style.transition = ''; cur.style.opacity = ''; cur.style.transform = ''; }
+        _orig.call(window, section);
+      }, cur ? 90 : 0);
+    };
+    window.showSection.__snPatched = true;
+  }
+  /* Wait for all other showSection patches to settle */
+  setTimeout(wrapShowSection, 1200);
+
+})();
 </script>
 </body>
 </html>
