@@ -539,27 +539,25 @@ async function loadCategoryImages() {
     return;
   }
   try {
+    // FIX: Admin saves images to site_settings table (key=cat_img_{filter}, value=base64 data URL)
+    // NOT to the categories table — reading from correct source now
     const { data, error } = await supabaseClient
-      .from('categories')
-      .select('slug, image_url, name_ar');
-    console.log('[DEBUG] categories query result:', data, error);
+      .from('site_settings')
+      .select('key, value')
+      .like('key', 'cat_img_%');
+
+    console.log('[DEBUG] site_settings cat_img query result:', data, error);
+
     if (error) {
-      if (error.code === 'PGRST205' || (error.message && error.message.includes('categories'))) {
-        console.error('[CATEGORIES] ❌ جدول categories غير موجود في Supabase.',
-          '\n→ السبب: لم يُنشأ الجدول بعد.',
-          '\n→ الحل: أنشئ جدول "categories" في Supabase بأعمدة: id, slug, name_ar, image_url',
-          '\n→ slug يجب أن يطابق: medicines, skincare, haircare, dental, handcare, footcare, makeup, devices, perfumes',
-          '\n→ الكود: ', error.code, '|', error.message);
-      } else {
-        console.warn('[DEBUG] categories error:', error.code, error.message);
-      }
+      console.warn('[DEBUG] site_settings error:', error.code, error.message);
       return;
     }
     if (!data || !data.length) {
-      console.warn('[CATEGORIES] ⚠️ الجدول موجود لكن فارغ — لا توجد بيانات أقسام في Supabase'); return;
+      console.warn('[CATEGORIES] ⚠️ لا توجد صور أقسام محفوظة في site_settings');
+      return;
     }
 
-    // map: category slug → circle element id
+    // map: category filter → circle element id
     const circleMap = {
       'medicines': 'cat_circle_medicines',
       'skincare':  'cat_circle_skincare',
@@ -572,27 +570,41 @@ async function loadCategoryImages() {
       'perfumes':  'cat_circle_perfumes'
     };
 
-    data.forEach(function(cat) {
-      console.log('[DEBUG] category:', cat.slug, '| image_url:', cat.image_url);
-      if (!cat.image_url || !cat.slug) return;
-      var circleId = circleMap[cat.slug];
-      if (!circleId) { console.log('[DEBUG] no circle mapped for slug:', cat.slug); return; }
+    data.forEach(function(row) {
+      // key format is: cat_img_{filter}
+      var catFilter = row.key.replace('cat_img_', '');
+      var imageUrl  = row.value || '';
+
+      console.log('[DEBUG] category id:', row.key,
+        '| name:', catFilter,
+        '| image_url:', imageUrl ? imageUrl.substring(0, 80) + '...' : 'EMPTY');
+
+      if (!imageUrl || !catFilter) {
+        console.log('[DEBUG] skipping — empty image_url for:', catFilter);
+        return;
+      }
+
+      var circleId = circleMap[catFilter];
+      if (!circleId) { console.log('[DEBUG] no circle mapped for filter:', catFilter); return; }
+
       var circle = document.getElementById(circleId);
       if (!circle) { console.log('[DEBUG] circle element not found:', circleId); return; }
+
       var img  = circle.querySelector('img');
       var icon = circle.querySelector('i');
-      if (!img) { console.log('[DEBUG] no img in circle:', circleId); return; }
+      if (!img) { console.log('[DEBUG] no img element in circle:', circleId); return; }
 
-      img.src = cat.image_url;
+      img.src = imageUrl;
       img.onload = function() {
         img.style.display = 'block';
         if (icon) icon.style.display = 'none';
-        console.log('[DEBUG] category image loaded:', cat.slug);
+        console.log('[DEBUG] ✅ category image loaded successfully:', catFilter);
       };
       img.onerror = function() {
         img.style.display = 'none';
         if (icon) icon.style.display = '';
-        console.warn('[DEBUG] category image failed to load:', cat.slug, cat.image_url);
+        console.warn('[DEBUG] ❌ category image failed to load:', catFilter,
+          '| url starts with:', imageUrl.substring(0, 80));
       };
     });
   } catch(e) {
