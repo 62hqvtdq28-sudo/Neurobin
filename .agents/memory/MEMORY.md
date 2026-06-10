@@ -1,0 +1,1 @@
+- [Neurobin backup list fix](neurobin-backup-list.md) — activity log supports 'backup' type but exportFullBackup never logged events; fix patches from outside like other hooks.

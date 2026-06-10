@@ -2267,6 +2267,7 @@
       <button onclick="filterActivityLog('order')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="order">📦 الطلبات</button>
       <button onclick="filterActivityLog('product')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="product">🧴 المنتجات</button>
       <button onclick="filterActivityLog('login')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="login">🔐 الدخول</button>
+      <button onclick="filterActivityLog('backup')" class="activity-filter-btn px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold" data-filter="backup">💾 النسخ الاحتياطية</button>
     </div>
     <div id="activityLogList" class="space-y-2">
       <div class="text-center py-8 text-brand-400 text-sm">جاري التحميل...</div>
@@ -5044,6 +5045,17 @@ if (typeof window !== 'undefined') {
       window.deleteProduct = async function(id) {
         _logActivity('product', 'حذف منتج #' + id, '');
         return _origDP.apply(this, arguments);
+      };
+    }
+    // Also intercept exportFullBackup to record each backup in the activity log
+    var _origEFB = window.exportFullBackup;
+    if (typeof _origEFB === 'function') {
+      window.exportFullBackup = async function() {
+        var result = await _origEFB.apply(this, arguments);
+        var nowStr = new Date().toLocaleString('ar-EG');
+        var fileName = 'neurobin-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        _logActivity('backup', '💾 نسخة احتياطية كاملة — ' + fileName, nowStr);
+        return result;
       };
     }
   }, 0);
