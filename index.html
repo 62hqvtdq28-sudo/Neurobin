@@ -2675,8 +2675,8 @@ window._showOrderConfirmation = function(orderData) {
     '<span style="font-size:20px;font-weight:900;color:#1a5c0f;">' + total + ' <span style="font-size:13px;font-weight:600;">د.ع</span></span>' +
     '</div></div>' +
     '<div style="display:flex;gap:10px;">' +
-    '<button onclick="document.getElementById('orderConfirmOverlay').remove();" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">متابعة التسوق</button>' +
-    '<button onclick="openOrderTracker();document.getElementById('orderConfirmOverlay').remove();" style="flex:1;padding:12px;background:linear-gradient(135deg,#1a5c0f,#2d8016);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">📦 تتبع طلبي</button>' +
+    '<button onclick="document.getElementById(\'orderConfirmOverlay\').remove();" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">متابعة التسوق</button>' +
+    '<button onclick="openOrderTracker();document.getElementById(\'orderConfirmOverlay\').remove();" style="flex:1;padding:12px;background:linear-gradient(135deg,#1a5c0f,#2d8016);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;">📦 تتبع طلبي</button>' +
     '</div></div>';
   document.body.appendChild(overlay);
   overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
@@ -2738,10 +2738,10 @@ window.addEventListener('load', function() {
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
           '<span style="font-size:20px;">🔔</span>' +
           '<span style="font-weight:800;color:#1a2e0d;font-size:14px;">حان وقت إعادة الطلب!</span>' +
-          '<button onclick="this.closest('div').parentNode.remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;">✕</button>' +
+          '<button onclick="this.closest(\'div\').parentNode.remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:18px;">✕</button>' +
           '</div>' +
           '<p style="font-size:13px;color:#374151;margin:0 0 10px;">طلبت "<strong>' + r.itemName + '</strong>" قبل ' + r.days + ' يوماً. هل تريد إعادة الطلب؟</p>' +
-          '<button onclick="openProductRequest('' + r.itemName.replace(/'/g,'') + '');this.closest('div').remove();" style="background:#1a5c0f;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;">🛒 اطلب الآن</button>';
+          '<button onclick="openProductRequest(\'' + r.itemName.replace(/'/g,'') + '\');this.closest(\'div\').remove();" style="background:#1a5c0f;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;">🛒 اطلب الآن</button>';
         document.body.appendChild(banner);
       }, 2000);
     });

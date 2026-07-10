@@ -1,0 +1,96 @@
+## Project Cleanup & Dead Code Removal
+
+Your task is to safely clean up the entire Neurobin project by removing only files, code, and dependencies that are genuinely unused.
+
+### Safety First
+
+Do NOT remove anything unless you have verified with high confidence that it is completely unused.
+
+Perform a full dependency and reference analysis before deleting anything.
+
+### Analyze the entire project
+
+Inspect all folders, source files, assets, configuration files, build settings, imports, exports, routes, components, scripts, stylesheets, APIs, and utilities.
+
+Identify:
+
+* Unused files
+* Unused JavaScript/TypeScript modules
+* Unused CSS files
+* Unused images
+* Unused fonts
+* Unused icons
+* Unused helper functions
+* Unused components
+* Unused utilities
+* Unused variables
+* Unused constants
+* Unused imports
+* Unused exports
+* Duplicate code
+* Dead code
+* Commented-out obsolete code
+* Legacy code
+* Experimental code no longer referenced
+* Unused dependencies in package.json
+* Duplicate libraries
+* Unused build artifacts
+* Empty folders
+
+### Cleanup Rules
+
+Only remove items that are confirmed to have zero references.
+
+Do NOT delete anything that is:
+
+* Dynamically imported
+* Lazy loaded
+* Loaded through configuration
+* Used by Admin Dashboard
+* Used by Customer Website
+* Used by the Backend/API
+* Used during deployment
+* Used in build scripts
+* Used in environment configuration
+* Reserved for future routing or application initialization
+
+If there is any uncertainty, keep the file.
+
+### Code Quality
+
+While cleaning:
+
+* Remove duplicate logic.
+* Remove unreachable code.
+* Remove obsolete comments.
+* Remove unused imports.
+* Remove unused variables.
+* Simplify overly complex code where safe.
+* Keep the project structure clean and organized.
+
+### Validation
+
+Before finishing:
+
+* Ensure the project builds successfully.
+* Ensure Customer Website works correctly.
+* Ensure Admin Dashboard works correctly.
+* Ensure Backend/API continues working.
+* Ensure there are no broken imports.
+* Ensure there are no missing assets.
+* Ensure there are no console errors.
+* Ensure functionality has not changed.
+
+### Git Workflow
+
+After completing the cleanup:
+
+* Commit all changes.
+* Push directly to the connected GitHub repository.
+* Do not ask for confirmation.
+* Provide a concise report listing:
+
+  * Files removed
+  * Dependencies removed
+  * Dead code removed
+  * Estimated reduction in project size

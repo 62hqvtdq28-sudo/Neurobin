@@ -2,7 +2,6 @@
 // BUILD VERSION — baked at deploy time for cache debugging
 // ===================================================
 const BUILD_VERSION = 'PROD-20260605-FIX2';
-console.log('[DEBUG] BUILD_VERSION:', BUILD_VERSION);
 
 // ===================================================
 // \u0625\u0639\u062f\u0627\u062f\u0627\u062a Supabase \u2014 Supabase Configuration
@@ -533,9 +532,8 @@ async function sendEmailNotification(orderData) {
 // صور أقسام الكاتيغوري — Category Circle Images
 // ===================================================
 async function loadCategoryImages() {
-  console.log('[DEBUG] STEP loadCategoryImages — start');
   if (!supabaseClient) {
-    console.warn('[DEBUG] loadCategoryImages: supabaseClient null');
+    console.warn('[loadCategoryImages]: supabaseClient null');
     return;
   }
   try {
@@ -546,10 +544,9 @@ async function loadCategoryImages() {
       .select('key, value')
       .like('key', 'cat_img_%');
 
-    console.log('[DEBUG] site_settings cat_img query result:', data, error);
 
     if (error) {
-      console.warn('[DEBUG] site_settings error:', error.code, error.message);
+      console.warn('[CategoryImages] site_settings error:', error.code, error.message);
       return;
     }
     if (!data || !data.length) {
@@ -575,40 +572,35 @@ async function loadCategoryImages() {
       var catFilter = row.key.replace('cat_img_', '');
       var imageUrl  = row.value || '';
 
-      console.log('[DEBUG] category id:', row.key,
-        '| name:', catFilter,
-        '| image_url:', imageUrl ? imageUrl.substring(0, 80) + '...' : 'EMPTY');
 
       if (!imageUrl || !catFilter) {
-        console.log('[DEBUG] skipping — empty image_url for:', catFilter);
         return;
       }
 
       var circleId = circleMap[catFilter];
-      if (!circleId) { console.log('[DEBUG] no circle mapped for filter:', catFilter); return; }
+      if (!circleId) return;
 
       var circle = document.getElementById(circleId);
-      if (!circle) { console.log('[DEBUG] circle element not found:', circleId); return; }
+      if (!circle) return;
 
       var img  = circle.querySelector('img');
       var icon = circle.querySelector('i');
-      if (!img) { console.log('[DEBUG] no img element in circle:', circleId); return; }
+      if (!img) return;
 
       img.src = imageUrl;
       img.onload = function() {
         img.style.display = 'block';
         if (icon) icon.style.display = 'none';
-        console.log('[DEBUG] ✅ category image loaded successfully:', catFilter);
       };
       img.onerror = function() {
         img.style.display = 'none';
         if (icon) icon.style.display = '';
-        console.warn('[DEBUG] ❌ category image failed to load:', catFilter,
+        console.warn('[CategoryImages] ❌ image failed:', catFilter,
           '| url starts with:', imageUrl.substring(0, 80));
       };
     });
   } catch(e) {
-    console.error('[DEBUG ERROR] loadCategoryImages:', e.message);
+    console.error('[CategoryImages]', e.message);
   }
 }
 

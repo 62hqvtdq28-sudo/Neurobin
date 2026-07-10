@@ -300,7 +300,6 @@
       try {
         const ab = await file.arrayBuffer();
         payload = new Uint8Array(ab);
-        console.log('[ImageStorage] Uint8Array OK (' + (payload.length/1024).toFixed(0) + 'KB), type:', contentType);
       } catch(e) {
         console.warn('[ImageStorage] arrayBuffer() failed, using File directly:', e.message);
       }
@@ -327,6 +326,5 @@
   };
 
   window.SupaDB = { Auth, Products, Bundles, Packages, Orders, Comments, Features, Testimonials, Settings, DiscountCodes, ImageStorage, Stats, _db };
-  console.log('[SupaDB] v2.4 \u2713 (patchOrder direct fetch)');
 })();
 

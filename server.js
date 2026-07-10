@@ -137,7 +137,6 @@ async function handleGroqProxy(req, res) {
         candidates: [{ content: { parts: [{ text }], role: 'model' } }],
       };
 
-      console.log('[groq-proxy] Success, tokens used:', resData.usage?.total_tokens);
       res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
       res.end(JSON.stringify(geminiResponse));
     } catch (err) {
