@@ -16,30 +16,30 @@ const CACHES_KEEP  = new Set([STATIC_CACHE, IMG_CACHE, API_CACHE, FONT_CACHE]);
 
 // ── Core files to pre-cache on install ───────────────────
 const PRECACHE_ASSETS = [
-  '/Neurobin/',
-  '/Neurobin/index.html',
-  '/Neurobin/styles.css',
-  '/Neurobin/tailwind.css',
-  '/Neurobin/font-override.css',
-  '/Neurobin/homepage-premium.css',
-  '/Neurobin/app.js',
-  '/Neurobin/supabase-db.js',
-  '/Neurobin/orders.js',
-  '/Neurobin/products.js',
-  '/Neurobin/packages.js',
-  '/Neurobin/bundles.js',
-  '/Neurobin/discounts.js',
-  '/Neurobin/skin-type.js',
-  '/Neurobin/safari-ios-fix.js',
-  '/Neurobin/pwa-install.js',
-  '/Neurobin/logo.jpg',
-  '/Neurobin/manifest.json',
-  '/Neurobin/neurobin-chat.js',
-  '/Neurobin/perf.js',
-  '/Neurobin/img-loader.js',
-  '/Neurobin/seo.js',
-  '/Neurobin/visitor-tracker.js',
-  '/Neurobin/telegram-notify.js',
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/tailwind.css',
+  '/font-override.css',
+  '/homepage-premium.css',
+  '/app.js',
+  '/supabase-db.js',
+  '/orders.js',
+  '/products.js',
+  '/packages.js',
+  '/bundles.js',
+  '/discounts.js',
+  '/skin-type.js',
+  '/safari-ios-fix.js',
+  '/pwa-install.js',
+  '/logo.jpg',
+  '/manifest.json',
+  '/neurobin-chat.js',
+  '/perf.js',
+  '/img-loader.js',
+  '/seo.js',
+  '/visitor-tracker.js',
+  '/telegram-notify.js',
 ];
 
 // ── Install ───────────────────────────────────────────────
@@ -91,7 +91,7 @@ function isSupabaseReq(url) {
   return url.includes('supabase.co');
 }
 function isInScope(url) {
-  return url.includes('/Neurobin/') || url.includes('github.io');
+  return url.startsWith(self.location.origin) || url.includes('github.io');
 }
 
 // ── Fetch ─────────────────────────────────────────────────
@@ -131,7 +131,7 @@ self.addEventListener('fetch', function (e) {
         }
         return res;
       }).catch(function () {
-        return caches.match(req) || caches.match('/Neurobin/index.html');
+        return caches.match(req) || caches.match('/index.html');
       })
     );
     return;
@@ -241,12 +241,12 @@ self.addEventListener('push', function (e) {
   try { data = e.data ? e.data.json() : {}; } catch(err) {}
   var opts = {
     body:    data.body    || 'لديك إشعار جديد من صيدلية نيروبين',
-    icon:    '/Neurobin/logo.jpg',
-    badge:   '/Neurobin/logo.jpg',
+    icon:    '/icons/icon-192.png',
+    badge:   '/icons/icon-192.png',
     dir:     'rtl',
     lang:    'ar',
     vibrate: [200, 100, 200],
-    data:    { url: data.url || '/Neurobin/' },
+    data:    { url: data.url || '/' },
     actions: [
       { action: 'open',  title: 'عرض'   },
       { action: 'close', title: 'إغلاق' }
@@ -260,7 +260,7 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   if (e.action === 'open' || !e.action) {
-    var url = (e.notification.data && e.notification.data.url) || '/Neurobin/';
+    var url = (e.notification.data && e.notification.data.url) || '/';
     e.waitUntil(clients.openWindow(url));
   }
 });

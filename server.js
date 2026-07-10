@@ -187,7 +187,17 @@ const server = http.createServer((req, res) => {
       }
       return;
     }
-    res.writeHead(200, { 'Content-Type': contentType });
+    const headers = { 'Content-Type': contentType };
+    // The service worker file and manifest must always be revalidated so
+    // browsers pick up updates promptly instead of serving a stale worker.
+    if (urlPath === '/sw.js' || urlPath === '/manifest.json') {
+      headers['Cache-Control'] = 'no-cache';
+    } else if (urlPath === '/index.html') {
+      headers['Cache-Control'] = 'no-cache';
+    } else if (/\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/.test(ext)) {
+      headers['Cache-Control'] = 'public, max-age=604800, immutable';
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 });

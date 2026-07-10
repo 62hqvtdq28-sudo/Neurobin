@@ -15,14 +15,16 @@
 <meta name="theme-color" content="#2D5016">
 <link rel="manifest" href="./manifest.json">
 <link rel="sitemap" type="application/xml" href="./sitemap.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/jpeg" href="./logo.jpg">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="صيدلية نيروبين">
-<link rel="apple-touch-icon" href="./logo.jpg">
-<link rel="apple-touch-icon" sizes="152x152" href="./logo.jpg">
-<link rel="apple-touch-icon" sizes="167x167" href="./logo.jpg">
-<link rel="apple-touch-icon" sizes="180x180" href="./logo.jpg">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="167x167" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
 <!-- iOS Splash Screens -->
 <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
 <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="./logo.jpg">
@@ -2324,13 +2326,9 @@ window.addEventListener('resize', function() {
   else _hookContactForm();
 })();
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){
-    navigator.serviceWorker.register('/sw.js',{scope:'/'})
-      .then(function(r){console.log('[SW] registered scope:',r.scope);})
-      .catch(function(e){console.warn('[SW] failed:',e);});
-  });
-}
+/* Service worker registration handled by pwa-install.js (single registration,
+   includes update-check + reload-on-update logic). Do not register here too —
+   a second registration with a different scope caused duplicate SW instances. */
 </script>
 
 <!-- ✅ Feature #15: Customer Order Tracking & Cancel (within 30 mins) -->

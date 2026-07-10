@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  var BASE_URL  = 'https://62hqvtdq28-sudo.github.io/Neurobin/';
+  var BASE_URL  = window.location.origin + '/';
   var LOGO_URL  = BASE_URL + 'logo.jpg';
   var DEF_TITLE = 'ph.neurobin — صيدليتك الموثوقة | أدوية وعناية بالبشرة ومكياج';
   var DEF_DESC  = 'صيدلية ph.neurobin — أكثر من 1200 منتج دوائي وتجميلي. أدوية، عناية بالبشرة، مكياج، عطور وأجهزة طبية. توصيل سريع 24-48 ساعة لجميع أنحاء العراق.';
@@ -184,7 +184,7 @@
           window.history.replaceState(
             { productId: productId },
             '',
-            '/Neurobin/?product=' + encodeURIComponent(productId)
+            '/?product=' + encodeURIComponent(productId)
           );
         } catch(e) {}
       }, 120);
@@ -202,7 +202,7 @@
       updateMeta({});
       removeProductLD();
       try {
-        window.history.replaceState({}, '', '/Neurobin/');
+        window.history.replaceState({}, '', '/');
       } catch(e) {}
     };
     window.closeQuickView.__seoPatched = true;

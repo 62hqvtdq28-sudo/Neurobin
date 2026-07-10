@@ -1,10 +1,10 @@
 {
-  "id": "/Neurobin/",
+  "id": "/",
   "name": "ph.neurobin — صيدليتك الموثوقة",
   "short_name": "نيروبين",
   "description": "صيدلية نيوروبن — أدوية، مستحضرات تجميل، عناية بالبشرة والشعر. توصيل سريع لجميع أنحاء العراق.",
-  "start_url": "/Neurobin/?source=pwa",
-  "scope": "/Neurobin/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#FDFCF8",
@@ -22,27 +22,27 @@
   },
   "icons": [
     {
-      "src": "logo.jpg",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.jpg",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.jpg",
+      "src": "icons/icon-maskable-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "logo.jpg",
+      "src": "icons/icon-maskable-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -51,42 +51,26 @@
       "name": "تسوّق الآن",
       "short_name": "تسوق",
       "description": "تصفح منتجاتنا",
-      "url": "/Neurobin/?source=shortcut#products",
-      "icons": [{ "src": "logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
+      "url": "/?source=shortcut#products",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "تتبع طلبي",
       "short_name": "طلبي",
       "description": "تتبع حالة طلبك",
-      "url": "/Neurobin/?source=shortcut#track-order",
-      "icons": [{ "src": "logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
+      "url": "/?source=shortcut#track-order",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "العروض",
       "short_name": "عروض",
       "description": "أحدث العروض والخصومات",
-      "url": "/Neurobin/?source=shortcut#offers",
-      "icons": [{ "src": "logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "logo.jpg",
-      "sizes": "540x720",
-      "type": "image/jpeg",
-      "form_factor": "narrow",
-      "label": "صيدلية نيروبين — الصفحة الرئيسية"
-    },
-    {
-      "src": "logo.jpg",
-      "sizes": "720x540",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "صيدلية نيروبين — تصفح المنتجات"
+      "url": "/?source=shortcut#offers",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "share_target": {
-    "action": "/Neurobin/",
+    "action": "/",
     "method": "GET",
     "params": {
       "title": "title",
