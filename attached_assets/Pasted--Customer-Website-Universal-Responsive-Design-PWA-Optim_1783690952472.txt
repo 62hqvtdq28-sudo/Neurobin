@@ -1,0 +1,135 @@
+# Customer Website – Universal Responsive Design & PWA Optimization
+
+Your task is to make the Customer Website fully responsive, fluid, and optimized for every screen size while maintaining a single, clean codebase.
+
+## Objective
+
+Ensure the Customer Website provides an excellent user experience across:
+
+* Desktop
+* Laptop
+* Tablet
+* Android phones
+* iPhone
+* Foldable devices
+* Small screens
+* Large monitors
+* Progressive Web App (PWA)
+
+The website must look and behave consistently in both the browser and when installed as a PWA.
+
+## Requirements
+
+Analyze the entire Customer Website before making changes.
+
+Improve responsive behavior without changing the visual identity or existing functionality.
+
+### Responsive Improvements
+
+Optimize:
+
+* Layouts
+* Navigation
+* Header
+* Footer
+* Product Grid
+* Product Cards
+* Search
+* Filters
+* Categories
+* Product Details
+* Shopping Cart
+* Checkout
+* Popups
+* Dialogs
+* Forms
+* Buttons
+* Images
+* Icons
+* Typography
+* Spacing
+* Animations
+
+### PWA Optimization
+
+Ensure the installed PWA behaves like a native application.
+
+Improve:
+
+* Splash screen behavior
+* Safe-area support (notches and Dynamic Island)
+* Full-screen experience
+* Orientation handling
+* Touch responsiveness
+* Offline support (if already implemented)
+* Install experience
+* Startup performance
+* Navigation transitions
+* Scroll restoration
+* Mobile gestures
+
+### Responsive Standards
+
+Use a mobile-first approach.
+
+Use flexible layouts.
+
+Prefer:
+
+* CSS Grid
+* Flexbox
+* Relative units
+* Responsive typography
+* Responsive spacing
+* Modern CSS features
+
+Avoid fixed widths whenever possible.
+
+Ensure every page adapts smoothly without horizontal scrolling.
+
+### Code Organization
+
+Keep the responsive implementation clean.
+
+Do NOT create unnecessary duplicate CSS files.
+
+Do NOT duplicate components.
+
+Prefer extending the existing stylesheet instead of creating multiple responsive stylesheets.
+
+Reuse existing classes whenever possible.
+
+### Validation
+
+Test all major pages at multiple screen sizes.
+
+Verify:
+
+* No layout breaks.
+* No overlapping elements.
+* No clipped text.
+* No overflowing containers.
+* No horizontal scrolling.
+* Fast touch interaction.
+* Smooth animations.
+* Correct PWA behavior.
+* Accessibility remains intact.
+
+### Restrictions
+
+Do NOT modify the Admin Dashboard.
+
+Do NOT modify Backend/API unless absolutely required.
+
+Do NOT change the existing design language.
+
+Do NOT remove any existing functionality.
+
+### Git Workflow
+
+After completing the work:
+
+* Commit all modified files.
+* Push directly to the connected GitHub repository.
+* Do not ask for confirmation.
+* Provide a concise summary of the responsive and PWA improvements completed.

@@ -7,8 +7,8 @@
 //   Supabase    → Network-First (5-min TTL fallback)
 //   Fonts/CDN   → Cache-First (immutable assets)
 // ══════════════════════════════════════════════════════════
-const SW_VERSION   = 'v11';
-const STATIC_CACHE = 'neurobin-static-v11';
+const SW_VERSION   = 'v12';
+const STATIC_CACHE = 'neurobin-static-v12';
 const IMG_CACHE    = 'neurobin-img-v2';
 const API_CACHE    = 'neurobin-api-v3';
 const FONT_CACHE   = 'neurobin-font-v1';
@@ -34,6 +34,12 @@ const PRECACHE_ASSETS = [
   '/Neurobin/pwa-install.js',
   '/Neurobin/logo.jpg',
   '/Neurobin/manifest.json',
+  '/Neurobin/neurobin-chat.js',
+  '/Neurobin/perf.js',
+  '/Neurobin/img-loader.js',
+  '/Neurobin/seo.js',
+  '/Neurobin/visitor-tracker.js',
+  '/Neurobin/telegram-notify.js',
 ];
 
 // ── Install ───────────────────────────────────────────────
@@ -45,7 +51,7 @@ self.addEventListener('install', function (e) {
       return Promise.allSettled(
         PRECACHE_ASSETS.map(function (url) {
           return cache.add(url).catch(function (err) {
-            console.warn('[SW v11] Failed to cache:', url, err.message);
+            console.warn('[SW v12] Failed to cache:', url, err.message);
           });
         })
       );
@@ -221,7 +227,7 @@ self.addEventListener('sync', function (e) {
   if (e.tag === 'sync-orders') e.waitUntil(syncPendingOrders());
 });
 async function syncPendingOrders() {
-  console.log('[SW v11] Background sync: pending orders check');
+  console.log('[SW v12] Background sync: pending orders check');
 }
 
 // ── Skip waiting on message ───────────────────────────────

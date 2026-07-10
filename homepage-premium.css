@@ -2951,3 +2951,65 @@ body {
 .product-card-main .product-img-animated:not(.img-loading) {
   opacity: 1 !important;
 }
+/* ============================================================
+   RESPONSIVE ADDITIONS — Large Screens & Landscape
+   ============================================================ */
+
+/* ── Large monitors (≥1440px): constrain max reading width ──── */
+@media (min-width: 1440px) {
+  .max-w-7xl { max-width: 1400px; margin-left: auto; margin-right: auto; }
+  #navbar .nav-inner { max-width: 1400px; margin-left: auto; margin-right: auto; }
+}
+
+/* ── Navbar landscape: left/right safe-area ─────────────────── */
+@media (orientation: landscape) and (max-height: 600px) {
+  #navbar .nav-inner {
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: 8px;
+  }
+}
+
+/* ── Drawer footer: safe-area on landscape ──────────────────── */
+.drawer-footer {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── PWA install banner: safe-area aware ────────────────────── */
+#pwa-banner, #pwa-ios-banner {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-left:   calc(12px + env(safe-area-inset-left,   0px));
+  padding-right:  calc(12px + env(safe-area-inset-right,  0px));
+}
+
+/* ── Cart sidebar: safe-area bottom ────────────────────────── */
+.cart-sidebar .cart-footer,
+.cart-sidebar > div:last-child {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Foldable unfolded (768–899px tablet-ish) ───────────────── */
+@media (min-width: 768px) and (max-width: 899px) {
+  .products-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .cat-icon-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ── Prevent text overflow in RTL layouts ───────────────────── */
+[dir="rtl"] .product-card-main h3,
+[dir="rtl"] .product-card-main p,
+[dir="rtl"] .add-to-cart-btn span {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ── Smooth page scroll animations ─────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
