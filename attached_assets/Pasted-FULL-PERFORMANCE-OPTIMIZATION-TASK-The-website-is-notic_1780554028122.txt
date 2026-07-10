@@ -1,0 +1,105 @@
+FULL PERFORMANCE OPTIMIZATION TASK
+
+The website is noticeably slow on mobile, iPad Safari, and desktop.
+
+I need actual performance improvements, not code cleanup only.
+
+Investigate and fix the biggest bottlenecks.
+
+=========================
+DATABASE OPTIMIZATION
+=========================
+
+1. Find all repeated database queries.
+2. Remove duplicate fetch operations.
+3. Cache frequently used data.
+4. Replace SELECT * with specific columns.
+5. Load only required records.
+6. Add pagination where needed.
+7. Prevent analytics from reloading unnecessarily.
+8. Prevent products from being fetched multiple times.
+
+=========================
+PRODUCTS PERFORMANCE
+=========================
+
+1. Do not load all products immediately.
+2. Implement lazy loading.
+3. Implement pagination or infinite scroll.
+4. Render visible products first.
+5. Delay loading off-screen content.
+6. Optimize product search performance.
+
+=========================
+IMAGES
+=========================
+
+1. Find oversized images.
+2. Compress large images.
+3. Use WebP when possible.
+4. Add loading="lazy" to all product images.
+5. Add loading="lazy" to category images.
+6. Prevent loading full-resolution images in cards.
+
+=========================
+JAVASCRIPT
+=========================
+
+1. Remove duplicate event listeners.
+2. Remove unused code.
+3. Fix memory leaks.
+4. Debounce search fields.
+5. Reduce unnecessary DOM updates.
+6. Reduce re-renders.
+
+=========================
+ADMIN PANEL
+=========================
+
+1. Load analytics only when Analytics page is opened.
+2. Load orders only when Orders page is opened.
+3. Do not preload all admin modules.
+4. Optimize dashboard startup speed.
+
+=========================
+MOBILE PERFORMANCE
+=========================
+
+Target devices:
+
+- iPad Safari
+- iPhone Safari
+- Android Chrome
+
+Fix:
+
+- Slow scrolling
+- Input lag
+- Delayed page transitions
+- Slow modal opening
+
+=========================
+ANALYSIS REQUIRED
+=========================
+
+Before making changes:
+
+1. Identify the top 10 slowest functions.
+2. Identify the top 10 largest files.
+3. Identify the biggest database bottlenecks.
+4. Identify the biggest rendering bottlenecks.
+
+After implementing fixes:
+
+Provide:
+
+- Files changed
+- Exact optimizations applied
+- Before vs After metrics
+- Estimated performance improvement
+
+IMPORTANT:
+
+Do not only explain.
+Actually implement and verify the optimizations.
+Prioritize real speed improvements that users can feel immediately.

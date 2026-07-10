@@ -1,0 +1,1243 @@
+@import url("font-override.css");
+
+/* === Cairo Global Font Override === */
+/* Applied at top priority to ensure Cairo font is used everywhere */
+html, body {
+  font-family: 'Cairo', sans-serif !important;
+  overscroll-behavior-x: none;
+}
+html {
+  overflow-x: clip;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+/* overflow-x on body only — keeps page as natural scroll root on iOS/PWA */
+body {
+  overflow-x: clip;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+*, *::before, *::after {
+  font-family: inherit;
+}
+input, textarea, select, button, a, span, div, p, h1, h2, h3, h4, h5, h6, label {
+  font-family: 'Cairo', sans-serif !important;
+}
+/* Loading Screen */
+.loading-screen{position:fixed;inset:0;background:#FDFCF8;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s}
+.loading-screen.hidden{opacity:0;pointer-events:none}
+.loading-spinner{width:48px;height:48px;border:4px solid #E8EAD8;border-top-color:#2D5016;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Scroll Animations */
+.scroll-animate{opacity:0;transform:translateY(40px);transition:opacity .6s ease-out,transform .6s ease-out}
+.scroll-animate.visible{opacity:1;transform:translateY(0)}
+.scroll-animate-left{opacity:0;transform:translateX(-50px);transition:opacity .6s ease-out,transform .6s ease-out}
+.scroll-animate-left.visible{opacity:1;transform:translateX(0)}
+.scroll-animate-right{opacity:0;transform:translateX(50px);transition:opacity .6s ease-out,transform .6s ease-out}
+.scroll-animate-right.visible{opacity:1;transform:translateX(0)}
+.scroll-animate-scale{opacity:0;transform:scale(.9);transition:opacity .6s ease-out,transform .6s ease-out}
+.scroll-animate-scale.visible{opacity:1;transform:scale(1)}
+/* ── PERMANENT SAFARI FIX: auto-reveal fallback ─────────────────────────
+   If IntersectionObserver NEVER fires 'visible' class (Safari/iPad bug),
+   CSS animation auto-reveals the element after a delay.
+   When .visible IS added normally → animation:none cancels the fallback.
+   This is the permanent safety net — works even if ALL JS fails.       */
+.scroll-animate-scale{animation:safariFbScale .55s ease-out .75s forwards}
+.scroll-animate{animation:safariFbUp .55s ease-out 1.0s forwards}
+.scroll-animate-left{animation:safariFbLeft .55s ease-out 1.1s forwards}
+.scroll-animate-right{animation:safariFbRight .55s ease-out 1.1s forwards}
+@keyframes safariFbScale{to{opacity:1;transform:scale(1)}}
+@keyframes safariFbUp{to{opacity:1;transform:translateY(0)}}
+@keyframes safariFbLeft{to{opacity:1;transform:translateX(0)}}
+@keyframes safariFbRight{to{opacity:1;transform:translateX(0)}}
+/* Cancel fallback animation the moment .visible is properly applied */
+.scroll-animate.visible,.scroll-animate-left.visible,
+.scroll-animate-right.visible,.scroll-animate-scale.visible{
+  animation:none!important}
+
+
+.delay-100{transition-delay:100ms!important}
+.delay-200{transition-delay:200ms!important}
+.delay-300{transition-delay:300ms!important}
+.delay-400{transition-delay:400ms!important}
+.delay-500{transition-delay:500ms!important}
+
+/* Hero Video */
+.hero-video-container{position:absolute;inset:0;overflow:hidden;z-index:0;contain:strict}
+.hero-video{width:100%;height:100%;object-fit:cover}
+.hero-video-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(30,53,15,.88) 0%,rgba(45,80,22,.75) 50%,rgba(61,107,45,.6) 100%)}
+
+/* Floating Elements */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+.float-animation{animation:float 6s ease-in-out infinite}
+.float-delayed{animation:float 6s ease-in-out infinite;animation-delay:-3s}
+@keyframes pulseSoft{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.25;transform:scale(1.05)}}
+.pulse-soft{animation:pulseSoft 4s ease-in-out infinite}
+
+/* Particle Animation */
+@keyframes particleFloat{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(-100vh) rotate(720deg);opacity:0}}
+.particle{position:absolute;width:8px;height:8px;background:rgba(255,255,255,0.2);border-radius:50%;animation:particleFloat linear infinite}
+.particle:nth-child(1){left:10%;animation-duration:18s;animation-delay:0s}
+.particle:nth-child(2){left:25%;animation-duration:22s;animation-delay:3s}
+.particle:nth-child(3){left:40%;animation-duration:16s;animation-delay:1s}
+.particle:nth-child(4){left:55%;animation-duration:20s;animation-delay:5s}
+.particle:nth-child(5){left:70%;animation-duration:24s;animation-delay:2s}
+.particle:nth-child(6){left:85%;animation-duration:19s;animation-delay:4s}
+
+/* Text Animations */
+@keyframes textReveal{0%{clip-path:inset(0 100% 0 0)}100%{clip-path:inset(0 0 0 0)}}
+.text-animated{animation:textReveal 1.2s ease-out forwards}
+@keyframes textGlow{0%,100%{text-shadow:0 0 20px rgba(245,158,11,0.4)}50%{text-shadow:0 0 50px rgba(245,158,11,0.7),0 0 80px rgba(245,158,11,0.4)}}
+.text-glow{animation:textGlow 3s ease-in-out infinite}
+
+/* Button Animations */
+@keyframes btnPop{0%{transform:scale(.8);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+.btn-animated{animation:btnPop .6s ease-out forwards;opacity:0}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.5)}50%{box-shadow:0 0 0 20px rgba(245,158,11,0)}}
+.btn-glow-pulse{animation:btnPulse 2s ease-in-out infinite}
+
+/* Trust Badge Animation */
+@keyframes badgeSlideIn{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.trust-badge{opacity:0;animation:badgeSlideIn .5s ease-out forwards}
+.trust-badge:nth-child(1){animation-delay:1.5s}
+.trust-badge:nth-child(2){animation-delay:1.7s}
+.trust-badge:nth-child(3){animation-delay:1.9s}
+
+/* Counter Animation */
+@keyframes numberPop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+.counter-pop{animation:numberPop .3s ease-out}
+
+/* Marquee */
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee{animation:marquee 35s linear infinite}
+
+/* Brand Emblem */
+.brand-emblem{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#2D5016 0%,#3D6B2D 100%);display:flex;align-items:center;justify-content:center;position:relative;transition:transform .3s ease;touch-action:manipulation}
+.brand-emblem:hover{transform:rotate(10deg) scale(1.05)}
+.brand-emblem::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid rgba(170,191,137,.4)}
+.brand-emblem::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(170,191,137,.2);animation:pulseSoft 2s ease-out infinite}
+
+/* Navigation */
+.nav-scrolled{background-color:rgba(250,249,245,.98)!important;box-shadow:0 4px 30px rgba(45,80,22,.1)}
+
+/* Buttons */
+.btn-primary{transition:background-color .25s,transform .25s,box-shadow .25s;touch-action:manipulation}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(45,80,22,.35)}
+.btn-primary:active{transform:scale(.97)}
+
+/* Cards */
+.card-hover{transition:transform .4s cubic-bezier(.4,0,.2,1),box-shadow .4s cubic-bezier(.4,0,.2,1)}
+.card-hover:hover{transform:translateY(-10px);box-shadow:0 30px 60px rgba(45,80,22,.15)}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2rem}
+.product-card-main{background:#fff;border-radius:1.5rem;overflow:hidden;border:1px solid #E8EAD8;transition:border-color .35s,box-shadow .35s,opacity .35s;position:relative;contain:layout style}
+.product-card-main::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#2D5016,#5C933B,#F59E0B);transform:scaleX(0);transition:transform .4s cubic-bezier(.4,0,.2,1)}
+.product-card-main:hover::before{transform:scaleX(1)}
+.product-card-main:hover{transform:translateY(-10px);box-shadow:0 30px 60px rgba(45,80,22,.15);border-color:#AABF89}
+.product-image-wrapper{overflow:hidden;position:relative;height:260px;background:linear-gradient(135deg,#E8EAD8 0%,#F6F7F4 100%);display:flex;align-items:center;justify-content:center}
+.product-image{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
+.product-card-main:hover .product-image{transform:scale(1.08)}
+.product-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(45,80,22,.95) 0%,rgba(45,80,22,.4) 50%,transparent 100%);opacity:0;transition:opacity .4s ease;display:flex;align-items:flex-end;justify-content:center;padding:1.5rem}
+.product-card-main:hover .product-overlay{opacity:1}
+
+/* Filter */
+/* ✅ Modern filter buttons */
+.filter-scroll-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none}
+.filter-scroll-wrapper::-webkit-scrollbar{display:none}
+.filter-nav{display:flex;gap:10px;padding:4px 2px;width:max-content;margin:0 auto}
+@media(min-width:768px){.filter-nav{width:auto;flex-wrap:wrap;justify-content:center}}
+.filter-btn{transition:background-color .2s,transform .2s,box-shadow .2s,border-color .2s;position:relative;overflow:hidden;white-space:nowrap;border:1.5px solid rgba(45,80,22,.1);border-radius:9999px;padding:10px 22px;background:#F0F2E8;color:#2D5016;font-weight:600;font-size:.875rem;cursor:pointer;letter-spacing:.01em;touch-action:manipulation}
+.filter-btn-inner{display:flex;align-items:center;gap:7px}
+.filter-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.3),transparent);opacity:0;transition:opacity .25s}
+.filter-btn:hover{background:#D1D5B1;border-color:rgba(45,80,22,.25);transform:translateY(-2px);box-shadow:0 6px 18px rgba(45,80,22,.15)}
+.filter-btn:hover::before{opacity:1}
+.filter-btn:active{transform:translateY(0);box-shadow:none}
+.filter-btn.active{background:linear-gradient(135deg,#2D5016 0%,#3D6B2D 100%);color:#fff;box-shadow:0 6px 22px rgba(45,80,22,.38);border-color:transparent;transform:translateY(-1px)}
+.filter-btn.active::before{opacity:1}
+
+/* Features */
+.feature-card{background:#fff;border-radius:1.5rem;padding:2rem;border:1px solid #E8EAD8;transition:transform .35s,box-shadow .35s,border-color .35s}
+.feature-card:hover{transform:translateY(-8px);box-shadow:0 25px 50px rgba(45,80,22,.12);border-color:#AABF89}
+.feature-icon{width:70px;height:70px;border-radius:1.25rem;display:flex;align-items:center;justify-content:center;transition:transform .35s ease}
+.feature-card:hover .feature-icon{transform:scale(1.1) rotate(5deg)}
+.stat-number{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#2D5016,#5C933B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* Cart Sidebar */
+.cart-sidebar{position:fixed;top:0;right:0;width:100%;max-width:420px;height:100vh;background:#fff;z-index:3000;transform:translateX(100%);visibility:hidden;transition:transform .4s cubic-bezier(.4,0,.2,1),visibility .4s;box-shadow:-10px 0 40px rgba(0,0,0,.15);display:flex;flex-direction:column}
+.cart-sidebar.active{transform:translateX(0);visibility:visible}
+.cart-overlay{position:fixed;inset:0;background:rgba(30,53,15,.5);z-index:2999;opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.cart-overlay.active{opacity:1;visibility:visible}
+.cart-badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;background:#EF4444;color:#fff;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px}
+
+/* Glass Effect */
+.glass-effect{background:rgba(255,255,255,0.95);border:1px solid rgba(255, 255, 255, 0.3)}
+
+/* Checkout Modal */
+.checkout-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;/* JS _syncModalsToViewport() sets top/left/width/height to match visualViewport */transition:opacity .25s ease,visibility .25s ease}
+.checkout-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.checkout-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-height:calc(100% - 2rem);opacity:0;transition:opacity .35s ease}
+.checkout-modal.active .checkout-container{opacity:1}
+
+/* WhatsApp Float Button */
+.whatsapp-float{position:fixed;bottom:24px;left:24px;z-index:1000;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#25D366 0%,#128C7E 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 30px rgba(37,211,102,.4);transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s;cursor:pointer;overflow:hidden;touch-action:manipulation}
+.whatsapp-float:hover{transform:scale(1.1) translateY(-5px);box-shadow:0 15px 40px rgba(37,211,102,.5)}
+.whatsapp-float::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2) 0%,transparent 50%)}
+.whatsapp-float svg{width:32px;height:32px;fill:#fff}
+@keyframes pulseRing{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+.whatsapp-float .pulse-ring{position:absolute;inset:0;border-radius:50%;border:3px solid #25D366;animation:pulseRing 2s infinite;opacity:0}
+
+/* Search Modal */
+.search-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease}
+.search-modal.active{opacity:1;visibility:visible;backdrop-filter:none;-webkit-backdrop-filter:none;}
+.search-container{width:90%;max-width:600px;background:#fff;border-radius:1.5rem;overflow:hidden;overflow-y:auto;max-height:80dvh;opacity:0;transition:opacity .25s ease}
+.search-modal.active .search-container{opacity:1}
+.search-input{width:100%;padding:1.5rem 2rem;font-size:1.25rem;border:none;outline:none;background:transparent;font-family:'Cairo',sans-serif}
+.search-results{max-height:400px;overflow-y:auto;border-top:1px solid #E8EAD8}
+.search-result-item{padding:1rem 2rem;cursor:pointer;transition:background .2s ease;display:flex;align-items:center;gap:1rem}
+.search-result-item:hover{background:#F6F7F4}
+
+/* Testimonial Card */
+.testimonial-card{background:#fff;border-radius:1.5rem;padding:2rem;border:1px solid #E8EAD8;transition:transform .35s ease,box-shadow .35s ease;position:relative;overflow:hidden}
+.testimonial-card::before{content:'"';position:absolute;top:.5rem;right:1.5rem;font-size:6rem;color:#D1D5B1;font-family:Georgia,serif;line-height:1}
+.testimonial-card:hover{transform:translateY(-8px);box-shadow:0 25px 50px rgba(45,80,22,.1)}
+.testimonial-card .stars{color:#F59E0B}
+
+/* Trust Badge */
+.trust-badge{display:inline-flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem;background:#fff;border-radius:9999px;box-shadow:0 4px 15px rgba(0,0,0,.08);border:1px solid #E8EAD8}
+.trust-badge-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.trust-badge-icon.green{background:linear-gradient(135deg,#D1FAE5,#A7F3D0);color:#065F46}
+.trust-badge-icon.gold{background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#92400E}
+.trust-badge-icon.blue{background:linear-gradient(135deg,#DBEAFE,#BFDBFE);color:#1E40AF}
+
+/* Stats Card */
+.stats-card{background:linear-gradient(135deg,#2D5016 0%,#3D6B2D 100%);border-radius:1.5rem;padding:2rem;color:#fff;position:relative;overflow:hidden}
+.stats-card::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%)}
+.stats-card:hover{transform:scale(1.03)}
+
+/* Toast Notification */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:linear-gradient(135deg,#2D5016,#3D6B2D);color:#fff;padding:1rem 2rem;border-radius:1rem;font-weight:600;z-index:5000;opacity:0;visibility:hidden;transition:opacity .3s cubic-bezier(.4,0,.2,1),visibility .3s,transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 10px 30px rgba(45,80,22,.3);will-change:transform,opacity}
+.toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.toast.success{background:linear-gradient(135deg,#10B981,#059669)}
+.toast.error{background:linear-gradient(135deg,#EF4444,#DC2626)}
+
+/* Comments Section */
+.comment-input{width:100%;padding:1rem 1.5rem;border:2px solid #E8EAD8;border-radius:1rem;font-family:'Cairo',sans-serif;font-size:1rem;transition:border-color .2s ease,box-shadow .2s ease;background:#FDFCF8}
+.comment-input:focus{outline:none;border-color:#5C933B;box-shadow:0 0 0 4px rgba(92,147,59,.1)}
+
+/* Quick View Modal */
+.quick-view-modal{position:fixed;inset:0;background:rgba(30,53,15,.6);z-index:3500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.quick-view-modal.active{opacity:1;visibility:visible;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.quick-view-container{width:100%;max-width:500px;background:#fff;border-radius:1.5rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;opacity:0;transition:opacity .35s ease;max-height:90dvh;max-height:90vh}
+.quick-view-modal.active .quick-view-container{opacity:1}
+
+/* Favorite Button */
+.favorite-btn{position:absolute;top:12px;left:12px;width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,.15);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;z-index:10;touch-action:manipulation}
+.favorite-btn:hover{transform:scale(1.15)}
+.favorite-btn.active svg{fill:#EF4444;stroke:#EF4444}
+
+/* Stock Badge */
+.stock-badge{position:absolute;top:8px;right:8px;padding:.2rem .55rem;border-radius:9999px;font-size:.7rem;font-weight:700;letter-spacing:.01em}
+.stock-badge.in-stock{background:#10B981;color:#fff}
+.stock-badge.low-stock{background:#F59E0B;color:#fff}
+.stock-badge.out-of-stock{background:#EF4444;color:#fff}
+
+/* Back to Top Button */
+.back-to-top{position:fixed;bottom:24px;right:24px;z-index:999;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#2D5016,#3D6B2D);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(45,80,22,.3);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease,transform .25s ease;cursor:pointer;touch-action:manipulation;will-change:opacity,transform}
+.back-to-top.visible{opacity:1;visibility:visible}
+.back-to-top:hover{transform:translateY(-5px);box-shadow:0 8px 30px rgba(45,80,22,.4)}
+
+/* Scroll Indicator */
+@keyframes scrollBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+.scroll-indicator{animation:scrollBounce 1.5s ease-in-out infinite}
+
+/* Star Twinkle */
+@keyframes starTwinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.star-twinkle{animation:starTwinkle 1.5s ease-in-out infinite}
+
+/* Stat Card Pulse */
+@keyframes statPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.stat-card-animated{transition:transform .3s ease;animation:statPulse 3s ease-in-out infinite}
+
+/* Responsive */
+@media(max-width:767px){
+  .products-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem}
+  .product-image-wrapper{height:220px}
+  .product-card-main>div:last-child{padding:0.4rem}
+  .product-card-main h3{font-size:0.8rem!important;margin-bottom:0.2rem!important;line-height:1.25!important}
+  .product-card-main .text-xl{font-size:0.75rem!important}
+  .product-card-main .inline-block.bg-brand-50{font-size:0.6rem;padding:1px 5px}
+  .product-card-main .flex.items-center.justify-between{flex-direction:column;align-items:stretch;gap:0.25rem}
+  .product-card-main .add-to-cart-btn span,.product-card-main button span.btn-text{font-size:0.65rem}
+  .stock-badge{font-size:0.6rem!important;padding:2px 5px!important;top:6px!important;right:6px!important}
+  .favorite-btn{width:26px!important;height:26px!important;top:4px!important;left:4px!important}
+  .hero-title{font-size:2.2rem!important;line-height:1.2!important}
+  .stat-number{font-size:1.75rem}
+  .cart-sidebar{max-width:100%}
+  .whatsapp-float{bottom:16px;left:16px;width:56px;height:56px}
+  .whatsapp-float svg{width:28px;height:28px}
+}
+@media(min-width:768px) and (max-width:1023px){
+  /* ═══ iPad Layout Fixes ═══ */
+
+  /* Product Grid */
+  .products-grid{grid-template-columns:repeat(3,1fr);gap:1rem}
+  .product-image-wrapper{height:240px}
+  .product-card-main>div:last-child{padding:0.75rem}
+  .product-card-main h3{font-size:0.88rem!important}
+  .product-card-main .text-xl{font-size:0.95rem!important}
+  .product-card-main .inline-block.bg-brand-50{font-size:0.68rem;padding:2px 7px}
+
+  /* Hero Section */
+  .hero-title{font-size:2.75rem!important;line-height:1.15!important}
+  .stat-number{font-size:2rem}
+
+  /* Cart Sidebar — comfortable width on iPad */
+  .cart-sidebar{max-width:420px}
+
+  /* Brand emblem slightly smaller */
+  .brand-emblem{width:64px;height:64px}
+
+  /* Add-to-cart button text */
+  .product-card-main .add-to-cart-btn span,
+  .product-card-main button span.btn-text{font-size:0.7rem}
+
+  /* Stock badge sizing */
+  .stock-badge{font-size:0.62rem!important;padding:2px 6px!important}
+
+  /* Favorite btn */
+  .favorite-btn{width:32px!important;height:32px!important}
+
+  /* WhatsApp float button */
+  .whatsapp-float{bottom:20px;left:20px;width:58px;height:58px}
+  .whatsapp-float svg{width:30px;height:30px}
+}
+/* â”€â”€ Checkout Modal Mobile Fix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-height: 800px) {
+  .checkout-container {
+    max-height: calc(var(--dvh, 100vh) - 0.75rem);
+    border-radius: 1rem;
+  }
+}
+@media (max-width: 640px) {
+  .checkout-modal {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+  .checkout-container {
+    /* Bottom-sheet: container aligns to bottom of visual viewport (above keyboard) */
+    max-height: calc(var(--dvh, 100vh) - 0.5rem);
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-width: 100%;
+  }
+}
+
+
+/* === Category Icon Grid (Font Awesome icons) === */
+.cat-grid-wrapper{padding:0 8px}
+.cat-icon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px clamp(4px,2vw,10px);max-width:580px;margin:0 auto}
+@media(min-width:640px){.cat-icon-grid{max-width:700px;gap:24px 12px}}
+.cat-icon-btn{display:flex;flex-direction:column;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px;border-radius:14px;transition:transform .2s ease;-webkit-tap-highlight-color:transparent}
+.cat-icon-btn:active{transform:scale(.93)}
+.cat-icon-circle{width:clamp(64px,19vw,96px);height:clamp(64px,19vw,96px);border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+@media(min-width:640px){.cat-icon-circle{width:112px;height:112px}}
+.cat-icon-circle i{font-size:36px;line-height:1;transition:color .2s}
+@media(min-width:640px){.cat-icon-circle i{font-size:42px}}
+.cat-icon-btn.active .cat-icon-circle{box-shadow:0 4px 20px rgba(45,80,22,.28);outline:2.5px solid #2D5016;outline-offset:3px;transform:translateY(-3px)}
+.cat-icon-btn:hover:not(.active) .cat-icon-circle{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.cat-icon-label{font-size:clamp(10px,2.8vw,12.5px);font-weight:700;color:#1E350F;text-align:center;line-height:1.3;max-width:clamp(64px,19vw,96px);word-break:break-word}
+.cat-icon-btn.active .cat-icon-label{color:#2D5016}
+/* Circle backgrounds */
+.ci-all{background:linear-gradient(135deg,#e8f5ee,#c0e6d0)}.ci-meds,.ci-skin,.ci-hair,.ci-teeth,.ci-makeup,.ci-device,.ci-perf,.ci-hand,.ci-foot{background:#fff;border:1.5px solid #e5e7eb}.ci-bundles{background:linear-gradient(135deg,#ef4444,#f97316)}
+/* Icon colors */
+.ci-all i{color:#1a6e3c}.ci-meds i{color:#d4820a}.ci-skin i{color:#c2185b}.ci-hair i{color:#3949ab}.ci-teeth i{color:#00838f}.ci-makeup i{color:#8e24aa}.ci-device i{color:#1565c0}.ci-perf i{color:#f9a825}.ci-hand i{color:#f43f5e}.ci-foot i{color:#14b8a6}.ci-bundles i{color:#fff}
+
+
+/* ═══════════════════════════════════════════════════════
+   إصلاح المشاكل الثلاث
+   ═══════════════════════════════════════════════════════ */
+
+/* 1. إصلاح لون زر السلة — من البرتقالي إلى الأخضر */
+button[aria-label="فتح سلة التسوق"],
+button[title="السلة"] {
+  background: linear-gradient(135deg, #2D5016, #3D6B2D) !important;
+  box-shadow: 0 4px 15px rgba(45,80,22,0.35) !important;
+}
+button[aria-label="فتح سلة التسوق"]:hover,
+button[title="السلة"]:hover {
+  background: linear-gradient(135deg, #254012, #2D5016) !important;
+}
+
+/* 2. إخفاء عنصر الفيديو عندما لا يوجد ملف
+      (الخلفية الخضراء + الغراديانت تظهر بدلاً منه) */
+/* hero-video: shown if video loads, hidden via JS if not */
+.hero-video { display: block; }
+
+/* 3. إصلاح ظهور زر "تابعنا" — إخفاؤه على الشاشات المتوسطة
+      حتى لا يضغط على باقي أزرار التنقل */
+@media (max-width: 1279px) {
+  #followDropdownWrap {
+    display: none !important;
+  }
+}
+@media (min-width: 1280px) {
+  #followDropdownWrap {
+    display: block !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   Performance & UX Upgrades (v5)
+   ═══════════════════════════════════════════════════════════ */
+
+/* GPU acceleration for key animated elements */
+/* NOTE: checkout-modal, search-modal, quick-view-modal EXCLUDED — breaks backdrop-filter on iOS.
+   NOTE: product-card-main EXCLUDED — 20+ GPU compositing layers crashes iPad Safari rendering. */
+.cart-sidebar,
+.float-animation,
+.scroll-animate {
+  will-change: transform;
+}
+
+/* Remove will-change after animation ends (memory) */
+.scroll-animate.visible,
+.product-card-main:not(:hover) {
+  will-change: auto;
+}
+
+/* Better touch on ALL interactive elements */
+button, a, [role="button"], label,
+.filter-btn, .cat-icon-btn,
+.product-card-main, .search-result-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Skeleton Loading (shimmer) ─────────────────────────── */
+/* shimmer removed from styles.css — all skeleton elements now use skPulse from homepage-premium.css */
+/* @keyframes shimmer kept below for admin-styles.css only (separate stylesheet) */
+@keyframes shimmer {
+  /* Kept for admin.html compatibility only (admin-styles.css references it) */
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  /* background-position animation → opacity pulse (compositor-only, no repaint) */
+  background: linear-gradient(135deg, #e8eede 0%, #f0f4e8 100%);
+  animation: skPulse 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+@keyframes skPulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1.00; }
+}
+.skeleton-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid #E8EAD8;
+  animation: fadeInPage 0.3s ease-out;
+  contain: layout style paint; /* isolate repaint to card */
+}
+.skeleton-img  { height: 185px; width: 100%; border-radius: 0; }
+.skeleton-body { padding: 10px 12px 12px; }
+.skeleton-tag  { height: 18px; width: 45%; margin-bottom: 8px; }
+.skeleton-title{ height: 14px; width: 85%; margin-bottom: 6px; }
+.skeleton-sub  { height: 12px; width: 60%; margin-bottom: 12px; }
+.skeleton-row  { display: flex; align-items: center; justify-content: space-between; }
+.skeleton-price{ height: 20px; width: 38%; }
+.skeleton-btn  { height: 30px; width: 36%; border-radius: 9999px; }
+@media (max-width: 767px) {
+  .skeleton-img { height: 145px; }
+}
+
+/* ── Product image fade-in on load ─────────────────────── */
+@keyframes imgFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.product-img-animated { animation: imgFadeIn 0.35s ease-in-out forwards; }
+
+/* ── Smooth grid appear on render ───────────────────────── */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#productsGrid > .skeleton-card { animation: fadeInPage 0.28s ease-out both; }
+#productsGrid > .skeleton-card:nth-child(1)  { animation-delay: 0ms; }
+#productsGrid > .skeleton-card:nth-child(2)  { animation-delay: 30ms; }
+#productsGrid > .skeleton-card:nth-child(3)  { animation-delay: 60ms; }
+#productsGrid > .skeleton-card:nth-child(4)  { animation-delay: 90ms; }
+#productsGrid > .skeleton-card:nth-child(5)  { animation-delay: 120ms; }
+#productsGrid > .skeleton-card:nth-child(6)  { animation-delay: 150ms; }
+#productsGrid > .skeleton-card:nth-child(n+7){ animation-delay: 180ms; }
+
+/* ── iOS Safari-specific fixes ──────────────────────────── */
+@supports (-webkit-touch-callout: none) {
+  /* Fix 100vh on iOS (address bar bug) */
+  .cart-sidebar        { height: -webkit-fill-available; }
+  /* Use --dvh (updated by visualViewport) instead of fill-available — keyboard-aware */
+  .checkout-container  { max-height: calc(var(--dvh, 100vh) - 1rem); }
+
+  /* Disable hover lift on touch devices (prevents sticky hover) */
+  .product-card-main:hover { transform: none; box-shadow: none; }
+  .product-card-main:hover::before { transform: scaleX(0); }
+  .product-card-main:hover .product-overlay { opacity: 0; }
+  .product-card-main:active { transform: scale(0.98); }
+
+  /* Smooth momentum scrolling */
+  .search-results,
+  .cart-sidebar,
+  .checkout-container,
+  .quick-view-container { -webkit-overflow-scrolling: touch; }
+
+  /* Fix button active state on iOS */
+  .btn-primary:active { transform: scale(0.96) !important; }
+}
+
+
+/* ── Prevent ghost compositing layers on inactive modals (iPad/iOS Safari fix) ──
+   transform+backdrop-filter on hidden elements creates visible GPU artifacts */
+.checkout-modal:not(.active) .checkout-container,
+.quick-view-modal:not(.active) .quick-view-container,
+.search-modal:not(.active) .search-container {
+  opacity: 0 !important;
+  transform: translateY(24px) !important;
+  pointer-events: none !important;
+  will-change: auto !important;
+}
+
+/* ── Scrollbar styling ───────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #F6F7F4; }
+::-webkit-scrollbar-thumb { background: #AABF89; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2D5016; }
+
+/* ── Reduced motion (accessibility) ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1     !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior:           auto  !important;
+  }
+  .skeleton { animation: none; background: #e8eae0; }
+}
+
+/* ── Better focus rings (accessibility) ─────────────────── */
+:focus-visible {
+  outline: 2.5px solid #2D5016;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) { outline: none; }
+
+/* ── Image loading state placeholder ────────────────────── */
+.product-image-wrapper img[src=""],
+.product-image-wrapper img:not([src]) {
+  opacity: 0;
+}
+
+/* ── Quick view overlay button improved ─────────────────── */
+.product-overlay button {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: 'Cairo', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* ── Card hover: more subtle on small screens ───────────── */
+@media (max-width: 767px) {
+  .product-card-main:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(45,80,22,.12);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 PREMIUM DESIGN SYSTEM — CSS Custom Properties + Components
+   Neurobin Pharmacy — v2.0
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Color Palette ──────────────────────────────── */
+  --c-brand-950: #111c08;
+  --c-brand-900: #1E350F;
+  --c-brand-800: #2D5016;
+  --c-brand-700: #3D6B2D;
+  --c-brand-600: #5C933B;
+  --c-brand-500: #7CB550;
+  --c-brand-400: #AABF89;
+  --c-brand-200: #D4E4C0;
+  --c-brand-100: #E8EAD8;
+  --c-brand-50:  #F6F7F4;
+  --c-gold:      #F59E0B;
+  --c-gold-light:#FDE68A;
+
+  /* ── Shadow System ──────────────────────────────── */
+  --shadow-xs:   0 1px 4px rgba(30,53,15,.06);
+  --shadow-sm:   0 2px 10px rgba(30,53,15,.09);
+  --shadow-md:   0 6px 24px rgba(30,53,15,.12);
+  --shadow-lg:   0 16px 48px rgba(30,53,15,.16);
+  --shadow-xl:   0 28px 80px rgba(30,53,15,.20);
+  --shadow-glow: 0 0 0 3px rgba(92,147,59,.25);
+  --shadow-card: 0 2px 12px rgba(30,53,15,.07), 0 8px 32px rgba(30,53,15,.05);
+  --shadow-card-hover: 0 8px 36px rgba(30,53,15,.15), 0 2px 8px rgba(30,53,15,.08);
+
+  /* ── Radius System ──────────────────────────────── */
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 9999px;
+
+  /* ── Transitions ────────────────────────────────── */
+  --t-fast:   150ms cubic-bezier(.4,0,.2,1);
+  --t-normal: 280ms cubic-bezier(.4,0,.2,1);
+  --t-slow:   450ms cubic-bezier(.4,0,.2,1);
+  --t-bounce: 400ms cubic-bezier(.34,1.56,.64,1);
+
+  /* ── Typography ─────────────────────────────────── */
+  --font-sans: 'Cairo', 'Tajawal', system-ui, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────
+   💊 DISCOUNT BADGE — Premium red pill on product cards
+   ───────────────────────────────────────────────────────── */
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px; /* RTL: appears on left (start) side */
+  z-index: 12;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: #fff;
+  font-size: 0.625rem;   /* 10px */
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 10px rgba(220,38,38,.45);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.4;
+  animation: badgePop .4s var(--t-bounce) both;
+}
+@keyframes badgePop {
+  0%   { transform: scale(0) rotate(-12deg); opacity: 0; }
+  70%  { transform: scale(1.15) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   🃏 PRODUCT CARD — Premium hover & depth
+   ───────────────────────────────────────────────────────── */
+.product-card-main {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid var(--c-brand-100);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--t-normal), box-shadow var(--t-normal), border-color var(--t-fast);
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.product-card-main:hover {
+  transform: translateY(-5px) scale(1.005);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--c-brand-200);
+}
+.product-card-main:active {
+  transform: translateY(-2px) scale(1.002);
+  transition-duration: 80ms;
+}
+/* Image container smooth zoom on hover */
+.product-card-main .product-image-wrapper {
+  overflow: hidden;
+  border-radius: var(--r-md);
+}
+.product-card-main .product-image-wrapper img {
+  transition: transform var(--t-slow);
+}
+.product-card-main:hover .product-image-wrapper img {
+  transform: scale(1.06);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🔍 SEARCH — Premium modal + recent searches
+   ───────────────────────────────────────────────────────── */
+
+/* Search modal glassmorphism — NOTE: blur REMOVED, expensive GPU op on Safari/iPad */
+#searchModal {
+  /* backdrop-filter: blur(12px) — removed, triggers full-viewport GPU compositing */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(8,22,4,0.80);
+  transition: opacity var(--t-normal);
+}
+#searchModal:not(.active) { pointer-events: none; }
+
+/* Search box container */
+#searchModal .search-modal-box {
+  background: rgba(255,255,255,.97);
+  backdrop-
+  -webkit-backdrop-
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,.6);
+}
+
+/* Search input focus glow */
+#searchInput:focus {
+  outline: none;
+  box-shadow: var(--shadow-glow), 0 0 0 1px rgba(92,147,59,.4);
+}
+
+/* Search result items */
+.search-result-item {
+  display: flex;
+  align-items: center;
+  transition: background var(--t-fast);
+  cursor: pointer;
+}
+.search-result-item:hover {
+  background: var(--c-brand-50);
+}
+
+/* Recent searches hover */
+.recent-search-item:hover {
+  background: var(--c-brand-50);
+  border-radius: var(--r-sm);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🏷️ STOCK BADGES — Refined pill style
+   ───────────────────────────────────────────────────────── */
+.stock-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px; /* RTL: appears on right (end) side */
+  z-index: 11;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.stock-badge.out-of-stock {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.stock-badge.low-stock {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+  animation: pulseStock 2s ease infinite;
+}
+.stock-badge.in-stock {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+@keyframes pulseStock {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 3px rgba(234,88,12,.15); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ✨ MARK HIGHLIGHT — Search result text
+   ───────────────────────────────────────────────────────── */
+.search-result-item mark,
+mark.search-hl {
+  background: linear-gradient(90deg, #fef08a 0%, #fde047 100%);
+  color: var(--c-brand-900);
+  font-weight: 800;
+  border-radius: 3px;
+  padding: 0 2px;
+  /* box-shadow removed from mark — compositing layer per highlighted char */
+}
+
+/* ─────────────────────────────────────────────────────────
+   🪟 GLASSMORPHISM UTILITY
+   ───────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,.75);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(255,255,255,.6);
+}
+.glass-dark {
+  background: rgba(30,53,15,.65);
+  backdrop-
+  -webkit-backdrop-
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🔘 BUTTON SYSTEM — Consistent interactive states
+   ───────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--c-brand-700), var(--c-brand-800));
+  color: #fff;
+  border-radius: var(--r-pill);
+  padding: .75rem 2rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), filter var(--t-fast);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(61,107,45,.35);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(61,107,45,.45);
+  filter: brightness(1.05);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(61,107,45,.3);
+}
+.btn-gold {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: var(--c-brand-900);
+  border-radius: var(--r-pill);
+  padding: .75rem 2rem;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245,158,11,.4);
+}
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(245,158,11,.55);
+}
+
+/* ─────────────────────────────────────────────────────────
+   📱 iPAD / SAFARI — Additional targeted fixes
+   ───────────────────────────────────────────────────────── */
+
+/* Prevent zoom on input focus in iOS */
+input[type="text"], input[type="tel"], input[type="email"],
+input[type="search"], select, textarea {
+  font-size: max(16px, 1rem); /* prevents iOS auto-zoom */
+}
+
+/* Safe area insets for notch devices */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px);    }
+
+/* Fix Safari sticky header rendering artifact */
+header[class*="sticky"], nav[class*="sticky"] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button, a, [role="button"] {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
+/* Fix Safari overflow with border-radius clipping */
+.product-card-main,
+[class*="rounded-xl"],
+[class*="rounded-2xl"],
+[class*="rounded-3xl"] {
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+/* iPad grid: ensure 3 columns on landscape iPad */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #productsGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   🌐 GLOBAL POLISH
+   ───────────────────────────────────────────────────────── */
+
+/* Smooth text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Custom focus ring matching brand */
+*:focus-visible {
+  outline: 2px solid var(--c-brand-500);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Prevent horizontal scroll leak on mobile */
+body { overflow-x: hidden; }
+
+/* Consistent selection color */
+::selection {
+  background: var(--c-brand-200);
+  color: var(--c-brand-900);
+}
+::-moz-selection {
+  background: var(--c-brand-200);
+  color: var(--c-brand-900);
+}
+
+/* ══════════════════════════════════════════════════════════
+   🍎 SAFARI / iPad BLUR BUG FIX — ph.neurobin
+   Prevents backdrop-filter stacking, GPU layer explosion,
+   and overlay residue on iOS Safari
+══════════════════════════════════════════════════════════ */
+
+/* 1. Kill backdrop-filter when modal is NOT active
+      Safari keeps it alive even at opacity:0 / visibility:hidden */
+.checkout-modal:not(.active),
+.search-modal:not(.active),
+.quick-view-modal:not(.active) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  /* Also remove GPU layer promotion */
+  transform: none !important;
+  -webkit-transform: none !important;
+  will-change: auto !important;
+}
+
+/* 2. Contain compositing to each overlay — stop bleed-through */
+.cart-overlay,
+.checkout-modal,
+.search-modal,
+.quick-view-modal {
+  isolation: isolate;
+  contain: layout style;
+}
+
+/* 3. Remove -webkit-mask-image from cards — kills excess GPU layers
+      (already in styles.css as a Safari fix but override to be safe) */
+.product-card-main,
+[class*="rounded-xl"],
+[class*="rounded-2xl"],
+[class*="rounded-3xl"] {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+/* 4. Stop decorative blur divs from creating page-wide compositing layers */
+.blur-2xl,
+.blur-3xl {
+  will-change: auto !important;
+  isolation: isolate;
+  contain: strict;
+  /* On iOS Safari, remove filter entirely from decorative elements */
+}
+@supports (-webkit-touch-callout: none) {
+  .blur-2xl,
+  .blur-3xl {
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 0.08 !important;
+    background: radial-gradient(circle, currentColor 0%, transparent 70%) !important;
+  }
+}
+
+/* 5. Prevent img-loading blur from getting permanently stuck */
+.product-image-wrapper img:not(.img-loading) {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 6. Disabled cart-overlay GPU layer when hidden */
+.cart-overlay:not(.active) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  pointer-events: none;
+}
+
+/* 7. Isolate glass morphism to prevent page-wide blur leakage */
+.glass,
+.glass-dark,
+.nav-scrolled {
+  isolation: isolate;
+}
+
+/* 8. scroll-animate — release will-change after transition ends */
+.scroll-animate.visible,
+.scroll-animate-left.visible,
+.scroll-animate-right.visible,
+.scroll-animate-scale.visible {
+  will-change: auto !important;
+  contain: none !important;
+}
+
+/* 9. Product grid: no GPU promotion during normal state */
+#productsGrid:not(.grid-fading-out):not(.grid-fading-in) {
+  will-change: auto !important;
+  transform: none !important;
+}
+
+/* 10. Notif/Track/Request modals inline — ensure hidden state is clean */
+#notifyModal:not([class*="active"]),
+#orderTrackModal[style*="none"],
+#productRequestModal[style*="none"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* 11. iOS Safari: hero decorative blobs → use opacity instead of blur */
+@supports (-webkit-touch-callout: none) {
+  section .absolute.blur-2xl,
+  section .absolute.blur-3xl,
+  div .absolute.blur-2xl,
+  div .absolute.blur-3xl {
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+}
+
+/* 12. Prevent backdrop-filter on nav until scrolled (reduces GPU load) */
+nav:not(.nav-scrolled) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* 13. iOS/iPad Safari — comprehensive filter:blur elimination ─────────────
+   Root cause: any filter:blur on ANY element creates a GPU compositing layer.
+   On iPad/iPhone Safari this bleeds upward, making the ENTIRE page appear blurred.
+   Solution: replace blur-based effects with opacity-only on all touch devices. */
+@supports (-webkit-touch-callout: none) {
+  /* Kill blur on ALL decorative elements */
+  .offer-slide-deco,
+  .offer-slide-deco.right,
+  [class*=deco],
+  .hero-blob,
+  .bg-blob {
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+
+  /* Kill img-loading blur — causes stuck page-wide blur */
+  .product-image-wrapper img.img-loading,
+  .product-image-wrapper img {
+    filter: none !important;
+    -webkit-filter: none !important;
+    transition: opacity 0.3s ease !important;
+  }
+
+  /* Ensure loaded images are fully visible */
+  .product-image-wrapper img.img-loaded {
+    opacity: 1 !important;
+  }
+
+  /* Kill backdrop-filter on ALL hidden modals */
+  #searchModal:not(.active),
+  #checkoutModal:not(.active),
+  #quickViewModal:not(.active),
+  .search-modal:not(.active),
+  .checkout-modal:not(.active),
+  .quick-view-modal:not(.active) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+
+
+/* ══════════════════════════════════════════════════════════
+   🔧 PWA / WebView SCROLL FIX — ph.neurobin
+   Fixes scroll freeze in PWA (standalone), iOS Safari,
+   Android WebView, and all mobile browsers.
+   ══════════════════════════════════════════════════════════ */
+
+/* 1. Base scroll — html & body must ALWAYS allow vertical scroll */
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: auto !important;
+  min-height: 100%;
+}
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  min-height: 100%;
+  height: auto !important;
+  /* Never set position:fixed or overflow:hidden here globally */
+}
+
+/* 2. PWA standalone — smooth scroll, safe area, no pull-to-refresh */
+@media (display-mode: standalone) {
+  html, body {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100%;
+    position: static !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 3. Scrollable containers inside modals/sidebar — must use touch scroll */
+.cart-sidebar {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain;
+}
+.checkout-container,
+.quick-view-container,
+.checkout-modal,
+.quick-view-modal,
+.search-results,
+#cartSidebar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 4. Cart overlay — ONLY block touch when visible (active)
+   touch-action:none on HIDDEN inset:0 overlay blocks single-finger scroll on Android */
+.cart-overlay {
+  pointer-events: none; /* no touch interception when hidden */
+}
+.cart-overlay.active {
+  touch-action: none;   /* block scroll-through ONLY when overlay is visible */
+  pointer-events: auto;
+}
+/* Allow scroll inside sidebar even when overlay is active */
+.cart-sidebar,
+#cartSidebar {
+  touch-action: pan-y; /* allow vertical scroll inside */
+  pointer-events: auto;
+}
+
+/* 5. Modals: ONLY block touch when active — touch-action:none on hidden
+   inset:0 modals is the PRIMARY cause of 2-finger scroll on Android Chrome */
+.checkout-modal,
+.quick-view-modal,
+.search-modal,
+#checkoutModal,
+#quickViewModal,
+#searchModal {
+  pointer-events: none; /* no touch interception when hidden */
+}
+.checkout-modal.active,
+.quick-view-modal.active,
+.search-modal.active,
+#checkoutModal.active,
+#quickViewModal.active,
+#searchModal.active {
+  touch-action: none;   /* block scroll-through ONLY when modal is open */
+  pointer-events: auto;
+}
+.checkout-container,
+.quick-view-container,
+.search-container {
+  touch-action: pan-y; /* allow scroll inside modal content */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 5b. Hidden full-viewport overlays must not trap touch in PWA standalone */
+.checkout-modal:not(.active),
+.quick-view-modal:not(.active),
+.search-modal:not(.active),
+#checkoutModal:not(.active),
+#quickViewModal:not(.active),
+#searchModal:not(.active) {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+}
+#mobileDrawer:not(.open) {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+}
+.checkout-modal.active,
+.quick-view-modal.active,
+.search-modal.active,
+#checkoutModal.active,
+#quickViewModal.active,
+#searchModal.active,
+#mobileDrawer.open {
+  height: var(--dvh, 100dvh);
+  visibility: visible;
+}
+
+/* 6. Mobile drawer — scrollable */
+#mobileDrawer,
+#drawerPanel {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 7. Scrollable horizontal sections */
+#topSellingGrid,
+.offers-slider-track {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* 8. Prevent double-bounce on iOS when page has no scroll */
+@supports (-webkit-touch-callout: none) {
+  html {
+    /* Use dynamic viewport height on iOS */
+    min-height: -webkit-fill-available;
+  }
+}
+
+
+
+/* ──────────────────────────────────────────────────────────
+   ⌨️  iPad / iPhone Safari — Keyboard-Safe Modal Fix
+   Root causes fixed:
+   1. overflow-x removed from <html> (above)
+   2. height:100vh removed from modal overlay (above)
+   3. transform removed from containers (above)
+   4. Visual Viewport JS sync handles overlay sizing
+   ────────────────────────────────────────────────────────── */
+
+/* body.modal-open — set by _lockScroll(); overflow lock only (no position:fixed in PWA) */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  width: 100%;
+}
+
+/* Input zoom prevention — iOS auto-zooms if font < 16px */
+.checkout-container input,
+.checkout-container select,
+.checkout-container textarea,
+.quick-view-container input,
+.quick-view-container select,
+#notifyModal input,
+#searchModal input {
+  font-size: max(16px, 1em) !important;
+}
+
+/* touch-action on modal overlays — ONLY when active (not hidden) */
+.checkout-modal.active, .quick-view-modal.active, .search-modal.active {
+  touch-action: none;
+}
+.checkout-container, .quick-view-container, .search-container {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area on iPhone X notch */
+.checkout-modal, .quick-view-modal {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

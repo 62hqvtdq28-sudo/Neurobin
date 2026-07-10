@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /Neurobin/
+Allow: /Neurobin/index.html
+
+Disallow: /Neurobin/admin.html
+Disallow: /Neurobin/admin.js
+Disallow: /Neurobin/admin-auth.js
+Disallow: /Neurobin/migrator.html
+Disallow: /Neurobin/track.html
+
+# Crawl-delay for polite crawling
+Crawl-delay: 5
+
+# Sitemap location
+Sitemap: https://62hqvtdq28-sudo.github.io/Neurobin/sitemap.xml
