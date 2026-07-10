@@ -1,1 +1,2 @@
-- [Neurobin backup list fix](neurobin-backup-list.md) — activity log supports 'backup' type but exportFullBackup never logged events; fix patches from outside like other hooks.
+- [Neurobin project overview](neurobin-overview.md) — Iraqi pharmacy platform: Node.js server, Supabase DB, vanilla JS/HTML/CSS frontend
+- [Neurobin backup list fix](neurobin-backup-list.md) — Why admin backup list was empty and how it was fixed
